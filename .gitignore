@@ -24,6 +24,9 @@
 .DS_Store
 *.pem
 
+# photobooth captures
+/captures
+
 # debug
 npm-debug.log*
 yarn-debug.log*

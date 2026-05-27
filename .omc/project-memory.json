@@ -1,0 +1,186 @@
+{
+  "version": "1.0.0",
+  "lastScanned": 1779863658667,
+  "projectRoot": "/Users/ianfebi01/Work/Web/photo-good",
+  "techStack": {
+    "languages": [
+      {
+        "name": "JavaScript/TypeScript",
+        "version": null,
+        "confidence": "high",
+        "markers": [
+          "package.json"
+        ]
+      },
+      {
+        "name": "TypeScript",
+        "version": null,
+        "confidence": "high",
+        "markers": [
+          "tsconfig.json"
+        ]
+      }
+    ],
+    "frameworks": [
+      {
+        "name": "next",
+        "version": "16.2.6",
+        "category": "fullstack"
+      },
+      {
+        "name": "react",
+        "version": "19.2.4",
+        "category": "frontend"
+      },
+      {
+        "name": "react-dom",
+        "version": "19.2.4",
+        "category": "frontend"
+      }
+    ],
+    "packageManager": "pnpm",
+    "runtime": null
+  },
+  "build": {
+    "buildCommand": "pnpm build 2>&1 | tail -18",
+    "testCommand": null,
+    "lintCommand": "pnpm lint",
+    "devCommand": "pnpm dev",
+    "scripts": {
+      "dev": "next dev",
+      "build": "next build",
+      "start": "next start",
+      "lint": "eslint"
+    }
+  },
+  "conventions": {
+    "namingStyle": null,
+    "importStyle": null,
+    "testPattern": null,
+    "fileOrganization": null
+  },
+  "structure": {
+    "isMonorepo": true,
+    "workspaces": [],
+    "mainDirectories": [
+      "app",
+      "public"
+    ],
+    "gitBranches": null
+  },
+  "customNotes": [],
+  "directoryMap": {
+    "app": {
+      "path": "app",
+      "purpose": "Application code",
+      "fileCount": 4,
+      "lastAccessed": 1779863658654,
+      "keyFiles": [
+        "favicon.ico",
+        "globals.css",
+        "layout.tsx",
+        "page.tsx"
+      ]
+    },
+    "public": {
+      "path": "public",
+      "purpose": "Public files",
+      "fileCount": 5,
+      "lastAccessed": 1779863658655,
+      "keyFiles": [
+        "file.svg",
+        "globe.svg",
+        "next.svg",
+        "vercel.svg",
+        "window.svg"
+      ]
+    }
+  },
+  "hotPaths": [
+    {
+      "path": "lib/photobooth/camera.ts",
+      "accessCount": 7,
+      "lastAccessed": 1779867403535,
+      "type": "file"
+    },
+    {
+      "path": "app/booth/page.tsx",
+      "accessCount": 5,
+      "lastAccessed": 1779866530565,
+      "type": "file"
+    },
+    {
+      "path": "app/page.tsx",
+      "accessCount": 3,
+      "lastAccessed": 1779866042416,
+      "type": "file"
+    },
+    {
+      "path": "app/globals.css",
+      "accessCount": 2,
+      "lastAccessed": 1779864662132,
+      "type": "file"
+    },
+    {
+      "path": "app/layout.tsx",
+      "accessCount": 2,
+      "lastAccessed": 1779864679268,
+      "type": "file"
+    },
+    {
+      "path": "app/api/camera/capture/route.ts",
+      "accessCount": 2,
+      "lastAccessed": 1779866324604,
+      "type": "file"
+    },
+    {
+      "path": "lib/utils.ts",
+      "accessCount": 1,
+      "lastAccessed": 1779864668176,
+      "type": "file"
+    },
+    {
+      "path": "lib/photobooth/config.ts",
+      "accessCount": 1,
+      "lastAccessed": 1779865877006,
+      "type": "file"
+    },
+    {
+      "path": "lib/photobooth/compose.ts",
+      "accessCount": 1,
+      "lastAccessed": 1779865923522,
+      "type": "file"
+    },
+    {
+      "path": "app/api/camera/status/route.ts",
+      "accessCount": 1,
+      "lastAccessed": 1779865928294,
+      "type": "file"
+    },
+    {
+      "path": "app/api/camera/stream/route.ts",
+      "accessCount": 1,
+      "lastAccessed": 1779865943097,
+      "type": "file"
+    },
+    {
+      "path": "app/api/camera/compose/route.ts",
+      "accessCount": 1,
+      "lastAccessed": 1779865961458,
+      "type": "file"
+    },
+    {
+      "path": "app/api/captures/[file]/route.ts",
+      "accessCount": 1,
+      "lastAccessed": 1779865973947,
+      "type": "file"
+    },
+    {
+      "path": "captures/strip-realtest.jpg",
+      "accessCount": 1,
+      "lastAccessed": 1779866746699,
+      "type": "file"
+    }
+  ],
+  "userDirectives": []
+}

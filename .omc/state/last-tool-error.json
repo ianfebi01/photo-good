@@ -1,0 +1,7 @@
+{
+  "tool_name": "Bash",
+  "tool_input_preview": "{\"command\":\"sleep 2  # let hot reload pick up the change\\ncurl -s --max-time 30 http://localhost:3000/api/camera/stream -o /tmp/hold-stream.bin &\\nHOLD=$!\\necho \\\"stream live (pid $HOLD), running 3s.....",
+  "error": "Exit code 143\nstream live (pid 72614), running 3s...\n=== capture WHILE stream live ===",
+  "timestamp": "2026-05-27T07:37:53.481Z",
+  "retry_count": 1
+}
