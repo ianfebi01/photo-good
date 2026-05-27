@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -61,71 +61,87 @@ export default function BoothPage() {
     restartPreview();
   }, [restartPreview] );
 
-  const run = useCallback( async () => {
-    if ( runningRef.current ) return;
-    runningRef.current = true;
-    setError( null );
-    setStrip( null );
-    setPhotos( [] );
-    setPhase( "running" );
+  // const run = useCallback( async () => {
+  //   if ( runningRef.current ) return;
+  //   runningRef.current = true;
+  //   setError( null );
+  //   setStrip( null );
+  //   setPhotos( [] );
+  //   setPhase( "running" );
+  //   const sessionId = newId();
+  //   const shots: Shot[] = [];
+
+  //   try {
+  //     for ( let i = 0; i < PHOTO_COUNT; i++ ) {
+  //       if ( !runningRef.current ) return;
+  //       setCurrent( i );
+  //       restartPreview();
+
+  //       for ( let n = timer; n > 0; n-- ) {
+  //         if ( !runningRef.current ) return;
+  //         setCount( n );
+  //         await wait( 1000 );
+  //       }
+  //       setCount( 0 );
+  //       if ( !runningRef.current ) return;
+
+  //       // Release the camera from live view, then take the still.
+  //       setPreviewOn( false );
+  //       setFlash( true );
+  //       await wait( 120 );
+
+  //       const res = await fetch( "/api/camera/capture", {
+  //         method  : "POST",
+  //         headers : { "Content-Type" : "application/json" },
+  //         body    : JSON.stringify( { sessionId, index : i } ),
+  //       } );
+  //       const data = await res.json();
+  //       setFlash( false );
+  //       if ( !res.ok ) throw new Error( data.error ?? "Capture failed" );
+
+  //       shots.push( data );
+  //       setPhotos( [...shots] );
+  //       if ( i < PHOTO_COUNT - 1 ) await wait( 900 );
+  //     }
+
+  //     if ( !runningRef.current ) return;
+  //     setPhase( "composing" );
+  //     const res = await fetch( "/api/camera/compose", {
+  //       method  : "POST",
+  //       headers : { "Content-Type" : "application/json" },
+  //       body    : JSON.stringify( { sessionId, files : shots.map( ( s ) => s.file ) } ),
+  //     } );
+  //     const data = await res.json();
+  //     if ( !res.ok ) throw new Error( data.error ?? "Compose failed" );
+  //     setStrip( data.url );
+  //     setPhase( "done" );
+  //   } catch ( err ) {
+  //     setError( err instanceof Error ? err.message : "Something went wrong" );
+  //     setPhase( "error" );
+  //   } finally {
+  //     runningRef.current = false;
+  //   }
+  // }, [timer, restartPreview] );
+
+  const capturePhoto = useCallback( async ( ) => {
     const sessionId = newId();
-    const shots: Shot[] = [];
+    setPreviewOn( false );
+    setPhase( "running" );
+    const res = await fetch( "/api/camera/capture", {
+      method  : "POST",
+      headers : { "Content-Type" : "application/json" },
+      body    : JSON.stringify( { sessionId, index : 1 } ),
+    } );
+    const data = await res.json();
+    setFlash( false );
+    if ( !res.ok ) throw new Error( data.error ?? "Capture failed" );
+    setPhotos( ( prev )=>  [...prev, data] );
+    setPreviewOn( true );
+  }, [] );
 
-    try {
-      for ( let i = 0; i < PHOTO_COUNT; i++ ) {
-        if ( !runningRef.current ) return;
-        setCurrent( i );
-        restartPreview();
-
-        for ( let n = timer; n > 0; n-- ) {
-          if ( !runningRef.current ) return;
-          setCount( n );
-          await wait( 1000 );
-        }
-        setCount( 0 );
-        if ( !runningRef.current ) return;
-
-        // Release the camera from live view, then take the still.
-        setPreviewOn( false );
-        setFlash( true );
-        await wait( 120 );
-
-        const res = await fetch( "/api/camera/capture", {
-          method  : "POST",
-          headers : { "Content-Type" : "application/json" },
-          body    : JSON.stringify( { sessionId, index : i } ),
-        } );
-        const data = await res.json();
-        setFlash( false );
-        if ( !res.ok ) throw new Error( data.error ?? "Capture failed" );
-
-        shots.push( data );
-        setPhotos( [...shots] );
-        if ( i < PHOTO_COUNT - 1 ) await wait( 900 );
-      }
-
-      if ( !runningRef.current ) return;
-      setPhase( "composing" );
-      const res = await fetch( "/api/camera/compose", {
-        method  : "POST",
-        headers : { "Content-Type" : "application/json" },
-        body    : JSON.stringify( { sessionId, files : shots.map( ( s ) => s.file ) } ),
-      } );
-      const data = await res.json();
-      if ( !res.ok ) throw new Error( data.error ?? "Compose failed" );
-      setStrip( data.url );
-      setPhase( "done" );
-    } catch ( err ) {
-      setError( err instanceof Error ? err.message : "Something went wrong" );
-      setPhase( "error" );
-    } finally {
-      runningRef.current = false;
-    }
-  }, [timer, restartPreview] );
-
-  const liveSrc = `/api/camera/stream?k=${streamKey}`;
-  const idle = phase === "idle";
-  const running = phase === "running";
+  const liveSrc = useMemo( () => `/api/camera/stream?key=${streamKey}`, [streamKey] );
+  const idle = useMemo( () => phase === "idle", [phase] );
+  const running = useMemo( () => phase === "running", [phase] );
 
   return (
     <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 px-5 py-8">
@@ -145,16 +161,15 @@ export default function BoothPage() {
         {/* Live preview / countdown stage */}
         <Card className="overflow-hidden p-0">
           <CardContent className="relative aspect-[3/2] bg-foreground p-0">
-            {previewOn ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                key={streamKey}
-                src={liveSrc}
-                alt="Live camera preview"
-                className="absolute inset-0 h-full w-full object-cover"
-              />
-            ) : (
-              <div className="absolute inset-0 grid place-items-center text-sm text-white/70">
+            <img
+              key={streamKey}
+              src={liveSrc}
+              alt="Live camera preview"
+              className="absolute inset-0 h-full w-full object-cover"
+            />
+            {/* Overlays */}
+            {previewOn === false && (
+              <div className="absolute inset-0 grid place-items-center text-xl text-white bg-white/30">
                 {running ? "Capturing…" : "Starting camera…"}
               </div>
             )}
@@ -204,7 +219,12 @@ export default function BoothPage() {
               <Progress value={( photos.length / PHOTO_COUNT ) * 100} />
 
               <div className="flex gap-2">
-                {idle || phase === "error" ? (
+                <Button className="flex-1"
+                  onClick={capturePhoto}
+                >
+                    Capture photo
+                </Button>
+                {/* {idle || phase === "error" ? (
                   <Button className="flex-1"
                     onClick={run}
                   >
@@ -229,7 +249,7 @@ export default function BoothPage() {
                   disabled={idle}
                 >
                   Reset
-                </Button>
+                </Button> */}
               </div>
 
               {error && (
