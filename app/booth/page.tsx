@@ -9,7 +9,7 @@ import { Progress } from "@/components/ui/progress";
 const PHOTO_COUNT = 4;
 
 type Shot = { file: string; url: string };
-type Phase = "idle" | "running" | "composing" | "done" | "error";
+type Phase = "idle" | "running" | "reviewing" | "composing" | "done" | "error";
 type Status = {
   connected: boolean;
   mock: boolean;
@@ -23,9 +23,9 @@ export default function BoothPage() {
   const [status, setStatus] = useState<Status | null>( null );
   const [phase, setPhase] = useState<Phase>( "idle" );
   const [photos, setPhotos] = useState<Shot[]>( [] );
+  const [pending, setPending] = useState<Shot | null>( null );
   const [strip, setStrip] = useState<string | null>( null );
   const [flash, setFlash] = useState( false );
-  const [previewOn, setPreviewOn] = useState( true );
   const [streamKey, setStreamKey] = useState( "live" );
   const [error, setError] = useState<string | null>( null );
   const [sessionId, setSessionId] = useState<string>( "" );
@@ -34,7 +34,6 @@ export default function BoothPage() {
 
   const restartPreview = useCallback( () => {
     setStreamKey( newId() );
-    setPreviewOn( true );
   }, [] );
 
   useEffect( () => {
@@ -49,22 +48,22 @@ export default function BoothPage() {
     setSessionId( "" );
     setPhase( "idle" );
     setPhotos( [] );
+    setPending( null );
     setStrip( null );
     setError( null );
     restartPreview();
   }, [restartPreview] );
 
-  const capturePhoto = useCallback( async () => {
+  const takeShot = useCallback( async ( replaceIndex?: number ) => {
     if ( runningRef.current ) return;
-    if ( photos.length >= PHOTO_COUNT ) return;
+    if ( replaceIndex === undefined && photos.length >= PHOTO_COUNT ) return;
     runningRef.current = true;
     setError( null );
     try {
       const activeSession = sessionId || newId();
       if ( !sessionId ) setSessionId( activeSession );
-      const index = photos.length;
+      const index = replaceIndex ?? photos.length;
 
-      setPreviewOn( false );
       setPhase( "running" );
       setFlash( true );
 
@@ -77,11 +76,41 @@ export default function BoothPage() {
       setFlash( false );
       if ( !res.ok ) throw new Error( data.error ?? "Capture failed" );
 
-      const nextPhotos = [...photos, data];
+      // Cache-bust so a retake at the same index re-loads from the server.
+      const shot: Shot = { file : data.file, url : `${data.url}?v=${newId()}` };
+      setPending( shot );
+      setPhase( "reviewing" );
+    } catch ( err ) {
+      setError( err instanceof Error ? err.message : "Something went wrong" );
+      setPhase( "error" );
+      setFlash( false );
+      restartPreview();
+    } finally {
+      runningRef.current = false;
+    }
+  }, [photos, restartPreview, sessionId] );
+
+  const capturePhoto = useCallback( () => takeShot(), [takeShot] );
+  const retakePending = useCallback( () => {
+    if ( phase !== "reviewing" || !pending ) return;
+    setPending( null );
+    setPhase( "idle" );
+    restartPreview();
+  }, [phase, pending, restartPreview] );
+
+  const acceptPending = useCallback( async () => {
+    if ( !pending || phase !== "reviewing" ) return;
+    if ( runningRef.current ) return;
+    runningRef.current = true;
+    setError( null );
+    try {
+      const nextPhotos = [...photos, pending];
       setPhotos( nextPhotos );
+      setPending( null );
 
       if ( nextPhotos.length >= PHOTO_COUNT ) {
         setPhase( "composing" );
+        const activeSession = sessionId || newId();
         const compose = await fetch( "/api/camera/compose", {
           method  : "POST",
           headers : { "Content-Type" : "application/json" },
@@ -99,22 +128,22 @@ export default function BoothPage() {
         restartPreview();
       }
     } catch ( err ) {
-      setError( err instanceof Error ? err.message : "Something went wrong" );
+      setError( err instanceof Error ? err.message : "Compose failed" );
       setPhase( "error" );
-      setFlash( false );
       restartPreview();
     } finally {
       runningRef.current = false;
     }
-  }, [photos, restartPreview, sessionId] );
+  }, [pending, phase, photos, restartPreview, sessionId] );
 
   const liveSrc = useMemo( () => `/api/camera/stream?key=${streamKey}`, [streamKey] );
   const running = useMemo( () => phase === "running", [phase] );
+  const reviewing = useMemo( () => phase === "reviewing", [phase] );
   const composing = useMemo( () => phase === "composing", [phase] );
   const done = useMemo( () => phase === "done", [phase] );
   const busy = running || composing;
   const remaining = PHOTO_COUNT - photos.length;
-  const canCapture = !busy && remaining > 0;
+  const canCapture = !busy && !reviewing && remaining > 0;
 
   return (
     <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 px-5 py-8">
@@ -133,15 +162,34 @@ export default function BoothPage() {
       <div className="grid gap-6 md:grid-cols-[1.4fr_1fr]">
         <Card className="overflow-hidden p-0">
           <CardContent className="relative aspect-[3/2] bg-foreground p-0">
+            {/* Live preview stays mounted so the MJPEG stream is never torn
+                down between captures; the pending photo and overlays sit on
+                top when needed. */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               key={streamKey}
               src={liveSrc}
               alt="Live camera preview"
               className="absolute inset-0 h-full w-full object-cover"
             />
-            {previewOn === false && (
-              <div className="absolute inset-0 grid place-items-center text-xl text-white bg-white/30">
-                {running ? "Capturing…" : composing ? "Composing…" : "Starting camera…"}
+
+            {pending && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={pending.url}
+                alt="Captured photo preview"
+                className="absolute inset-0 h-full w-full object-cover"
+              />
+            )}
+
+            {running && (
+              <div className="absolute inset-0 grid place-items-center text-xl text-white bg-black/30">
+                {pending ? "Retaking…" : "Capturing…"}
+              </div>
+            )}
+            {composing && (
+              <div className="absolute inset-0 grid place-items-center text-xl text-white bg-black/30">
+                Composing…
               </div>
             )}
 
@@ -150,6 +198,19 @@ export default function BoothPage() {
             {photos.length > 0 && !done && (
               <div className="absolute left-3 top-3 rounded-full bg-primary px-3 py-1 text-xs font-medium text-primary-foreground">
                 {photos.length} / {PHOTO_COUNT}
+              </div>
+            )}
+
+            {reviewing && (
+              <div className="absolute inset-x-0 bottom-0 flex items-center justify-center gap-2 bg-linear-to-t from-black/70 to-transparent px-3 py-4">
+                <Button onClick={acceptPending}>
+                  Keep this shot
+                </Button>
+                <Button variant="secondary"
+                  onClick={retakePending}
+                >
+                  Retake
+                </Button>
               </div>
             )}
           </CardContent>
@@ -169,13 +230,15 @@ export default function BoothPage() {
                     ? "Composing…"
                     : running
                       ? "Capturing…"
-                      : remaining === 0
-                        ? "All shots taken"
-                        : `Capture photo (${remaining} left)`}
+                      : reviewing
+                        ? "Review the shot below"
+                        : remaining === 0
+                          ? "All shots taken"
+                          : `Capture photo (${remaining} left)`}
                 </Button>
                 <Button variant="outline"
                   onClick={reset}
-                  disabled={busy || ( photos.length === 0 && !strip )}
+                  disabled={busy || ( photos.length === 0 && !pending && !strip )}
                 >
                   Reset
                 </Button>
@@ -192,22 +255,29 @@ export default function BoothPage() {
           <div className="grid grid-cols-2 gap-2">
             {Array.from( { length : PHOTO_COUNT } ).map( ( _, i ) => {
               const shot = photos[i];
+              const isPending = !shot && reviewing && i === photos.length;
+              const src = shot?.url ?? ( isPending ? pending?.url : undefined );
 
               return (
                 <div
                   key={i}
                   className="relative aspect-[3/2] overflow-hidden rounded-md border bg-muted"
                 >
-                  {shot ? (
+                  {src ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
-                      src={shot.url}
+                      src={src}
                       alt={`Shot ${i + 1}`}
-                      className="h-full w-full object-cover"
+                      className={`h-full w-full object-cover ${isPending ? "opacity-60" : ""}`}
                     />
                   ) : (
                     <span className="absolute inset-0 grid place-items-center text-xs text-muted-foreground">
                       {i + 1}
+                    </span>
+                  )}
+                  {isPending && (
+                    <span className="absolute right-1 top-1 rounded bg-amber-500 px-1.5 py-0.5 text-[10px] font-medium text-white">
+                      Pending
                     </span>
                   )}
                 </div>
