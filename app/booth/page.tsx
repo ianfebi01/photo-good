@@ -6,7 +6,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 
-const PHOTO_COUNT = 4;
+import {
+  CLIENT_FRAMES,
+  DEFAULT_FRAME_KEY,
+  type FrameKey,
+  getClientFrame,
+} from "@/lib/photobooth/frames.client";
 
 type Shot = { file: string; url: string };
 type Phase = "idle" | "running" | "reviewing" | "composing" | "done" | "error";
@@ -22,6 +27,7 @@ const newId = () => Math.random().toString( 36 ).slice( 2, 10 );
 export default function BoothPage() {
   const [status, setStatus] = useState<Status | null>( null );
   const [phase, setPhase] = useState<Phase>( "idle" );
+  const [frameKey, setFrameKey] = useState<FrameKey>( DEFAULT_FRAME_KEY );
   const [photos, setPhotos] = useState<Shot[]>( [] );
   const [pending, setPending] = useState<Shot | null>( null );
   const [strip, setStrip] = useState<string | null>( null );
@@ -31,6 +37,9 @@ export default function BoothPage() {
   const [sessionId, setSessionId] = useState<string>( "" );
 
   const runningRef = useRef( false );
+
+  const frame = useMemo( () => getClientFrame( frameKey ), [frameKey] );
+  const photoCount = frame.photoCount;
 
   const restartPreview = useCallback( () => {
     setStreamKey( newId() );
@@ -54,9 +63,24 @@ export default function BoothPage() {
     restartPreview();
   }, [restartPreview] );
 
+  const selectFrame = useCallback( ( key: FrameKey ) => {
+    if ( key === frameKey ) return;
+    // Switching mid-session would orphan captured shots that don't fit the new
+    // slot layout — clear everything and start fresh.
+    setFrameKey( key );
+    runningRef.current = false;
+    setSessionId( "" );
+    setPhase( "idle" );
+    setPhotos( [] );
+    setPending( null );
+    setStrip( null );
+    setError( null );
+    restartPreview();
+  }, [frameKey, restartPreview] );
+
   const takeShot = useCallback( async ( replaceIndex?: number ) => {
     if ( runningRef.current ) return;
-    if ( replaceIndex === undefined && photos.length >= PHOTO_COUNT ) return;
+    if ( replaceIndex === undefined && photos.length >= photoCount ) return;
     runningRef.current = true;
     setError( null );
     try {
@@ -76,7 +100,6 @@ export default function BoothPage() {
       setFlash( false );
       if ( !res.ok ) throw new Error( data.error ?? "Capture failed" );
 
-      // Cache-bust so a retake at the same index re-loads from the server.
       const shot: Shot = { file : data.file, url : `${data.url}?v=${newId()}` };
       setPending( shot );
       setPhase( "reviewing" );
@@ -88,7 +111,7 @@ export default function BoothPage() {
     } finally {
       runningRef.current = false;
     }
-  }, [photos, restartPreview, sessionId] );
+  }, [photoCount, photos, restartPreview, sessionId] );
 
   const capturePhoto = useCallback( () => takeShot(), [takeShot] );
   const retakePending = useCallback( () => {
@@ -108,7 +131,7 @@ export default function BoothPage() {
       setPhotos( nextPhotos );
       setPending( null );
 
-      if ( nextPhotos.length >= PHOTO_COUNT ) {
+      if ( nextPhotos.length >= photoCount ) {
         setPhase( "composing" );
         const activeSession = sessionId || newId();
         const compose = await fetch( "/api/camera/compose", {
@@ -116,6 +139,7 @@ export default function BoothPage() {
           headers : { "Content-Type" : "application/json" },
           body    : JSON.stringify( {
             sessionId : activeSession,
+            frame     : frameKey,
             files     : nextPhotos.map( ( s ) => s.file ),
           } ),
         } );
@@ -134,7 +158,7 @@ export default function BoothPage() {
     } finally {
       runningRef.current = false;
     }
-  }, [pending, phase, photos, restartPreview, sessionId] );
+  }, [frameKey, pending, phase, photoCount, photos, restartPreview, sessionId] );
 
   const liveSrc = useMemo( () => `/api/camera/stream?key=${streamKey}`, [streamKey] );
   const running = useMemo( () => phase === "running", [phase] );
@@ -142,8 +166,10 @@ export default function BoothPage() {
   const composing = useMemo( () => phase === "composing", [phase] );
   const done = useMemo( () => phase === "done", [phase] );
   const busy = running || composing;
-  const remaining = PHOTO_COUNT - photos.length;
+  const remaining = photoCount - photos.length;
   const canCapture = !busy && !reviewing && remaining > 0;
+  const frameLocked = photos.length > 0 || pending !== null || busy || reviewing;
+  const thumbCols = photoCount <= 2 ? "grid-cols-1" : photoCount === 3 ? "grid-cols-3" : "grid-cols-2";
 
   return (
     <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 px-5 py-8">
@@ -153,18 +179,21 @@ export default function BoothPage() {
             Photobooth
           </h1>
           <p className="text-sm text-muted-foreground">
-            {PHOTO_COUNT} shots · summer-day frame
+            {photoCount} shots · {frame.label} frame
           </p>
         </div>
         <CameraBadge status={status} />
       </header>
 
+      <FrameSelector
+        active={frameKey}
+        disabled={frameLocked}
+        onSelect={selectFrame}
+      />
+
       <div className="grid gap-6 md:grid-cols-[1.4fr_1fr]">
         <Card className="overflow-hidden p-0">
           <CardContent className="relative aspect-[3/2] bg-foreground p-0">
-            {/* Live preview stays mounted so the MJPEG stream is never torn
-                down between captures; the pending photo and overlays sit on
-                top when needed. */}
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               key={streamKey}
@@ -197,7 +226,7 @@ export default function BoothPage() {
 
             {photos.length > 0 && !done && (
               <div className="absolute left-3 top-3 rounded-full bg-primary px-3 py-1 text-xs font-medium text-primary-foreground">
-                {photos.length} / {PHOTO_COUNT}
+                {photos.length} / {photoCount}
               </div>
             )}
 
@@ -219,7 +248,7 @@ export default function BoothPage() {
         <div className="flex flex-col gap-4">
           <Card>
             <CardContent className="flex flex-col gap-4">
-              <Progress value={( photos.length / PHOTO_COUNT ) * 100} />
+              <Progress value={( photos.length / photoCount ) * 100} />
 
               <div className="flex gap-2">
                 <Button className="flex-1"
@@ -252,8 +281,8 @@ export default function BoothPage() {
             </CardContent>
           </Card>
 
-          <div className="grid grid-cols-2 gap-2">
-            {Array.from( { length : PHOTO_COUNT } ).map( ( _, i ) => {
+          <div className={`grid gap-2 ${thumbCols}`}>
+            {Array.from( { length : photoCount } ).map( ( _, i ) => {
               const shot = photos[i];
               const isPending = !shot && reviewing && i === photos.length;
               const src = shot?.url ?? ( isPending ? pending?.url : undefined );
@@ -301,7 +330,7 @@ export default function BoothPage() {
             />
             <div className="flex gap-2">
               <a href={strip}
-                download="photobooth-strip.jpg"
+                download={`photobooth-${frameKey}.jpg`}
               >
                 <Button>Download strip</Button>
               </a>
@@ -315,6 +344,68 @@ export default function BoothPage() {
         </Card>
       )}
     </main>
+  );
+}
+
+function FrameSelector( {
+  active,
+  disabled,
+  onSelect,
+}: {
+  active: FrameKey;
+  disabled: boolean;
+  onSelect: ( key: FrameKey ) => void;
+} ) {
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex items-center justify-between">
+        <span className="text-sm font-medium text-foreground">Frame</span>
+        {disabled && (
+          <span className="text-xs text-muted-foreground">
+            Reset to switch frames
+          </span>
+        )}
+      </div>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        {CLIENT_FRAMES.map( ( f ) => {
+          const isActive = f.key === active;
+
+          return (
+            <button
+              key={f.key}
+              type="button"
+              onClick={() => onSelect( f.key )}
+              disabled={disabled && !isActive}
+              className={`group flex flex-col items-stretch gap-2 rounded-lg border p-2 text-left transition disabled:cursor-not-allowed disabled:opacity-50 ${
+                isActive
+                  ? "border-primary ring-2 ring-primary/40"
+                  : "border-border hover:border-primary/50"
+              }`}
+              aria-pressed={isActive}
+            >
+              <div className="overflow-hidden rounded-md bg-muted"
+                style={{ aspectRatio : `${f.width} / ${f.height}` }}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={f.publicUrl}
+                  alt={`${f.label} frame preview`}
+                  className="h-full w-full object-contain"
+                />
+              </div>
+              <div className="flex items-center justify-between gap-2 px-1">
+                <span className="text-sm font-medium text-foreground">
+                  {f.label}
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  {f.photoCount} shots
+                </span>
+              </div>
+            </button>
+          );
+        } )}
+      </div>
+    </div>
   );
 }
 

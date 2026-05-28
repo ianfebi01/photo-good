@@ -3,28 +3,27 @@ import "server-only";
 import sharp from "sharp";
 
 import {
-  FRAME_HEIGHT,
-  FRAME_IMAGE,
-  FRAME_SLOTS,
-  FRAME_WIDTH,
-  PHOTO_COUNT,
+  type FrameKey,
+  getFrame,
 } from "./config";
 
 /**
- * Cached frame overlay: the source PNG with all green panel pixels turned
- * transparent so captured photos placed underneath show through, while the
- * decorations (sun, starfish, crab, title) that overlap the panels stay on top.
+ * Cached frame overlays: each source image with its green panel pixels turned
+ * transparent, so captured photos placed underneath show through while
+ * decorations (sun, starfish, sparkles, title, etc.) that overlap stay on top.
  */
-let cachedOverlay: Buffer | null = null;
+const overlayCache = new Map<FrameKey, Buffer>();
 
 function isGreen( r: number, g: number, b: number ) {
   return g > 80 && g > r * 1.2 && g > b * 1.2 && r < 130 && b < 130;
 }
 
-async function buildFrameOverlay(): Promise<Buffer> {
-  if ( cachedOverlay ) return cachedOverlay;
+async function buildFrameOverlay( key: FrameKey ): Promise<Buffer> {
+  const cached = overlayCache.get( key );
+  if ( cached ) return cached;
 
-  const { data, info } = await sharp( FRAME_IMAGE )
+  const frame = getFrame( key );
+  const { data, info } = await sharp( frame.image )
     .ensureAlpha()
     .raw()
     .toBuffer( { resolveWithObject : true } );
@@ -37,26 +36,32 @@ async function buildFrameOverlay(): Promise<Buffer> {
     }
   }
 
-  cachedOverlay = await sharp( pixels, {
+  const overlay = await sharp( pixels, {
     raw : { width : info.width, height : info.height, channels },
   } )
     .png()
     .toBuffer();
 
-  return cachedOverlay;
+  overlayCache.set( key, overlay );
+
+  return overlay;
 }
 
 /**
- * Compose up to PHOTO_COUNT photos into the summer-day frame. Photos are
- * cover-fitted into each green slot, then the frame (with green made
- * transparent) is laid on top so decorative artwork stays visible.
+ * Compose photos into the chosen frame. Each photo is cover-fitted into a
+ * slot's bounding box, then the frame (with green made transparent) is laid
+ * on top so the green-area shape masks the photo and decorations stay visible.
  */
-export async function composeStrip( photos: Buffer[] ): Promise<Buffer> {
-  const overlay = await buildFrameOverlay();
+export async function composeStrip(
+  photos: Buffer[],
+  frameKey: FrameKey,
+): Promise<Buffer> {
+  const frame = getFrame( frameKey );
+  const overlay = await buildFrameOverlay( frameKey );
 
   const photoOverlays = await Promise.all(
-    photos.slice( 0, PHOTO_COUNT ).map( async ( buf, i ) => {
-      const slot = FRAME_SLOTS[i];
+    photos.slice( 0, frame.slots.length ).map( async ( buf, i ) => {
+      const slot = frame.slots[i];
       const input = await sharp( buf )
         .resize( slot.width, slot.height, { fit : "cover", position : "centre" } )
         .png()
@@ -68,8 +73,8 @@ export async function composeStrip( photos: Buffer[] ): Promise<Buffer> {
 
   return sharp( {
     create : {
-      width      : FRAME_WIDTH,
-      height     : FRAME_HEIGHT,
+      width      : frame.width,
+      height     : frame.height,
       channels   : 4,
       background : { r : 255, g : 255, b : 255, alpha : 1 },
     },
