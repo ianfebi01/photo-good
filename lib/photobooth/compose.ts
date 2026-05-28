@@ -2,27 +2,21 @@ import "server-only";
 
 import sharp from "sharp";
 
-import {
-  type FrameKey,
-  getFrame,
-} from "./config";
+import { type FrameDef, getFrame } from "./config";
+import { isGreen } from "./slots";
 
 /**
- * Cached frame overlays: each source image with its green panel pixels turned
- * transparent, so captured photos placed underneath show through while
- * decorations (sun, starfish, sparkles, title, etc.) that overlap stay on top.
+ * Cached frame overlays keyed by frame key + image-path mtime fingerprint.
+ * Each entry is the frame image with its green panel pixels turned
+ * transparent, so captured photos placed underneath show through while the
+ * surrounding artwork stays on top.
  */
-const overlayCache = new Map<FrameKey, Buffer>();
+const overlayCache = new Map<string, Buffer>();
 
-function isGreen( r: number, g: number, b: number ) {
-  return g > 80 && g > r * 1.2 && g > b * 1.2 && r < 130 && b < 130;
-}
-
-async function buildFrameOverlay( key: FrameKey ): Promise<Buffer> {
-  const cached = overlayCache.get( key );
+async function buildFrameOverlay( frame: FrameDef ): Promise<Buffer> {
+  const cached = overlayCache.get( frame.key );
   if ( cached ) return cached;
 
-  const frame = getFrame( key );
   const { data, info } = await sharp( frame.image )
     .ensureAlpha()
     .raw()
@@ -42,7 +36,7 @@ async function buildFrameOverlay( key: FrameKey ): Promise<Buffer> {
     .png()
     .toBuffer();
 
-  overlayCache.set( key, overlay );
+  overlayCache.set( frame.key, overlay );
 
   return overlay;
 }
@@ -54,10 +48,11 @@ async function buildFrameOverlay( key: FrameKey ): Promise<Buffer> {
  */
 export async function composeStrip(
   photos: Buffer[],
-  frameKey: FrameKey,
+  frameKey: string,
 ): Promise<Buffer> {
-  const frame = getFrame( frameKey );
-  const overlay = await buildFrameOverlay( frameKey );
+  const frame = await getFrame( frameKey );
+  if ( !frame ) throw new Error( `Unknown frame: ${frameKey}` );
+  const overlay = await buildFrameOverlay( frame );
 
   const photoOverlays = await Promise.all(
     photos.slice( 0, frame.slots.length ).map( async ( buf, i ) => {

@@ -5,9 +5,7 @@ import { ensureCapturesDir } from "@/lib/photobooth/camera";
 import {
   CAPTURES_DIR,
   DEFAULT_FRAME,
-  MAX_PHOTO_COUNT,
   getFrame,
-  isFrameKey,
 } from "@/lib/photobooth/config";
 import { composeStrip } from "@/lib/photobooth/compose";
 
@@ -16,6 +14,7 @@ export const dynamic = "force-dynamic";
 
 const FILE_RE = /^shot-[a-z0-9]+-\d+\.jpg$/i;
 const ID_RE = /^[a-z0-9]+$/i;
+const FRAME_KEY_RE = /^[a-z0-9-]+$/i;
 
 export async function POST( request: Request ) {
   let files: string[] = [];
@@ -33,18 +32,18 @@ export async function POST( request: Request ) {
   if ( !ID_RE.test( sessionId ) ) {
     return Response.json( { error : "Invalid sessionId" }, { status : 400 } );
   }
-  if ( !isFrameKey( frameKey ) ) {
+  if ( !FRAME_KEY_RE.test( frameKey ) ) {
+    return Response.json( { error : "Invalid frame key" }, { status : 400 } );
+  }
+  const frame = await getFrame( frameKey );
+  if ( !frame ) {
     return Response.json( { error : "Unknown frame" }, { status : 400 } );
   }
-  const frame = getFrame( frameKey );
   if ( files.length !== frame.slots.length ) {
     return Response.json(
       { error : `Expected ${frame.slots.length} files for ${frame.label}` },
       { status : 400 },
     );
-  }
-  if ( files.length > MAX_PHOTO_COUNT ) {
-    return Response.json( { error : "Too many files" }, { status : 400 } );
   }
   if ( !files.every( ( f ) => FILE_RE.test( f ) ) ) {
     return Response.json( { error : "Invalid file name" }, { status : 400 } );

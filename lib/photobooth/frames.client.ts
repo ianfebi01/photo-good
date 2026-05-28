@@ -1,21 +1,24 @@
 /**
- * Client-safe frame metadata for the booth UI (thumbnails + slot counts).
- * Keep `key`, `label`, `publicUrl`, dimensions, and slot count in sync with
- * lib/photobooth/config.ts on the server.
+ * Client-safe frame metadata for the booth UI.
+ *
+ * The full catalog is fetched from /api/frames at runtime (built-in + user
+ * uploads). These constants provide the initial selection key and a tiny
+ * fallback list so the selector renders before the fetch resolves.
  */
 
-export type FrameKey = "summer-day" | "good-vibes";
-
 export type ClientFrame = {
-  key: FrameKey;
+  key: string;
   label: string;
   publicUrl: string;
   width: number;
   height: number;
   photoCount: number;
+  builtIn: boolean;
 };
 
-export const CLIENT_FRAMES: ClientFrame[] = [
+export const DEFAULT_FRAME_KEY = "summer-day";
+
+export const FALLBACK_FRAMES: ClientFrame[] = [
   {
     key        : "summer-day",
     label      : "Summer Day",
@@ -23,6 +26,7 @@ export const CLIENT_FRAMES: ClientFrame[] = [
     width      : 707,
     height     : 2000,
     photoCount : 4,
+    builtIn    : true,
   },
   {
     key        : "good-vibes",
@@ -31,14 +35,6 @@ export const CLIENT_FRAMES: ClientFrame[] = [
     width      : 533,
     height     : 1600,
     photoCount : 3,
+    builtIn    : true,
   },
 ];
-
-export const DEFAULT_FRAME_KEY: FrameKey = "summer-day";
-
-export function getClientFrame( key: FrameKey ): ClientFrame {
-  const found = CLIENT_FRAMES.find( ( f ) => f.key === key );
-  if ( !found ) throw new Error( `Unknown frame: ${key}` );
-
-  return found;
-}

@@ -1,0 +1,37 @@
+{
+  "frames": [
+    {
+      "key": "user-sender-memory",
+      "label": "Sender Memory",
+      "filename": "user-sender-memory.jpg",
+      "width": 565,
+      "height": 1600,
+      "slots": [
+        {
+          "left": 34,
+          "top": 56,
+          "width": 497,
+          "height": 300
+        },
+        {
+          "left": 34,
+          "top": 375,
+          "width": 497,
+          "height": 299
+        },
+        {
+          "left": 34,
+          "top": 693,
+          "width": 497,
+          "height": 299
+        },
+        {
+          "left": 34,
+          "top": 1011,
+          "width": 497,
+          "height": 299
+        }
+      ]
+    }
+  ]
+}

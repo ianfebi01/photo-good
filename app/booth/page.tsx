@@ -7,10 +7,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 
 import {
-  CLIENT_FRAMES,
+  type ClientFrame,
   DEFAULT_FRAME_KEY,
-  type FrameKey,
-  getClientFrame,
+  FALLBACK_FRAMES,
 } from "@/lib/photobooth/frames.client";
 
 type Shot = { file: string; url: string };
@@ -27,7 +26,8 @@ const newId = () => Math.random().toString( 36 ).slice( 2, 10 );
 export default function BoothPage() {
   const [status, setStatus] = useState<Status | null>( null );
   const [phase, setPhase] = useState<Phase>( "idle" );
-  const [frameKey, setFrameKey] = useState<FrameKey>( DEFAULT_FRAME_KEY );
+  const [frames, setFrames] = useState<ClientFrame[]>( FALLBACK_FRAMES );
+  const [frameKey, setFrameKey] = useState<string>( DEFAULT_FRAME_KEY );
   const [photos, setPhotos] = useState<Shot[]>( [] );
   const [pending, setPending] = useState<Shot | null>( null );
   const [strip, setStrip] = useState<string | null>( null );
@@ -35,11 +35,15 @@ export default function BoothPage() {
   const [streamKey, setStreamKey] = useState( "live" );
   const [error, setError] = useState<string | null>( null );
   const [sessionId, setSessionId] = useState<string>( "" );
+  const [uploadOpen, setUploadOpen] = useState( false );
 
   const runningRef = useRef( false );
 
-  const frame = useMemo( () => getClientFrame( frameKey ), [frameKey] );
-  const photoCount = frame.photoCount;
+  const frame = useMemo(
+    () => frames.find( ( f ) => f.key === frameKey ) ?? frames[0],
+    [frames, frameKey],
+  );
+  const photoCount = frame?.photoCount ?? 0;
 
   const restartPreview = useCallback( () => {
     setStreamKey( newId() );
@@ -50,6 +54,17 @@ export default function BoothPage() {
       .then( ( r ) => r.json() )
       .then( setStatus )
       .catch( () => setStatus( { connected : false, mock : true, gphoto2 : false } ) );
+  }, [] );
+
+  useEffect( () => {
+    fetch( "/api/frames" )
+      .then( ( r ) => r.json() )
+      .then( ( data ) => {
+        if ( Array.isArray( data?.frames ) ) {
+          setFrames( data.frames as ClientFrame[] );
+        }
+      } )
+      .catch( () => {} );
   }, [] );
 
   const reset = useCallback( () => {
@@ -63,10 +78,8 @@ export default function BoothPage() {
     restartPreview();
   }, [restartPreview] );
 
-  const selectFrame = useCallback( ( key: FrameKey ) => {
+  const selectFrame = useCallback( ( key: string ) => {
     if ( key === frameKey ) return;
-    // Switching mid-session would orphan captured shots that don't fit the new
-    // slot layout — clear everything and start fresh.
     setFrameKey( key );
     runningRef.current = false;
     setSessionId( "" );
@@ -160,6 +173,16 @@ export default function BoothPage() {
     }
   }, [frameKey, pending, phase, photoCount, photos, restartPreview, sessionId] );
 
+  const onFrameUploaded = useCallback( ( newFrame: ClientFrame ) => {
+    setFrames( ( prev ) =>
+      prev.some( ( f ) => f.key === newFrame.key )
+        ? prev
+        : [...prev, newFrame],
+    );
+    setUploadOpen( false );
+    selectFrame( newFrame.key );
+  }, [selectFrame] );
+
   const liveSrc = useMemo( () => `/api/camera/stream?key=${streamKey}`, [streamKey] );
   const running = useMemo( () => phase === "running", [phase] );
   const reviewing = useMemo( () => phase === "reviewing", [phase] );
@@ -179,17 +202,26 @@ export default function BoothPage() {
             Photobooth
           </h1>
           <p className="text-sm text-muted-foreground">
-            {photoCount} shots · {frame.label} frame
+            {photoCount} shots · {frame?.label ?? "—"} frame
           </p>
         </div>
         <CameraBadge status={status} />
       </header>
 
       <FrameSelector
+        frames={frames}
         active={frameKey}
         disabled={frameLocked}
         onSelect={selectFrame}
+        onAdd={() => setUploadOpen( true )}
       />
+
+      {uploadOpen && (
+        <FrameUploadForm
+          onCancel={() => setUploadOpen( false )}
+          onUploaded={onFrameUploaded}
+        />
+      )}
 
       <div className="grid gap-6 md:grid-cols-[1.4fr_1fr]">
         <Card className="overflow-hidden p-0">
@@ -248,7 +280,7 @@ export default function BoothPage() {
         <div className="flex flex-col gap-4">
           <Card>
             <CardContent className="flex flex-col gap-4">
-              <Progress value={( photos.length / photoCount ) * 100} />
+              <Progress value={photoCount > 0 ? ( photos.length / photoCount ) * 100 : 0} />
 
               <div className="flex gap-2">
                 <Button className="flex-1"
@@ -348,26 +380,39 @@ export default function BoothPage() {
 }
 
 function FrameSelector( {
+  frames,
   active,
   disabled,
   onSelect,
+  onAdd,
 }: {
-  active: FrameKey;
+  frames: ClientFrame[];
+  active: string;
   disabled: boolean;
-  onSelect: ( key: FrameKey ) => void;
+  onSelect: ( key: string ) => void;
+  onAdd: () => void;
 } ) {
   return (
     <div className="flex flex-col gap-2">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-3">
         <span className="text-sm font-medium text-foreground">Frame</span>
-        {disabled && (
-          <span className="text-xs text-muted-foreground">
-            Reset to switch frames
-          </span>
-        )}
+        <div className="flex items-center gap-3">
+          {disabled && (
+            <span className="text-xs text-muted-foreground">
+              Reset to switch frames
+            </span>
+          )}
+          <Button size="sm"
+            variant="outline"
+            onClick={onAdd}
+            disabled={disabled}
+          >
+            + Add frame
+          </Button>
+        </div>
       </div>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        {CLIENT_FRAMES.map( ( f ) => {
+        {frames.map( ( f ) => {
           const isActive = f.key === active;
 
           return (
@@ -394,18 +439,145 @@ function FrameSelector( {
                 />
               </div>
               <div className="flex items-center justify-between gap-2 px-1">
-                <span className="text-sm font-medium text-foreground">
+                <span className="truncate text-sm font-medium text-foreground">
                   {f.label}
                 </span>
                 <span className="text-xs text-muted-foreground">
                   {f.photoCount} shots
                 </span>
               </div>
+              {!f.builtIn && (
+                <span className="px-1 text-[10px] uppercase tracking-wide text-muted-foreground">
+                  Custom
+                </span>
+              )}
             </button>
           );
         } )}
       </div>
     </div>
+  );
+}
+
+function FrameUploadForm( {
+  onCancel,
+  onUploaded,
+}: {
+  onCancel: () => void;
+  onUploaded: ( frame: ClientFrame ) => void;
+} ) {
+  const [label, setLabel] = useState( "" );
+  const [file, setFile] = useState<File | null>( null );
+  const [uploading, setUploading] = useState( false );
+  const [err, setErr] = useState<string | null>( null );
+
+  const previewUrl = useMemo(
+    () => ( file ? URL.createObjectURL( file ) : null ),
+    [file],
+  );
+  useEffect( () => {
+    return () => {
+      if ( previewUrl ) URL.revokeObjectURL( previewUrl );
+    };
+  }, [previewUrl] );
+
+  const submit = useCallback( async () => {
+    if ( !file || !label.trim() ) return;
+    setUploading( true );
+    setErr( null );
+    try {
+      const form = new FormData();
+      form.append( "file", file );
+      form.append( "label", label.trim() );
+      const res = await fetch( "/api/frames", { method : "POST", body : form } );
+      const data = await res.json();
+      if ( !res.ok ) throw new Error( data.error ?? "Upload failed" );
+      onUploaded( data.frame as ClientFrame );
+    } catch ( e ) {
+      setErr( e instanceof Error ? e.message : "Upload failed" );
+    } finally {
+      setUploading( false );
+    }
+  }, [file, label, onUploaded] );
+
+  return (
+    <Card>
+      <CardContent className="flex flex-col gap-4">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h2 className="text-base font-semibold text-foreground">
+              Add a custom frame
+            </h2>
+            <p className="text-xs text-muted-foreground">
+              Upload a PNG/JPEG/WEBP (≤ 8 MB) with each photo slot painted
+              solid green. Slots are detected automatically.
+            </p>
+          </div>
+          <Button size="sm"
+            variant="ghost"
+            onClick={onCancel}
+            disabled={uploading}
+          >
+            Cancel
+          </Button>
+        </div>
+
+        <div className="grid gap-3 sm:grid-cols-[1fr_140px]">
+          <div className="flex flex-col gap-3">
+            <label className="flex flex-col gap-1 text-sm">
+              <span className="font-medium text-foreground">Name</span>
+              <input
+                type="text"
+                value={label}
+                onChange={( e ) => setLabel( e.target.value )}
+                placeholder="e.g. Birthday Strip"
+                maxLength={60}
+                className="rounded-md border bg-background px-3 py-2 text-sm"
+                disabled={uploading}
+              />
+            </label>
+            <label className="flex flex-col gap-1 text-sm">
+              <span className="font-medium text-foreground">Image</span>
+              <input
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                onChange={( e ) => setFile( e.target.files?.[0] ?? null )}
+                className="text-sm"
+                disabled={uploading}
+              />
+            </label>
+            {err && (
+              <p className="rounded-md bg-destructive/10 px-3 py-2 text-xs text-destructive">
+                {err}
+              </p>
+            )}
+            <div>
+              <Button onClick={submit}
+                disabled={!file || !label.trim() || uploading}
+              >
+                {uploading ? "Uploading…" : "Upload frame"}
+              </Button>
+            </div>
+          </div>
+          <div className="overflow-hidden rounded-md border bg-muted"
+            style={{ minHeight : 140 }}
+          >
+            {previewUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={previewUrl}
+                alt="Selected frame preview"
+                className="h-full w-full object-contain"
+              />
+            ) : (
+              <div className="grid h-full place-items-center p-2 text-center text-xs text-muted-foreground">
+                Preview
+              </div>
+            )}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
