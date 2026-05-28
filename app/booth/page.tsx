@@ -6,8 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 
-const PHOTO_COUNT = 6;
-const TIMER_OPTIONS = [3, 5, 10] as const;
+const PHOTO_COUNT = 4;
 
 type Shot = { file: string; url: string };
 type Phase = "idle" | "running" | "composing" | "done" | "error";
@@ -18,23 +17,18 @@ type Status = {
   gphoto2: boolean;
 };
 
-const wait = ( ms: number ) => new Promise( ( r ) => setTimeout( r, ms ) );
 const newId = () => Math.random().toString( 36 ).slice( 2, 10 );
 
 export default function BoothPage() {
   const [status, setStatus] = useState<Status | null>( null );
-  const [timer, setTimer] = useState<number>( 3 );
   const [phase, setPhase] = useState<Phase>( "idle" );
-  const [count, setCount] = useState( 0 );
-  const [current, setCurrent] = useState( 0 );
   const [photos, setPhotos] = useState<Shot[]>( [] );
   const [strip, setStrip] = useState<string | null>( null );
   const [flash, setFlash] = useState( false );
-  // A stable initial key keeps SSR and the first client render identical (no
-  // hydration mismatch); newId() is only used later, from user-driven actions.
   const [previewOn, setPreviewOn] = useState( true );
   const [streamKey, setStreamKey] = useState( "live" );
   const [error, setError] = useState<string | null>( null );
+  const [sessionId, setSessionId] = useState<string>( "" );
 
   const runningRef = useRef( false );
 
@@ -52,96 +46,75 @@ export default function BoothPage() {
 
   const reset = useCallback( () => {
     runningRef.current = false;
+    setSessionId( "" );
     setPhase( "idle" );
     setPhotos( [] );
     setStrip( null );
-    setCurrent( 0 );
-    setCount( 0 );
     setError( null );
     restartPreview();
   }, [restartPreview] );
 
-  // const run = useCallback( async () => {
-  //   if ( runningRef.current ) return;
-  //   runningRef.current = true;
-  //   setError( null );
-  //   setStrip( null );
-  //   setPhotos( [] );
-  //   setPhase( "running" );
-  //   const sessionId = newId();
-  //   const shots: Shot[] = [];
+  const capturePhoto = useCallback( async () => {
+    if ( runningRef.current ) return;
+    if ( photos.length >= PHOTO_COUNT ) return;
+    runningRef.current = true;
+    setError( null );
+    try {
+      const activeSession = sessionId || newId();
+      if ( !sessionId ) setSessionId( activeSession );
+      const index = photos.length;
 
-  //   try {
-  //     for ( let i = 0; i < PHOTO_COUNT; i++ ) {
-  //       if ( !runningRef.current ) return;
-  //       setCurrent( i );
-  //       restartPreview();
+      setPreviewOn( false );
+      setPhase( "running" );
+      setFlash( true );
 
-  //       for ( let n = timer; n > 0; n-- ) {
-  //         if ( !runningRef.current ) return;
-  //         setCount( n );
-  //         await wait( 1000 );
-  //       }
-  //       setCount( 0 );
-  //       if ( !runningRef.current ) return;
+      const res = await fetch( "/api/camera/capture", {
+        method  : "POST",
+        headers : { "Content-Type" : "application/json" },
+        body    : JSON.stringify( { sessionId : activeSession, index } ),
+      } );
+      const data = await res.json();
+      setFlash( false );
+      if ( !res.ok ) throw new Error( data.error ?? "Capture failed" );
 
-  //       // Release the camera from live view, then take the still.
-  //       setPreviewOn( false );
-  //       setFlash( true );
-  //       await wait( 120 );
+      const nextPhotos = [...photos, data];
+      setPhotos( nextPhotos );
 
-  //       const res = await fetch( "/api/camera/capture", {
-  //         method  : "POST",
-  //         headers : { "Content-Type" : "application/json" },
-  //         body    : JSON.stringify( { sessionId, index : i } ),
-  //       } );
-  //       const data = await res.json();
-  //       setFlash( false );
-  //       if ( !res.ok ) throw new Error( data.error ?? "Capture failed" );
-
-  //       shots.push( data );
-  //       setPhotos( [...shots] );
-  //       if ( i < PHOTO_COUNT - 1 ) await wait( 900 );
-  //     }
-
-  //     if ( !runningRef.current ) return;
-  //     setPhase( "composing" );
-  //     const res = await fetch( "/api/camera/compose", {
-  //       method  : "POST",
-  //       headers : { "Content-Type" : "application/json" },
-  //       body    : JSON.stringify( { sessionId, files : shots.map( ( s ) => s.file ) } ),
-  //     } );
-  //     const data = await res.json();
-  //     if ( !res.ok ) throw new Error( data.error ?? "Compose failed" );
-  //     setStrip( data.url );
-  //     setPhase( "done" );
-  //   } catch ( err ) {
-  //     setError( err instanceof Error ? err.message : "Something went wrong" );
-  //     setPhase( "error" );
-  //   } finally {
-  //     runningRef.current = false;
-  //   }
-  // }, [timer, restartPreview] );
-
-  const capturePhoto = useCallback( async ( ) => {
-    const sessionId = newId();
-    setPreviewOn( false );
-    setPhase( "running" );
-    const res = await fetch( "/api/camera/capture", {
-      method  : "POST",
-      headers : { "Content-Type" : "application/json" },
-      body    : JSON.stringify( { sessionId, index : 1 } ),
-    } );
-    const data = await res.json();
-    setFlash( false );
-    if ( !res.ok ) throw new Error( data.error ?? "Capture failed" );
-    setPhotos( ( prev )=>  [...prev, data] );
-    setPreviewOn( true );
-  }, [] );
+      if ( nextPhotos.length >= PHOTO_COUNT ) {
+        setPhase( "composing" );
+        const compose = await fetch( "/api/camera/compose", {
+          method  : "POST",
+          headers : { "Content-Type" : "application/json" },
+          body    : JSON.stringify( {
+            sessionId : activeSession,
+            files     : nextPhotos.map( ( s ) => s.file ),
+          } ),
+        } );
+        const composed = await compose.json();
+        if ( !compose.ok ) throw new Error( composed.error ?? "Compose failed" );
+        setStrip( composed.url );
+        setPhase( "done" );
+      } else {
+        setPhase( "idle" );
+        restartPreview();
+      }
+    } catch ( err ) {
+      setError( err instanceof Error ? err.message : "Something went wrong" );
+      setPhase( "error" );
+      setFlash( false );
+      restartPreview();
+    } finally {
+      runningRef.current = false;
+    }
+  }, [photos, restartPreview, sessionId] );
 
   const liveSrc = useMemo( () => `/api/camera/stream?key=${streamKey}`, [streamKey] );
-  const idle = useMemo( () => phase === "idle", [phase] );
   const running = useMemo( () => phase === "running", [phase] );
+  const composing = useMemo( () => phase === "composing", [phase] );
+  const done = useMemo( () => phase === "done", [phase] );
+  const busy = running || composing;
+  const remaining = PHOTO_COUNT - photos.length;
+  const canCapture = !busy && remaining > 0;
 
   return (
     <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 px-5 py-8">
@@ -151,14 +124,13 @@ export default function BoothPage() {
             Photobooth
           </h1>
           <p className="text-sm text-muted-foreground">
-            6 shots · {timer}s timer · vertical strip
+            {PHOTO_COUNT} shots · summer-day frame
           </p>
         </div>
         <CameraBadge status={status} />
       </header>
 
       <div className="grid gap-6 md:grid-cols-[1.4fr_1fr]">
-        {/* Live preview / countdown stage */}
         <Card className="overflow-hidden p-0">
           <CardContent className="relative aspect-[3/2] bg-foreground p-0">
             <img
@@ -167,89 +139,46 @@ export default function BoothPage() {
               alt="Live camera preview"
               className="absolute inset-0 h-full w-full object-cover"
             />
-            {/* Overlays */}
             {previewOn === false && (
               <div className="absolute inset-0 grid place-items-center text-xl text-white bg-white/30">
-                {running ? "Capturing…" : "Starting camera…"}
-              </div>
-            )}
-
-            {count > 0 && (
-              <div className="absolute inset-0 grid place-items-center bg-black/30">
-                <span className="text-[8rem] font-bold leading-none text-white drop-shadow-lg tabular-nums">
-                  {count}
-                </span>
+                {running ? "Capturing…" : composing ? "Composing…" : "Starting camera…"}
               </div>
             )}
 
             {flash && <div className="absolute inset-0 animate-pulse bg-white" />}
 
-            {running && (
+            {photos.length > 0 && !done && (
               <div className="absolute left-3 top-3 rounded-full bg-primary px-3 py-1 text-xs font-medium text-primary-foreground">
-                Shot {current + 1} / {PHOTO_COUNT}
+                {photos.length} / {PHOTO_COUNT}
               </div>
             )}
           </CardContent>
         </Card>
 
-        {/* Controls + thumbnails */}
         <div className="flex flex-col gap-4">
           <Card>
             <CardContent className="flex flex-col gap-4">
-              <div className="flex flex-col gap-2">
-                <span className="text-sm font-medium text-foreground">
-                  Countdown timer
-                </span>
-                <div className="flex gap-2">
-                  {TIMER_OPTIONS.map( ( t ) => (
-                    <Button
-                      key={t}
-                      type="button"
-                      size="sm"
-                      variant={timer === t ? "default" : "outline"}
-                      disabled={running || phase === "composing"}
-                      onClick={() => setTimer( t )}
-                    >
-                      {t}s
-                    </Button>
-                  ) )}
-                </div>
-              </div>
-
               <Progress value={( photos.length / PHOTO_COUNT ) * 100} />
 
               <div className="flex gap-2">
                 <Button className="flex-1"
                   onClick={capturePhoto}
+                  disabled={!canCapture}
                 >
-                    Capture photo
+                  {composing
+                    ? "Composing…"
+                    : running
+                      ? "Capturing…"
+                      : remaining === 0
+                        ? "All shots taken"
+                        : `Capture photo (${remaining} left)`}
                 </Button>
-                {/* {idle || phase === "error" ? (
-                  <Button className="flex-1"
-                    onClick={run}
-                  >
-                    Start session
-                  </Button>
-                ) : phase === "done" ? (
-                  <Button className="flex-1"
-                    onClick={run}
-                  >
-                    Retake
-                  </Button>
-                ) : (
-                  <Button className="flex-1"
-                    variant="secondary"
-                    disabled
-                  >
-                    {phase === "composing" ? "Composing…" : "In progress…"}
-                  </Button>
-                )}
                 <Button variant="outline"
                   onClick={reset}
-                  disabled={idle}
+                  disabled={busy || ( photos.length === 0 && !strip )}
                 >
                   Reset
-                </Button> */}
+                </Button>
               </div>
 
               {error && (
@@ -260,10 +189,10 @@ export default function BoothPage() {
             </CardContent>
           </Card>
 
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-2 gap-2">
             {Array.from( { length : PHOTO_COUNT } ).map( ( _, i ) => {
               const shot = photos[i];
-              
+
               return (
                 <div
                   key={i}
@@ -288,7 +217,6 @@ export default function BoothPage() {
         </div>
       </div>
 
-      {/* Result strip */}
       {strip && (
         <Card>
           <CardContent className="flex flex-col items-center gap-4">
@@ -308,7 +236,7 @@ export default function BoothPage() {
                 <Button>Download strip</Button>
               </a>
               <Button variant="outline"
-                onClick={run}
+                onClick={reset}
               >
                 New session
               </Button>
@@ -336,7 +264,7 @@ function CameraBadge( { status }: { status: Status | null } ) {
       </span>
     );
   }
-  
+
   return (
     <span className="flex items-center gap-2 rounded-full bg-accent px-3 py-1 text-xs font-medium text-accent-foreground">
       <span className="size-2 rounded-full bg-amber-500" />
