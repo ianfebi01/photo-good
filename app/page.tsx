@@ -38,7 +38,7 @@ export default function Home() {
           </Card>
 
           {/* Right Portrait */}
-          <Card className="xl:col-span-4 xl:row-span-5 border-accent border p-0! overflow-hidden">
+          <Card className="xl:col-span-4 xl:row-span-5 p-0! overflow-hidden">
             <PhotoboothCard />
           </Card>
 

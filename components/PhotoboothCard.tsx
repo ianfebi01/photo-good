@@ -1,6 +1,6 @@
 'use client'
 import Image from 'next/image'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef } from 'react'
 import { gsap } from 'gsap'
 
 const photos = [
@@ -31,17 +31,25 @@ const photos = [
 ]
 
 export default function PhotoboothCard() {
-  const photoRefs  = useRef<( HTMLDivElement | null )[]>( [] )
-  const captionRef = useRef<HTMLDivElement>( null )
-  const [index, setIndex] = useState( 0 )
+  const photoRefs     = useRef<( HTMLDivElement | null )[]>( [] )
+  const captionTextRef = useRef<HTMLDivElement>( null )
+  const taglineRef    = useRef<HTMLSpanElement>( null )
+  const hashtagRef    = useRef<HTMLSpanElement>( null )
+  const descRef       = useRef<HTMLParagraphElement>( null )
+  const stack1Ref     = useRef<HTMLDivElement>( null )
+  const stack2Ref     = useRef<HTMLDivElement>( null )
+  const captionBoxRef = useRef<HTMLDivElement>( null )
 
   useEffect( () => {
     const ctx = gsap.context( () => {
       gsap.set( photoRefs.current.slice( 1 ), { autoAlpha : 0 } )
+      gsap.set( [stack1Ref.current, stack2Ref.current], { y : 0 } )
+      gsap.set( captionBoxRef.current, { y : 0 } )
 
-      const hold       = 3.5
-      const fadeDur    = 0.8
-      const captionDur = 0.35
+      const hold     = 3.5
+      const fadeDur  = 0.8
+      const textDur  = 0.28
+      const stackDur = 0.7
 
       const tl = gsap.timeline( { repeat : -1 } )
 
@@ -50,15 +58,30 @@ export default function PhotoboothCard() {
 
         tl.to( {}, { duration : hold } )
 
-        // Caption exit
-        tl.to( captionRef.current, {
-          autoAlpha : 0,
-          y         : 16,
-          duration  : captionDur,
-          ease      : 'power2.in',
+        // Stacks peek out below caption + caption lifts up
+        tl.to( stack2Ref.current, {
+          y        : 10,
+          duration : stackDur,
         } )
 
-        // Photo crossfade + update index
+        tl.to( stack1Ref.current, {
+          y        : 16,
+          duration : stackDur,
+        }, '<+=0.1' )
+
+        tl.to( captionBoxRef.current, {
+          y        : -12,
+          duration : stackDur,
+        } )
+
+        // Caption text fade out
+        tl.to(
+          captionTextRef.current,
+          { autoAlpha : 0, y : 8, duration : textDur, ease : 'power2.in' },
+          '<',
+        )
+
+        // Photo crossfade + swap text content
         tl.to( photoRefs.current[i], { autoAlpha : 0, duration : fadeDur, ease : 'power2.inOut' }, '<' )
         tl.to(
           photoRefs.current[next],
@@ -66,16 +89,27 @@ export default function PhotoboothCard() {
             autoAlpha : 1,
             duration  : fadeDur,
             ease      : 'power2.inOut',
-            onStart   : () => setIndex( next ),
+            onStart   : () => {
+              if ( taglineRef.current ) taglineRef.current.textContent = photos[next].tagline
+              if ( hashtagRef.current ) hashtagRef.current.textContent = photos[next].hashtag
+              if ( descRef.current )    descRef.current.textContent    = photos[next].desc
+            },
           },
           '<',
         )
 
-        // Caption enter
+        // Caption text fade in
         tl.fromTo(
-          captionRef.current,
-          { autoAlpha : 0, y : -16 },
-          { autoAlpha : 1, y : 0, duration : captionDur, ease : 'power2.out' },
+          captionTextRef.current,
+          { autoAlpha : 0, y : -8 },
+          { autoAlpha : 1, y : 0, duration : textDur, ease : 'power2.out' },
+        )
+
+        // Stacks return behind caption + caption settles back down
+        tl.to(
+          [stack1Ref.current, stack2Ref.current, captionBoxRef.current],
+          { y : 0, duration : stackDur, ease : 'power2.inOut' },
+          '+=2',
         )
       } )
     } )
@@ -85,14 +119,15 @@ export default function PhotoboothCard() {
 
   return (
     <div className="relative w-full h-full min-h-64">
-      {/* Photos stacked */}
+      {/* Photos */}
       {photos.map( ( photo, i ) => (
         <div
           key={i}
           ref={( el ) => {
-            photoRefs.current[i] = el 
+            photoRefs.current[i] = el
           }}
           className="absolute inset-0"
+          style={i !== 0 ? { opacity : 0, visibility : 'hidden' } : undefined}
         >
           <Image
             src={photo.src}
@@ -109,20 +144,43 @@ export default function PhotoboothCard() {
         photo good.<sup className="text-[10px]">™</sup>
       </div>
 
-      {/* Caption */}
-      <div ref={captionRef}
-        className="absolute bottom-0 left-0 right-0 z-10"
-      >
-        <div className="mx-3 mb-3 bg-white/95 backdrop-blur-sm rounded-2xl px-4 py-3 flex items-start justify-between gap-3">
-          <div className="flex flex-col leading-tight">
-            <span className="text-foreground font-bold text-base">{photos[index].tagline}</span>
-            <span className="text-accent font-bold text-base">{photos[index].hashtag}</span>
+      {/* Caption stack area */}
+      <div className="absolute bottom-0 left-0 right-0 z-10 px-3 pb-6">
+        {/* Stacked bg rects — behind main caption, peek out on transition */}
+        <div
+          ref={stack1Ref}
+          className="absolute inset-x-10 top-0 h-14 bg-secondary rounded-2xl"
+        />
+        <div
+          ref={stack2Ref}
+          className="absolute inset-x-6 top-0 h-14 bg-accent rounded-2xl"
+        />
+
+        {/* Main caption */}
+        <div
+          ref={captionBoxRef}
+          className="relative bg-white/95 backdrop-blur-sm rounded-2xl px-4 py-3 flex items-start justify-between gap-3"
+        >
+          <div
+            ref={captionTextRef}
+            className="contents"
+          >
+            <div className="flex flex-col leading-tight">
+              <span
+                ref={taglineRef}
+                className="text-foreground font-bold text-base"
+              >{photos[0].tagline}</span>
+              <span
+                ref={hashtagRef}
+                className="text-accent font-bold text-base"
+              >{photos[0].hashtag}</span>
+            </div>
+            <p
+              ref={descRef}
+              className="text-muted-foreground text-[11px] leading-snug text-right max-w-30 mt-0.5"
+            >{photos[0].desc}</p>
           </div>
-          <p className="text-muted-foreground text-[11px] leading-snug text-right max-w-[120px] mt-0.5">
-            {photos[index].desc}
-          </p>
         </div>
-        <div className="h-2 bg-accent rounded-b-3xl mx-0" />
       </div>
     </div>
   )
