@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Shadows_Into_Light_Two, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
-const geistSans = Geist( {
+const shadowFont = Shadows_Into_Light_Two( {
+  weight   : "400",
   variable : "--font-sans",
   subsets  : ["latin"],
 } );
@@ -25,7 +26,7 @@ export default function RootLayout( {
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${shadowFont.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
