@@ -4,6 +4,7 @@ import PhotoStack from '@/components/PhotoStack'
 import PalleteStack from '../components/PalleteStack'
 import PhotoboothCard from '@/components/PhotoboothCard'
 import QuoteCard from '@/components/QuoteCard'
+import Link from 'next/link'
 
 function Card( {
   className,
@@ -33,8 +34,36 @@ export default function Home() {
           <PhotoStack className="xl:col-span-4 xl:row-span-9" />
 
           {/* Hero */}
-          <Card className="text-white bg-secondary xl:col-span-4 xl:row-span-5">
-            Hero Content
+          <Card className="relative overflow-hidden bg-secondary p-8 xl:col-span-4 xl:row-span-5 text-secondary-foreground flex flex-col justify-between">
+            {/* Ambient glow */}
+            <div className="pointer-events-none absolute -top-16 -right-16 h-56 w-56 rounded-full bg-secondary-foreground/10 blur-3xl" />
+
+            {/* Title */}
+            <div className="relative z-10 flex flex-col gap-3">
+              <h1 className="text-4xl font-bold leading-tight">
+                Let&apos;s Capture<br />Some Memories
+              </h1>
+              <p className="max-w-47.5 text-sm leading-relaxed text-secondary-foreground/60 font-poppins">
+                Your personal photo booth, wrapped in warm memories.
+              </p>
+            </div>
+
+            {/* Starburst START button */}
+            <div className="relative z-10 flex items-center justify-center">
+              <Link
+                href="/booth"
+                className="group relative flex h-56 w-56 items-center justify-center"
+              >
+                {/* Shadow starburst */}
+                <div className="starburst absolute inset-0 translate-x-3 translate-y-3 bg-accent transition-transform duration-300 group-hover:translate-x-4 group-hover:translate-y-4" />
+                {/* Spinning starburst */}
+                <div className="starburst starburst-spin absolute inset-0 bg-white" />
+                {/* START label — stays still */}
+                <span className="relative z-10 text-2xl font-bold text-primary transition-transform duration-300 group-hover:scale-110">
+                  START
+                </span>
+              </Link>
+            </div>
           </Card>
 
           {/* Right Portrait */}
