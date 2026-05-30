@@ -3,6 +3,7 @@ import LogoCard from '@/components/LogoCard'
 import PhotoStack from '@/components/PhotoStack'
 import PalleteStack from '../components/PalleteStack'
 import RotatingImages from '@/components/RotatingImages'
+import QuoteCard from '@/components/QuoteCard'
 
 function Card( {
   className,
@@ -42,8 +43,8 @@ export default function Home() {
           </Card>
 
           {/* Quote */}
-          <Card className="text-white bg-chart-2 xl:col-span-3 xl:row-span-4">
-            Quote
+          <Card className="text-white bg-chart-2 xl:col-span-3 xl:row-span-4 flex flex-col">
+            <QuoteCard />
           </Card>
 
           {/* Logo */}
