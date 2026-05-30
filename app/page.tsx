@@ -37,7 +37,7 @@ export default function Home() {
           </Card>
 
           {/* Right Portrait */}
-          <Card className="xl:col-span-4 xl:row-span-5 border-accent border flex items-center justify-center">
+          <Card className="xl:col-span-4 xl:row-span-5 border-accent border flex items-center justify-center bg-[url(/lens-bg.png)] bg-cover bg-center">
             <RotatingImages />
           </Card>
 

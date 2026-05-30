@@ -5,9 +5,9 @@ import CircleGrids, { CircleGridsHandle } from '@/components/Icons/CircleGrids'
 import { gsap } from 'gsap'
 
 const images = [
-  'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=500&q=80&fit=crop',
-  'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=500&q=80&fit=crop',
-  'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=500&q=80&fit=crop',
+  '/lenses.png',
+  '/lenses.png',
+  '/lenses.png',
 ]
 
 const RotatingImages = () => {
@@ -125,7 +125,7 @@ const RotatingImages = () => {
           ref={( el ) => {
             profileImages.current[0] = el
           }}
-          className="aspect-square w-full overflow-hidden absolute inset-x-0 mx-auto inset-y-0 my-auto rounded-full bg-muted rotate-90"
+          className="aspect-square w-full overflow-hidden absolute inset-x-0 mx-auto inset-y-0 my-auto rounded-ful rotate-90"
         >
           <Image
             src={images[0]}
@@ -140,7 +140,7 @@ const RotatingImages = () => {
           }}
           className="aspect-square w-full overflow-hidden absolute inset-x-0 mx-auto inset-y-0 my-auto rounded-full -rotate-90"
         >
-          <div className="[clip-path:circle(35%_at_50%_50%)] w-full h-full bg-muted/80">
+          <div className="[clip-path:circle(35%_at_50%_50%)] w-full h-full">
             <Image
               src={images[1]}
               alt="Photo 2"
@@ -155,7 +155,7 @@ const RotatingImages = () => {
           }}
           className="aspect-square w-full overflow-hidden absolute inset-x-0 mx-auto inset-y-0 my-auto rounded-full rotate-45"
         >
-          <div className="[clip-path:circle(25%_at_50%_50%)] w-full h-full bg-muted/90">
+          <div className="[clip-path:circle(25%_at_50%_50%)] w-full h-full">
             <Image
               src={images[2]}
               alt="Photo 3"
