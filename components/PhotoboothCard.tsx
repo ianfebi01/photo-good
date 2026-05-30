@@ -248,7 +248,7 @@ export default function PhotoboothCard() {
 
             <p
               ref={descRef}
-              className="text-muted-foreground text-[11px] leading-snug text-right max-w-30 mt-0.5"
+              className="text-muted-foreground text-[11px] leading-snug text-right max-w-30 mt-0.5 font-poppins"
             >
               {photos[0].desc}
             </p>
