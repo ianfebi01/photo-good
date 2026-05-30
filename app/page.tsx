@@ -2,7 +2,7 @@ import { cn } from '@/lib/utils'
 import LogoCard from '@/components/LogoCard'
 import PhotoStack from '@/components/PhotoStack'
 import PalleteStack from '../components/PalleteStack'
-import RotatingImages from '@/components/RotatingImages'
+import PhotoboothCard from '@/components/PhotoboothCard'
 import QuoteCard from '@/components/QuoteCard'
 
 function Card( {
@@ -38,8 +38,8 @@ export default function Home() {
           </Card>
 
           {/* Right Portrait */}
-          <Card className="xl:col-span-4 xl:row-span-5 border-accent border flex items-center justify-center bg-[url(/lens-bg.png)] bg-cover bg-center">
-            <RotatingImages />
+          <Card className="xl:col-span-4 xl:row-span-5 border-accent border p-0! overflow-hidden">
+            <PhotoboothCard />
           </Card>
 
           {/* Quote */}
