@@ -2,6 +2,7 @@ import { cn } from '@/lib/utils'
 import LogoCard from '@/components/LogoCard'
 import PhotoStack from '@/components/PhotoStack'
 import PalleteStack from '../components/PalleteStack'
+import RotatingImages from '@/components/RotatingImages'
 
 function Card( {
   className,
@@ -36,7 +37,9 @@ export default function Home() {
           </Card>
 
           {/* Right Portrait */}
-          <Card className="xl:col-span-4 xl:row-span-5 border-accent border">Portrait Card</Card>
+          <Card className="xl:col-span-4 xl:row-span-5 border-accent border flex items-center justify-center">
+            <RotatingImages />
+          </Card>
 
           {/* Quote */}
           <Card className="text-white bg-chart-2 xl:col-span-3 xl:row-span-4">
