@@ -9,7 +9,7 @@ const swatches = [
   { name : "Secondary", hex : "#FFEDC7", className : "bg-secondary text-secondary-foreground" },
 ];
 
-export default function Home() {
+export default function Pallete() {
   return (
     <main className="flex flex-1 flex-col items-center justify-center gap-12 bg-background px-6 py-24 font-sans">
       <div className="flex flex-col items-center gap-3 text-center">
