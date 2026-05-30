@@ -1,12 +1,13 @@
 import { cn } from '@/lib/utils'
 import LogoCard from '@/components/LogoCard'
+import PhotoStack from '@/components/PhotoStack'
 
 function Card( {
   className,
   children,
 }: React.PropsWithChildren<{ className?: string }> ) {
   return (
-    <div className={cn( 'rounded-3xl bg-white p-6 shadow-sm transition-all duration-300 ease-in-out', className )}>
+    <div className={cn( 'rounded-3xl bg-white p-6 hover:shadow-xl transition-all duration-300 ease-in-out', className )}>
       {children}
     </div>
   )
@@ -14,7 +15,7 @@ function Card( {
 
 export default function Home() {
   return (
-    <main className="min-h-screen xl:min-h-[unset] xl:h-screen bg-secondary">
+    <main className="min-h-screen xl:min-h-[unset] xl:h-screen bg-white">
       <div className="container px-4 py-8 mx-auto lg:py-16 xl:h-full">
         <div
           className={cn(
@@ -26,20 +27,15 @@ export default function Home() {
           )}
         >
           {/* Top Left */}
-          <Card className="xl:col-span-4 xl:row-span-4">Photo Card</Card>
+          <PhotoStack className="xl:col-span-4 xl:row-span-9" />
 
           {/* Hero */}
-          <Card className="text-white bg-primary xl:col-span-4 xl:row-span-5">
+          <Card className="text-white bg-secondary xl:col-span-4 xl:row-span-5">
             Hero Content
           </Card>
 
           {/* Right Portrait */}
-          <Card className="xl:col-span-4 xl:row-span-5">Portrait Card</Card>
-
-          {/* Typography */}
-          <Card className="text-white bg-accent xl:col-span-4 xl:row-span-5">
-            Typography
-          </Card>
+          <Card className="xl:col-span-4 xl:row-span-5 border-accent border">Portrait Card</Card>
 
           {/* Quote */}
           <Card className="text-white bg-chart-2 xl:col-span-3 xl:row-span-4">
