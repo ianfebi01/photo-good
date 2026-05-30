@@ -42,74 +42,139 @@ export default function PhotoboothCard() {
 
   useEffect( () => {
     const ctx = gsap.context( () => {
-      gsap.set( photoRefs.current.slice( 1 ), { autoAlpha : 0 } )
-      gsap.set( [stack1Ref.current, stack2Ref.current], { y : 0 } )
-      gsap.set( captionBoxRef.current, { y : 0 } )
+      gsap.set( photoRefs.current.slice( 1 ), {
+        autoAlpha : 0,
+      } )
 
-      const hold     = 3.5
-      const fadeDur  = 0.8
-      const textDur  = 0.28
+      gsap.set(
+        [
+          stack1Ref.current,
+          stack2Ref.current,
+          captionBoxRef.current,
+        ],
+        {
+          y : 0,
+        }
+      )
+
+      gsap.set( captionTextRef.current, {
+        opacity : 1,
+        y       : 0,
+      } )
+
+      const hold = 3.5
+      const fadeDur = 0.8
+      const textDur = 0.28
       const stackDur = 0.7
 
-      const tl = gsap.timeline( { repeat : -1 } )
+      const tl = gsap.timeline( {
+        repeat : -1,
+      } )
 
       photos.forEach( ( _, i ) => {
         const next = ( i + 1 ) % photos.length
 
         tl.to( {}, { duration : hold } )
 
-        // Stacks peek out below caption + caption lifts up
-        tl.to( stack2Ref.current, {
-          y        : 10,
-          duration : stackDur,
-        } )
-
-        tl.to( stack1Ref.current, {
-          y        : 16,
-          duration : stackDur,
-        }, '<+=0.1' )
-
-        tl.to( captionBoxRef.current, {
-          y        : -12,
-          duration : stackDur,
-        } )
-
-        // Caption text fade out
+        // Lift caption and reveal stack cards
         tl.to(
-          captionTextRef.current,
-          { autoAlpha : 0, y : 8, duration : textDur, ease : 'power2.in' },
-          '<',
+          stack2Ref.current,
+          {
+            y        : 10,
+            duration : stackDur,
+            ease     : 'power2.out',
+          }
         )
 
-        // Photo crossfade + swap text content
-        tl.to( photoRefs.current[i], { autoAlpha : 0, duration : fadeDur, ease : 'power2.inOut' }, '<' )
+        tl.to(
+          stack1Ref.current,
+          {
+            y        : 16,
+            duration : stackDur,
+            ease     : 'power2.out',
+          },
+          '<+=0.1'
+        )
+
+        tl.to(
+          captionBoxRef.current,
+          {
+            y        : -12,
+            duration : stackDur,
+            ease     : 'power2.out',
+          },
+          '<'
+        )
+
+        // Fade caption text out while caption lifts
+        tl.to(
+          captionTextRef.current,
+          {
+            opacity  : 0,
+            y        : 8,
+            duration : textDur,
+            ease     : 'power2.in',
+          },
+          '<'
+        )
+
+        // Crossfade photos
+        tl.to(
+          photoRefs.current[i],
+          {
+            autoAlpha : 0,
+            duration  : fadeDur,
+            ease      : 'power2.inOut',
+          },
+          '<'
+        )
+
         tl.to(
           photoRefs.current[next],
           {
             autoAlpha : 1,
             duration  : fadeDur,
             ease      : 'power2.inOut',
-            onStart   : () => {
-              if ( taglineRef.current ) taglineRef.current.textContent = photos[next].tagline
-              if ( hashtagRef.current ) hashtagRef.current.textContent = photos[next].hashtag
-              if ( descRef.current )    descRef.current.textContent    = photos[next].desc
-            },
           },
-          '<',
+          '<'
         )
 
-        // Caption text fade in
-        tl.fromTo(
-          captionTextRef.current,
-          { autoAlpha : 0, y : -8 },
-          { autoAlpha : 1, y : 0, duration : textDur, ease : 'power2.out' },
-        )
+        // Swap text while hidden
+        tl.call( () => {
+          if ( taglineRef.current )
+            taglineRef.current.textContent = photos[next].tagline
 
-        // Stacks return behind caption + caption settles back down
+          if ( hashtagRef.current )
+            hashtagRef.current.textContent = photos[next].hashtag
+
+          if ( descRef.current )
+            descRef.current.textContent = photos[next].desc
+        } )
+
+        // Reposition above, then fade in — avoids fromTo immediateRender bug
+        tl.set( captionTextRef.current, { y : -8 } )
+        tl.to( captionTextRef.current, {
+          opacity  : 1,
+          y        : 0,
+          duration : textDur,
+          ease     : 'power2.out',
+        } )
+
+        // Hold new state briefly
+        tl.to( {}, { duration : 0.7 } )
+
+        // Return stack cards
         tl.to(
-          [stack1Ref.current, stack2Ref.current, captionBoxRef.current],
-          { y : 0, duration : stackDur, ease : 'power2.inOut' },
-          '+=2',
+          [
+            stack1Ref.current,
+            stack2Ref.current,
+            captionBoxRef.current,
+          ],
+          {
+            y        : 0,
+            duration : stackDur,
+            ease     : 'power2.inOut',
+          }
         )
       } )
     } )
@@ -159,26 +224,34 @@ export default function PhotoboothCard() {
         {/* Main caption */}
         <div
           ref={captionBoxRef}
-          className="relative bg-white/95 backdrop-blur-sm rounded-2xl px-4 py-3 flex items-start justify-between gap-3"
+          className="relative bg-white/95 backdrop-blur-sm rounded-2xl px-4 py-3"
         >
           <div
             ref={captionTextRef}
-            className="contents"
+            className="flex items-start justify-between gap-3"
           >
             <div className="flex flex-col leading-tight">
               <span
                 ref={taglineRef}
                 className="text-foreground font-bold text-base"
-              >{photos[0].tagline}</span>
+              >
+                {photos[0].tagline}
+              </span>
+
               <span
                 ref={hashtagRef}
                 className="text-accent font-bold text-base"
-              >{photos[0].hashtag}</span>
+              >
+                {photos[0].hashtag}
+              </span>
             </div>
+
             <p
               ref={descRef}
               className="text-muted-foreground text-[11px] leading-snug text-right max-w-30 mt-0.5"
-            >{photos[0].desc}</p>
+            >
+              {photos[0].desc}
+            </p>
           </div>
         </div>
       </div>
