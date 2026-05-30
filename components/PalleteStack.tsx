@@ -58,7 +58,7 @@ export default function PalleteStack( {
     } );
 
     // Hold stacked
-    tl.to( {}, { duration : 1 } );
+    tl.to( {}, { duration : 3.5 } );
 
     // Expand
     cards.forEach( ( card, index ) => {
@@ -75,7 +75,7 @@ export default function PalleteStack( {
     } );
 
     // Hold expanded
-    tl.to( {}, { duration : 1.5 } );
+    tl.to( {}, { duration : 3.5 } );
 
     // Collapse back (reverse order looks nicer)
     [...cards].reverse().forEach( ( card, reverseIndex ) => {
