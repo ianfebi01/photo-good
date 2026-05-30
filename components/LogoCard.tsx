@@ -81,7 +81,8 @@ export default function LogoCard( { className }: { className?: string } ) {
   return (
     <div
       className={cn(
-        'rounded-3xl bg-white p-6 shadow-sm',
+        'rounded-3xl bg-white p-6',
+        'hover:shadow-xl transition-all duration-300 ease-in-out',
         'relative overflow-hidden',
         'flex items-center justify-center',
         className

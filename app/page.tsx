@@ -1,6 +1,7 @@
 import { cn } from '@/lib/utils'
 import LogoCard from '@/components/LogoCard'
 import PhotoStack from '@/components/PhotoStack'
+import PalleteStack from '../components/PalleteStack'
 
 function Card( {
   className,
@@ -46,7 +47,7 @@ export default function Home() {
           <LogoCard className="xl:col-span-5 xl:row-span-2" />
 
           {/* Colors */}
-          <Card className="xl:col-span-5 xl:row-span-2">Color Palette</Card>
+          <PalleteStack className="xl:col-span-5 xl:row-span-2" />
         </div>
       </div>
     </main>
