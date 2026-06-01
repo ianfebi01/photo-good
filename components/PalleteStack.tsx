@@ -1,5 +1,5 @@
 'use client'
-import { useLayoutEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import gsap from "gsap";
 import { cn } from "../lib/utils";
 
@@ -33,12 +33,12 @@ export default function PalleteStack( {
 } ) {
   const cardsRef = useRef<HTMLDivElement[]>( [] );
 
-  useLayoutEffect( () => {
+  const STACK_WIDTH = 50;
+  const OVERLAP = 18;
+
+  useEffect( () => {
     const cards = cardsRef.current;
     const total = cards.length;
-
-    const STACK_WIDTH = 50;
-    const OVERLAP = 18;
 
     // Initial stacked state
     cards.forEach( ( card, index ) => {
@@ -58,7 +58,8 @@ export default function PalleteStack( {
     } );
 
     // Hold stacked
-    tl.to( {}, { duration : 3.5 } );
+    tl.to( {}, { duration : 2.5 } );
+    tl.addLabel( "expand" );
 
     // Expand
     cards.forEach( ( card, index ) => {
@@ -70,15 +71,15 @@ export default function PalleteStack( {
           xPercent : 0,
           duration : 0.8,
         },
-        index * 0.08
+        `expand+=${index * 0.08}`
       );
     } );
 
     // Hold expanded
-    tl.to( {}, { duration : 3.5 } );
+    tl.to( {}, { duration : 2.5 } );
 
     // Collapse back (reverse order looks nicer)
-    [...cards].reverse().forEach( ( card, reverseIndex ) => {
+    cards.toReversed().forEach( ( card, reverseIndex ) => {
       const index = total - reverseIndex - 1;
 
       tl.to(
@@ -114,6 +115,10 @@ export default function PalleteStack( {
           className="absolute top-0 bottom-0 rounded-3xl"
           style={{
             backgroundColor : card.color,
+            // width           : `${STACK_WIDTH}%`,
+            // right           : 0,
+            // transform       : `translateX(${-( CARDS.length - 1 - index ) * OVERLAP}%)`,
+            // zIndex          : index + 1,
           }}
         >
           <div
