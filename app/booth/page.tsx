@@ -1,26 +1,17 @@
 'use client'
 
-import { useEffect, useMemo } from 'react'
+import { useEffect } from 'react'
 
 import { type ClientFrame } from '@/lib/photobooth/frames.client'
-import { useBoothStore, getBoothStep } from '@/store/boothStore'
+import { useBoothStore } from '@/store/boothStore'
 
 import { BoothStepper } from '@/components/booth/BoothStepper'
-import { CameraBadge } from '@/components/booth/CameraBadge'
 import { StepCapture } from '@/components/booth/StepCapture'
 import { StepResult } from '@/components/booth/StepResult'
 import { StepSelectFrame } from '@/components/booth/StepSelectFrame'
 
 export default function BoothPage() {
-  const { frames, frameKey, started, strip, setStatus, setFrames } =
-    useBoothStore()
-
-  const frame = useMemo(
-    () => frames.find( ( f ) => f.key === frameKey ) ?? frames[0],
-    [frames, frameKey],
-  )
-  const step = useMemo( () => getBoothStep( { started, strip } ), [started, strip] )
-  const status = useBoothStore( ( s ) => s.status )
+  const { step, setStatus, setFrames } = useBoothStore()
 
   useEffect( () => {
     fetch( '/api/camera/status' )
@@ -39,9 +30,9 @@ export default function BoothPage() {
   }, [setFrames] )
 
   return (
-    <main className="min-h-screen bg-white xl:min-h-screen">
-      <div className="container mx-auto px-4 py-8 lg:py-16 xl:h-full">
-        <header className="flex flex-wrap items-center justify-between gap-3">
+    <main className="">
+      <div className="min-h-screen bg-white xl:min-h-[unset] xl:h-screen overflow-hidden container mx-auto px-4 py-8 lg:py-16 flex flex-col">
+        {/* <header className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h1 className="text-3xl font-semibold tracking-tight text-foreground">
               Photobooth
@@ -51,9 +42,9 @@ export default function BoothPage() {
             </p>
           </div>
           <CameraBadge status={status} />
-        </header>
+        </header> */}
 
-        <BoothStepper step={step} />
+        <BoothStepper />
 
         {step === 0 && <StepSelectFrame />}
         {step === 1 && <StepCapture />}

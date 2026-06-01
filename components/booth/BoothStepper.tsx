@@ -1,8 +1,13 @@
+'use client'
 import { cn } from '@/lib/utils'
+import { useBoothStore } from '../../store/boothStore'
 
 const STEPS = ['Select Frame', 'Capture', 'Your Strip'] as const
 
-export function BoothStepper( { step }: { step: 0 | 1 | 2 } ) {
+export function BoothStepper( ) {
+  const { step } =
+      useBoothStore()
+  
   return (
     <div className="flex w-full items-start py-4">
       {STEPS.map( ( label, i ) => (

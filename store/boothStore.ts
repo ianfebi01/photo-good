@@ -45,6 +45,8 @@ export interface BoothState {
   frames: ClientFrame[];
   status: Status | null;
 
+  step: 0 | 1 | 2;
+
   // ── Actions ────────────────────────────────────────
   setStatus: ( status: Status | null ) => void;
   setFrames: ( frames: ClientFrame[] ) => void;
@@ -76,6 +78,7 @@ export const useBoothStore = create<BoothState>()(
       uploadOpen : false,
       frames     : FALLBACK_FRAMES,
       status     : null,
+      step       : 0,
 
       // ── Setters ────────────────────────────────────
       setStatus     : ( status ) => set( { status } ),
@@ -85,7 +88,7 @@ export const useBoothStore = create<BoothState>()(
       restartPreview : () => set( { streamKey : newId() } ),
 
       // ── Begin capture session ──────────────────────
-      start : () => set( { started : true } ),
+      start : () => set( { started : true, step : 1 } ),
 
       // ── Frame selection ────────────────────────────
       selectFrame : ( key ) => {
@@ -100,6 +103,7 @@ export const useBoothStore = create<BoothState>()(
           pending   : null,
           strip     : null,
           error     : null,
+          step      : 0,
         } );
         get().restartPreview();
       },
@@ -115,6 +119,7 @@ export const useBoothStore = create<BoothState>()(
           pending   : null,
           strip     : null,
           error     : null,
+          step      : 0,
         } );
         get().restartPreview();
       },
@@ -207,7 +212,7 @@ export const useBoothStore = create<BoothState>()(
             } );
             const composed = await res.json();
             if ( !res.ok ) throw new Error( composed.error ?? "Compose failed" );
-            set( { strip : composed.url, phase : "done" } );
+            set( { strip : composed.url, phase : "done", step : 2 } );
           } else {
             set( { phase : "idle" } );
             get().restartPreview();
@@ -236,10 +241,3 @@ export const useBoothStore = create<BoothState>()(
     },
   ),
 );
-
-export function getBoothStep( state: Pick<BoothState, "started" | "strip"> ): 0 | 1 | 2 {
-  if ( state.strip !== null ) return 2;
-  if ( state.started ) return 1;
-
-  return 0;
-}
