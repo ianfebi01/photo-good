@@ -53,7 +53,7 @@ export function FrameSelector( {
             </div>
           </div>
         </div>
-        <div className="flex-1 grid grid-cols-2 lg:grid-cols-3 gap-3 h-full overflow-auto scrollbar-none">
+        <div className="flex-1 flex flex-row gap-3 h-full overflow-x-auto scrollbar-none">
           {frames.map( ( f ) => {
             const isActive = f.key === active
 
@@ -71,8 +71,8 @@ export function FrameSelector( {
                 aria-pressed={isActive}
               >
                 <div
-                  className="overflow-hidden rounded-md bg-muted"
-                  style={{ aspectRatio : `${f.width} / ${f.height}` }}
+                  className="overflow-hidden h-full"
+                  // style={{ aspectRatio : `${f.width} / ${f.height}` }}
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
