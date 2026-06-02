@@ -158,7 +158,7 @@ export const useBoothStore = create<BoothState>()(
         const controller = new AbortController();
         const timeout = setTimeout( () => controller.abort(), 30_000 );
 
-        set( { error : null, phase : "running", flash : true } );
+        set( { error : null, phase : "running" } );
         try {
           const { sessionId } = get();
           const activeSession = sessionId || newId();

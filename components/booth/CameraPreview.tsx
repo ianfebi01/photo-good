@@ -1,8 +1,10 @@
+import { useEffect, useRef } from 'react'
 import { Camera } from 'lucide-react'
 
 import type { Phase, Shot } from '@/store/boothStore'
 import { LiveStream } from './LiveStream'
 import { getCSSFilter } from './filters'
+import { createPortal } from 'react-dom'
 
 interface CameraPreviewProps {
   phase: Phase
@@ -25,10 +27,28 @@ export function CameraPreview( {
   const running = phase === 'running'
   const composing = phase === 'composing'
 
+  const liveImgRef = useRef<HTMLImageElement | null>( null )
+  const frozenRef = useRef<HTMLCanvasElement | null>( null )
+
+  // During capture the live stream pauses (and can blank to white). The instant
+  // capture starts — the stream is still showing a real frame here — paint it
+  // onto a canvas and use that as the backdrop, so the "Capturing…" overlay sits
+  // on the last frame instead of a white box.
+  useEffect( () => {
+    if ( !running ) return
+    const img = liveImgRef.current
+    const canvas = frozenRef.current
+    if ( !img || !canvas || !img.naturalWidth || !img.naturalHeight ) return
+    canvas.width = img.naturalWidth
+    canvas.height = img.naturalHeight
+    canvas.getContext( '2d' )?.drawImage( img, 0, 0 )
+  }, [running] )
+
   return (
     <div className="relative aspect-3/2 overflow-hidden rounded-3xl hover:shadow-xl transition-all duration-300 ease-in-out">
       {showStream ? (
         <LiveStream
+          ref={liveImgRef}
           src={liveSrc}
           className="absolute inset-0 h-full w-full object-cover"
         />
@@ -56,8 +76,11 @@ export function CameraPreview( {
         </div>
       )}
 
-      {flash && (
-        <div className="absolute inset-0 bg-white animate-fade-out z-30" />
+      {running && (
+        <canvas
+          ref={frozenRef}
+          className="absolute inset-0 h-full w-full object-cover z-10"
+        />
       )}
 
       {running && (
@@ -80,6 +103,13 @@ export function CameraPreview( {
             </span>
           </div>
         </div>
+      )}
+
+      {flash && (
+        createPortal(
+          <div className="fixed w-full h-full inset-0 bg-white animate-fade-out z-30" />,
+          document.body
+        )
       )}
     </div>
   )

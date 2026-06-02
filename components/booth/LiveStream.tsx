@@ -1,12 +1,15 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { forwardRef, useEffect, useRef } from 'react'
 
-export function LiveStream( { src, className }: { src: string; className?: string } ) {
-  const imgRef = useRef<HTMLImageElement>( null )
+export const LiveStream = forwardRef<
+  HTMLImageElement,
+  { src: string; className?: string }
+>( function LiveStream( { src, className }, ref ) {
+  const innerRef = useRef<HTMLImageElement | null>( null )
 
   useEffect( () => {
-    const img = imgRef.current
+    const img = innerRef.current
     if ( !img ) return
     img.src = ''
     img.src = src
@@ -19,9 +22,13 @@ export function LiveStream( { src, className }: { src: string; className?: strin
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img
-      ref={imgRef}
+      ref={( node ) => {
+        innerRef.current = node
+        if ( typeof ref === 'function' ) ref( node )
+        else if ( ref ) ref.current = node
+      }}
       alt="Live camera preview"
       className={className}
     />
   )
-}
+} )
