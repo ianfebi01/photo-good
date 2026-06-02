@@ -15,6 +15,7 @@ import {
 import gsap from 'gsap'
 import { Inter } from 'next/font/google'
 import { type ClientFrame } from '@/lib/photobooth/frames.client'
+import { cn } from '@/lib/utils'
 
 const inter = Inter( {
   subsets  : ['latin'],
@@ -324,9 +325,17 @@ export function AddFrameDialog( { onUploaded, trigger }: AddFrameDialogProps ) {
                 onDragLeave={handleDrag}
                 onDrop={handleDrop}
                 onClick={() => fileInputRef.current?.click()}
-                className={`overflow-hidden rounded-xl border border-dashed flex flex-col items-center justify-center relative h-[260px] sm:h-full font-sans cursor-pointer transition select-none ${
-                  dragActive ? 'border-primary bg-primary/5' : 'border-neutral-200 bg-neutral-50/50 hover:bg-neutral-50 hover:border-neutral-300'
-                }`}
+                className={cn(
+                  'overflow-hidden flex flex-col items-center justify-center relative h-[260px] sm:h-full font-sans cursor-pointer transition select-none rounded-none',
+                  previewUrl
+                    ? 'border-none p-0 bg-transparent'
+                    : cn(
+                      'border border-dashed',
+                      dragActive
+                        ? 'border-primary bg-primary/5'
+                        : 'border-neutral-200 bg-neutral-50/50 hover:bg-neutral-50 hover:border-neutral-300'
+                    )
+                )}
               >
                 <input
                   ref={fileInputRef}
@@ -343,7 +352,7 @@ export function AddFrameDialog( { onUploaded, trigger }: AddFrameDialogProps ) {
                     <img
                       src={previewUrl}
                       alt="Selected frame preview"
-                      className="h-full w-full object-contain p-2"
+                      className="h-full w-full object-contain"
                     />
                     {/* Circle X Button in Corner */}
                     <button
@@ -352,7 +361,7 @@ export function AddFrameDialog( { onUploaded, trigger }: AddFrameDialogProps ) {
                         e.stopPropagation()
                         handleFileChange( null )
                       }}
-                      className="absolute top-2 right-2 size-6 rounded-full bg-white hover:bg-neutral-100 border border-neutral-200 shadow-md flex items-center justify-center cursor-pointer text-neutral-500 hover:text-neutral-900 transition focus:outline-none z-10"
+                      className="absolute top-2 right-2 size-6 rounded-full bg-white hover:bg-neutral-100 border border-neutral-200 shadow-md flex items-center justify-center cursor-pointer text-neutral-500 hover:text-neutral-950 transition focus:outline-none z-10"
                     >
                       <X className="size-3.5" />
                     </button>
@@ -431,7 +440,14 @@ export function AddFrameDialog( { onUploaded, trigger }: AddFrameDialogProps ) {
             {/* Column 3: Preview Slots */}
             <div className="flex flex-col gap-1.5 font-sans h-full">
               <span className="font-semibold text-neutral-500 text-[10px] uppercase tracking-wider">Preview Slots</span>
-              <div className="flex-1 overflow-hidden rounded-xl border border-neutral-100 bg-neutral-50/50 flex items-center justify-center relative min-h-[260px] sm:min-h-[unset] sm:h-full font-sans">
+              <div
+                className={cn(
+                  'flex-1 overflow-hidden flex items-center justify-center relative min-h-[260px] sm:min-h-[unset] sm:h-full font-sans rounded-none',
+                  serverPreviewUrl
+                    ? 'border-none p-0 bg-transparent'
+                    : 'border border-neutral-100 bg-neutral-50/50'
+                )}
+              >
                 {previewLoading ? (
                   <div className="text-xs text-neutral-400 font-sans font-medium flex flex-col items-center gap-1.5 animate-pulse">
                     <Loader2 className="size-5 text-primary animate-spin" />
@@ -442,7 +458,7 @@ export function AddFrameDialog( { onUploaded, trigger }: AddFrameDialogProps ) {
                   <img
                     src={serverPreviewUrl}
                     alt="Processed frame preview"
-                    className="h-full w-full object-contain p-2 drop-shadow-sm"
+                    className="h-full w-full object-contain drop-shadow-sm"
                   />
                 ) : (
                   <div className="text-xs text-neutral-400 font-sans font-medium flex flex-col items-center gap-1.5">

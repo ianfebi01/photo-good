@@ -109,7 +109,7 @@ export function FrameUploadForm( {
           </div>
 
           <div
-            className="overflow-hidden rounded-md border bg-muted"
+            className="overflow-hidden rounded-none border bg-muted"
             style={{ minHeight : 140 }}
           >
             {previewUrl ? (
