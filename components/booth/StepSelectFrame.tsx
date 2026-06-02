@@ -1,17 +1,13 @@
 import { Button } from '@/components/ui/button'
 import { type ClientFrame } from '@/lib/photobooth/frames.client'
 import { useBoothStore } from '@/store/boothStore'
-
 import { FrameSelector } from './FrameSelector'
-import { FrameUploadForm } from './FrameUploadForm'
 
 export function StepSelectFrame() {
   const {
     frames,
     frameKey,
-    uploadOpen,
     selectFrame,
-    setUploadOpen,
     start,
     addFrame,
   } = useBoothStore()
@@ -25,18 +21,12 @@ export function StepSelectFrame() {
         active={frameKey}
         disabled={false}
         onSelect={selectFrame}
-        onAdd={() => setUploadOpen( true )}
+        onAdd={( f: ClientFrame ) => addFrame( f )}
       />
 
-      {uploadOpen && (
-        <FrameUploadForm
-          onCancel={() => setUploadOpen( false )}
-          onUploaded={( f: ClientFrame ) => addFrame( f )}
-        />
-      )}
-
       <div className="flex justify-end">
-        <Button size="lg"
+        <Button
+          size="lg"
           onClick={start}
           disabled={!frame}
         >

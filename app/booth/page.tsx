@@ -5,7 +5,6 @@ import { useEffect } from 'react'
 import { type ClientFrame } from '@/lib/photobooth/frames.client'
 import { useBoothStore } from '@/store/boothStore'
 
-import { BoothStepper } from '@/components/booth/BoothStepper'
 import { StepCapture } from '@/components/booth/StepCapture'
 import { StepResult } from '@/components/booth/StepResult'
 import { StepSelectFrame } from '@/components/booth/StepSelectFrame'
@@ -43,8 +42,6 @@ export default function BoothPage() {
           </div>
           <CameraBadge status={status} />
         </header> */}
-
-        <BoothStepper />
 
         {step === 0 && <StepSelectFrame />}
         {step === 1 && <StepCapture />}

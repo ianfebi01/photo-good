@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button'
 import { type ClientFrame } from '@/lib/photobooth/frames.client'
-import { cn } from '../../lib/utils'
+import { FramePhotoStack } from './FramePhotoStack'
+import { AddFrameDialog } from './AddFrameDialog'
 
 export function FrameSelector( {
   frames,
@@ -13,92 +14,43 @@ export function FrameSelector( {
   active: string
   disabled: boolean
   onSelect: ( key: string ) => void
-  onAdd: () => void
+  onAdd: ( frame: ClientFrame ) => void
 } ) {
-
-  const activeFrame = frames.find( ( f ) => f.key === active )
-  
   return (
-    <div className="flex flex-col gap-2 grow overflow-hidden">
-      <div className="flex items-center justify-between gap-3">
-        <span className="text-sm font-medium text-foreground">
-          Choose a frame
-        </span>
-        <Button size="sm"
-          variant="outline"
-          onClick={onAdd}
-          disabled={disabled}
-        >
-          + Add frame
-        </Button>
+    <div className="flex flex-col gap-6 grow overflow-hidden items-center">
+      {/* Header Row */}
+      <div className="flex items-center justify-between gap-3 w-full shrink-0 max-w-2xl">
+        <div className="flex flex-col">
+          <span className="text-sm font-bold text-neutral-800 font-sans">
+            Select Frame Template
+          </span>
+          <span className="text-xs text-neutral-400 font-sans">
+            Click the stack or use the arrows to choose a template
+          </span>
+        </div>
+        <AddFrameDialog
+          onUploaded={onAdd}
+          trigger={
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={disabled}
+              className="font-sans text-xs border-neutral-200 hover:bg-neutral-50 shadow-sm"
+            >
+              + Add custom frame
+            </Button>
+          }
+        />
       </div>
 
-      <div className="flex flex-row gap-8 xl:gap-12 grow overflow-hidden">
-        <div className='flex-1'>
-          <div
-            className={cn( 
-              'overflow-hidden rounded-md bg-muted h-full flex items-center justify-center p-4',
-            )}
-          >
-            <div
-              className="overflow-hidden rounded-md bg-muted h-full w-full"
-              style={{ aspectRatio : `${activeFrame?.width} / ${activeFrame?.height}` }}
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={activeFrame?.publicUrl}
-                alt={`${activeFrame?.label} frame preview`}
-                className="h-full w-full object-contain"
-              />
-            </div>
-          </div>
-        </div>
-        <div className="flex-1 flex flex-row gap-3 h-full overflow-x-auto scrollbar-none">
-          {frames.map( ( f ) => {
-            const isActive = f.key === active
-
-            return (
-              <button
-                key={f.key}
-                type="button"
-                onClick={() => onSelect( f.key )}
-                disabled={disabled && !isActive}
-                className={`group flex flex-col gap-2 rounded-lg border p-2 text-left transition disabled:cursor-not-allowed disabled:opacity-50 ${
-                  isActive
-                    ? 'border-primary ring-2 ring-primary/40'
-                    : 'border-border hover:border-primary/50'
-                }`}
-                aria-pressed={isActive}
-              >
-                <div
-                  className="overflow-hidden h-full"
-                  // style={{ aspectRatio : `${f.width} / ${f.height}` }}
-                >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={f.publicUrl}
-                    alt={`${f.label} frame preview`}
-                    className="h-full w-full object-contain"
-                  />
-                </div>
-                <div className='grow'/>
-                <div className="flex items-center justify-between gap-2 px-1">
-                  <span className="truncate text-sm font-medium text-foreground">
-                    {f.label}
-                  </span>
-                  <span className="text-xs text-muted-foreground">
-                    {f.photoCount} shots
-                  </span>
-                </div>
-                {!f.builtIn && (
-                  <span className="px-1 text-[10px] uppercase tracking-wide text-muted-foreground">
-                  Custom
-                  </span>
-                )}
-              </button>
-            )
-          } )}
-        </div>
+      {/* Main Stack Workspace - Transparent, centered, no backgrounds or borders */}
+      <div className="w-full max-w-2xl flex-1 flex items-center justify-center overflow-visible relative">
+        <FramePhotoStack
+          frames={frames}
+          activeKey={active}
+          onSelect={onSelect}
+          disabled={disabled}
+        />
       </div>
     </div>
   )
