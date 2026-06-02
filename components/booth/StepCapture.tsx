@@ -7,6 +7,30 @@ import { Button } from '@/components/ui/button'
 import { useBoothStore } from '@/store/boothStore'
 import { cn } from '@/lib/utils'
 
+function LiveStream( { src, className }: { src: string; className?: string } ) {
+  const imgRef = useRef<HTMLImageElement>( null )
+
+  useEffect( () => {
+    const img = imgRef.current
+    if ( !img ) return
+    img.src = ''
+    img.src = src
+    
+    return () => {
+      img.src = ''
+    }
+  }, [src] )
+
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      ref={imgRef}
+      alt="Live camera preview"
+      className={className}
+    />
+  )
+}
+
 function Card( {
   className,
   children,
@@ -354,11 +378,8 @@ export function StepCapture() {
 
           <div className="relative aspect-3/2 overflow-hidden rounded-3xl hover:shadow-xl transition-all duration-300 ease-in-out">
             {phase !== 'reviewing' && phase !== 'adjusting' ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                key={streamKey}
+              <LiveStream
                 src={liveSrc}
-                alt="Live camera preview"
                 className="absolute inset-0 h-full w-full object-cover"
               />
             ) : pending ? (

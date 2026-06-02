@@ -121,6 +121,7 @@ export const useBoothStore = create<BoothState>()(
           pending   : null,
           strip     : null,
           error     : null,
+          flash     : false,
           step      : 0,
         } );
         get().restartPreview();
@@ -154,6 +155,9 @@ export const useBoothStore = create<BoothState>()(
         if ( replaceIndex === undefined && photos.length >= photoCount ) return;
         _capturing = true;
 
+        const controller = new AbortController();
+        const timeout = setTimeout( () => controller.abort(), 30_000 );
+
         set( { error : null, phase : "running", flash : true } );
         try {
           const { sessionId } = get();
@@ -165,9 +169,9 @@ export const useBoothStore = create<BoothState>()(
             method  : "POST",
             headers : { "Content-Type" : "application/json" },
             body    : JSON.stringify( { sessionId : activeSession, index } ),
+            signal  : controller.signal,
           } );
           const data = await res.json();
-          set( { flash : false } );
           if ( !res.ok ) throw new Error( data.error ?? "Capture failed" );
 
           set( {
@@ -175,13 +179,14 @@ export const useBoothStore = create<BoothState>()(
             phase   : "reviewing",
           } );
         } catch ( err ) {
-          set( {
-            error : err instanceof Error ? err.message : "Something went wrong",
-            phase : "error",
-            flash : false,
-          } );
+          const message = err instanceof Error
+            ? ( err.name === "AbortError" ? "Capture timed out" : err.message )
+            : "Something went wrong";
+          set( { error : message, phase : "error" } );
           get().restartPreview();
         } finally {
+          clearTimeout( timeout );
+          set( { flash : false } );
           _capturing = false;
         }
       },
