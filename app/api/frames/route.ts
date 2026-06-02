@@ -1,4 +1,4 @@
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile, unlink } from "node:fs/promises";
 import path from "node:path";
 
 import sharp from "sharp";
@@ -181,4 +181,42 @@ export async function POST( request: Request ) {
       builtIn    : false,
     },
   } );
+}
+
+/**
+ * Delete a user-uploaded frame. Query parameters:
+ *   - key: the frame key (must start with "user-")
+ */
+export async function DELETE( request: Request ) {
+  const { searchParams } = new URL( request.url );
+  const key = searchParams.get( "key" );
+
+  if ( !key ) {
+    return Response.json( { error : "Missing key parameter" }, { status : 400 } );
+  }
+
+  if ( !key.startsWith( "user-" ) ) {
+    return Response.json( { error : "Cannot delete built-in frames" }, { status : 400 } );
+  }
+
+  const manifest = await readManifest();
+  const entryIndex = manifest.frames.findIndex( ( f ) => f.key === key );
+
+  if ( entryIndex === -1 ) {
+    return Response.json( { error : "Frame not found" }, { status : 404 } );
+  }
+
+  const entry = manifest.frames[entryIndex];
+  const filePath = path.join( USER_FRAMES_DIR, entry.filename );
+
+  try {
+    await unlink( filePath );
+  } catch {
+    // If the file is already gone, proceed to clean up manifest
+  }
+
+  manifest.frames.splice( entryIndex, 1 );
+  await writeManifest( manifest );
+
+  return Response.json( { success : true } );
 }

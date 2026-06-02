@@ -82,6 +82,15 @@ export default function Home() {
           {/* Colors */}
           <PalleteStack className="xl:col-span-5 xl:row-span-2" />
         </div>
+
+        <div className="mt-8 flex justify-center">
+          <Link
+            href="/admin"
+            className="text-xs text-muted-foreground/60 hover:text-primary transition-colors font-medium"
+          >
+            Admin Panel
+          </Link>
+        </div>
       </div>
     </main>
   )
