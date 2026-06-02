@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "camera:setup": "bash camera-service/setup.sh",
+    "camera": "camera-service/.venv/bin/python3 camera-service/server.py"
   },
   "dependencies": {
     "@base-ui/react": "^1.5.0",

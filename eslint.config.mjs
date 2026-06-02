@@ -4,7 +4,7 @@ import reactPlugin from 'eslint-plugin-react'
 
 const config = [
   {
-    ignores : ['app/(payload)/admin/importMap.js'],
+    ignores : ['app/(payload)/admin/importMap.js', 'camera-service/**'],
   },
   ...nextConfigVitals,
   ...tsEslint.configs.recommended,

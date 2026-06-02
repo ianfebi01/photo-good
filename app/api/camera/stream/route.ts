@@ -1,15 +1,11 @@
-import {
-  detectCamera,
-  livePreviewFrame,
-  mockPreviewFrame,
-} from "@/lib/photobooth/camera";
+import { detectCamera, mockPreviewFrame } from "@/lib/photobooth/camera";
+import { SIDECAR_PREVIEW_URL } from "@/lib/photobooth/sidecar";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const BOUNDARY = "photoboothframe";
 const PART_TRAILER = Buffer.from( "\r\n" );
-const DETECT_INTERVAL_MS = 5_000;
 
 const delay = ( ms: number ) => new Promise( ( r ) => setTimeout( r, ms ) );
 
@@ -21,25 +17,43 @@ function wrap( jpeg: Buffer ) {
   return Buffer.concat( [header, jpeg, PART_TRAILER] );
 }
 
+const STREAM_HEADERS = {
+  "Cache-Control" : "no-store, no-cache, must-revalidate",
+  "Pragma"        : "no-cache",
+  "Connection"    : "close",
+};
+
 /**
- * Live preview as multipart/x-mixed-replace MJPEG, consumable directly by an
- * <img> tag. Frames are pulled one at a time: real frames come from the
- * persistent gphoto2 shell session (capture-preview), mock frames are
- * synthesized. The loop stops on abort so the camera is freed for a capture.
+ * Live preview as multipart/x-mixed-replace MJPEG, consumable by an <img> tag.
  *
- * Camera status is re-checked every 5 s while in mock mode so the stream
- * self-heals when a camera is plugged in after the stream started. We only
- * call detectCamera() in mock mode to avoid spawning a second gphoto2 process
- * while the shell session already owns the device.
+ * With a real camera we proxy the sidecar's /preview stream straight through —
+ * the sidecar self-heals across USB reconnects on that same connection, so live
+ * view returns on its own after an unplug/replug. With no camera (or sidecar
+ * down) we synthesize mock frames.
  */
 export async function GET( request: Request ) {
-  const initialStatus = await detectCamera();
-  const headers = {
-    "Content-Type"  : `multipart/x-mixed-replace; boundary=${BOUNDARY}`,
-    "Cache-Control" : "no-store, no-cache, must-revalidate",
-    "Pragma"        : "no-cache",
-    "Connection"    : "close",
-  };
+  const status = await detectCamera();
+
+  if ( !status.mock ) {
+    try {
+      const upstream = await fetch( SIDECAR_PREVIEW_URL, {
+        signal : request.signal,
+        cache  : "no-store",
+      } );
+      if ( upstream.ok && upstream.body ) {
+        return new Response( upstream.body, {
+          headers : {
+            "Content-Type" :
+              upstream.headers.get( "content-type" ) ??
+              `multipart/x-mixed-replace; boundary=${BOUNDARY}`,
+            ...STREAM_HEADERS,
+          },
+        } );
+      }
+    } catch {
+      // sidecar unreachable mid-request — fall through to mock frames
+    }
+  }
 
   let aborted = false;
   const stop = () => {
@@ -48,34 +62,18 @@ export async function GET( request: Request ) {
   request.signal.addEventListener( "abort", stop );
 
   let tick = 0;
-  let useMock = initialStatus.mock;
-  let lastDetectMs = Date.now();
+  const minInterval = 120;
 
   const stream = new ReadableStream( {
     async start( controller ) {
       try {
         while ( !aborted ) {
-          // Re-detect only while serving mock frames — calling detectCamera()
-          // while the gphoto2 shell session is active risks a device conflict.
-          if ( useMock && Date.now() - lastDetectMs >= DETECT_INTERVAL_MS ) {
-            try {
-              const status = await detectCamera();
-              useMock = status.mock;
-            } catch {}
-            lastDetectMs = Date.now();
-          }
-
           const started = Date.now();
           let frame: Buffer;
           try {
-            frame = useMock ? await mockPreviewFrame( tick++ ) : await livePreviewFrame();
+            frame = await mockPreviewFrame( tick++ );
           } catch {
             if ( aborted ) break;
-            if ( !useMock ) {
-              // Real camera frame failed — fall back to mock and retry detection soon
-              useMock = true;
-              lastDetectMs = Date.now() - ( DETECT_INTERVAL_MS - 1_000 );
-            }
             await delay( 250 );
             continue;
           }
@@ -83,10 +81,9 @@ export async function GET( request: Request ) {
           try {
             controller.enqueue( wrap( frame ) );
           } catch {
-            break; // consumer went away / controller closed
+            break;
           }
           const elapsed = Date.now() - started;
-          const minInterval = useMock ? 120 : 60;
           if ( elapsed < minInterval ) await delay( minInterval - elapsed );
         }
       } finally {
@@ -100,5 +97,10 @@ export async function GET( request: Request ) {
     },
   } );
 
-  return new Response( stream, { headers } );
+  return new Response( stream, {
+    headers : {
+      "Content-Type" : `multipart/x-mixed-replace; boundary=${BOUNDARY}`,
+      ...STREAM_HEADERS,
+    },
+  } );
 }

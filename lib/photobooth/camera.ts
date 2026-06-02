@@ -1,6 +1,5 @@
 import "server-only";
 
-import { spawn } from "node:child_process";
 import { mkdir } from "node:fs/promises";
 import sharp from "sharp";
 
@@ -11,7 +10,7 @@ import {
   PHOTO_HEIGHT,
   PHOTO_WIDTH,
 } from "./config";
-import { getCameraSession } from "./session";
+import { sidecarCapture, sidecarStatus } from "./sidecar";
 
 export type CameraStatus = {
   /** A real camera is reachable and will be used. */
@@ -20,7 +19,7 @@ export type CameraStatus = {
   mock: boolean;
   /** Detected camera model, when available. */
   model?: string;
-  /** True when the gphoto2 binary is installed. */
+  /** True when the camera service (sidecar) is reachable. */
   gphoto2: boolean;
 };
 
@@ -28,100 +27,39 @@ export async function ensureCapturesDir() {
   await mkdir( CAPTURES_DIR, { recursive : true } );
 }
 
-/** Run a command and resolve with its stdout buffer (rejects on non-zero exit). */
-function run(
-  cmd: string,
-  args: string[],
-  timeoutMs = 20_000,
-): Promise<Buffer> {
-  return new Promise( ( resolve, reject ) => {
-    const child = spawn( cmd, args );
-    const out: Buffer[] = [];
-    const err: Buffer[] = [];
-    const timer = setTimeout( () => {
-      child.kill( "SIGKILL" );
-      reject( new Error( `${cmd} timed out` ) );
-    }, timeoutMs );
-
-    child.stdout.on( "data", ( d ) => out.push( d ) );
-    child.stderr.on( "data", ( d ) => err.push( d ) );
-    child.on( "error", ( e ) => {
-      clearTimeout( timer );
-      reject( e );
-    } );
-    child.on( "close", ( code ) => {
-      clearTimeout( timer );
-      if ( code === 0 ) resolve( Buffer.concat( out ) );
-      else
-        reject(
-          new Error(
-            `${cmd} exited ${code}: ${Buffer.concat( err ).toString().trim()}`,
-          ),
-        );
-    } );
-  } );
-}
-
-let gphoto2Available: boolean | null = null;
-
-async function hasGphoto2() {
-  if ( gphoto2Available !== null ) return gphoto2Available;
-  try {
-    await run( "gphoto2", ["--version"], 5_000 );
-    gphoto2Available = true;
-  } catch {
-    gphoto2Available = false;
-  }
-  
-  return gphoto2Available;
-}
-
+/**
+ * Camera status comes from the Python sidecar (camera-service/), which owns the
+ * camera via libgphoto2 and recovers across USB reconnects in-process. When the
+ * sidecar is unreachable — or PHOTOBOOTH_MOCK=1 — we fall back to the simulated
+ * camera so the app keeps working without hardware.
+ */
 export async function detectCamera(): Promise<CameraStatus> {
-  const gphoto2 = await hasGphoto2();
-  if ( !gphoto2 ) return { connected : false, mock : true, gphoto2 : false };
+  if ( FORCE_MOCK ) return { connected : false, mock : true, gphoto2 : false };
 
-  let model: string | undefined;
-  let connected = false;
-  try {
-    const out = ( await run( "gphoto2", ["--auto-detect"], 8_000 ) ).toString();
-    // First two lines are a header + separator; any further row is a camera.
-    const rows = out
-      .split( "\n" )
-      .slice( 2 )
-      .map( ( l ) => l.trim() )
-      .filter( Boolean );
-    if ( rows.length > 0 ) {
-      connected = true;
-      model = rows[0].replace( /\s{2,}.*$/, "" ).trim();
-    }
-  } catch {
-    connected = false;
-  }
+  const status = await sidecarStatus();
+  if ( !status ) return { connected : false, mock : true, gphoto2 : false };
 
-  const mock = FORCE_MOCK || !connected;
-  
-  return { connected : connected && !FORCE_MOCK, mock, model, gphoto2 };
+  return {
+    connected : status.connected,
+    mock      : !status.connected,
+    model     : status.model ?? undefined,
+    gphoto2   : true,
+  };
 }
 
 /**
  * Capture one full-resolution still as a JPEG buffer. Real captures go through
- * the persistent gphoto2 shell session (see ./session) so live view and stills
- * share one camera connection and never wedge the device.
+ * the sidecar's /capture endpoint; with no camera we synthesize a mock frame.
  */
 export async function captureStill( seq = 0 ): Promise<Buffer> {
   const status = await detectCamera();
   if ( status.mock ) return mockPhoto( seq );
 
-  return getCameraSession().captureStill();
-}
-
-/** Grab one live-view preview frame from the persistent camera session. */
-export function livePreviewFrame(): Promise<Buffer> {
-  return getCameraSession().previewFrame();
+  return sidecarCapture();
 }
 
 // ---------------------------------------------------------------------------
-// Mock camera (sharp-generated frames) — used when no camera is attached.
+// Mock camera (sharp-generated frames) — used when no camera/sidecar is present.
 // ---------------------------------------------------------------------------
 
 const MOCK_TINTS = [
@@ -161,7 +99,7 @@ export async function mockPhoto( seq = 0 ): Promise<Buffer> {
   <text x="50%" y="92%" text-anchor="middle" font-family="Arial, sans-serif"
         font-size="30" fill="#ffffff" opacity="0.85">${escapeXml( stamp )}</text>
 </svg>`;
-  
+
   return sharp( Buffer.from( svg ) ).jpeg( { quality : 88 } ).toBuffer();
 }
 
@@ -179,6 +117,6 @@ export async function mockPreviewFrame( tick: number ): Promise<Buffer> {
   <text x="50%" y="50%" text-anchor="middle" font-family="Arial, sans-serif"
         font-size="40" font-weight="700" fill="#ffffff" opacity="0.9">LIVE • mock camera</text>
 </svg>`;
-  
+
   return sharp( Buffer.from( svg ) ).jpeg( { quality : 70 } ).toBuffer();
 }
