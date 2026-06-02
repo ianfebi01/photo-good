@@ -1,10 +1,10 @@
 'use client'
 
-import { useRef, useEffect } from 'react'
+import { useRef, useEffect, useState } from 'react'
 import gsap from 'gsap'
 import { cn } from '@/lib/utils'
 
-const FRAMES = ['/frames/summer-day.png', '/frames/good-vibes.jpg']
+const FRAMES = ['/api/frames/preview?key=summer-day', '/api/frames/preview?key=good-vibes']
 
 // back → middle → front
 const STACK = [
@@ -19,6 +19,15 @@ export default function PhotoStack( { className }: { className?: string } ) {
   const orderRef    = useRef( [0, 1, 2] )   // order[pos] = cardIdx (0=back, 2=front)
   const nextFrame   = useRef( 1 )
   const busy        = useRef( false )
+  const [cacheBuster, setCacheBuster] = useState( '' )
+
+  useEffect( () => {
+    const timer = setTimeout( () => {
+      setCacheBuster( String( Date.now() ) )
+    }, 0 )
+
+    return () => clearTimeout( timer )
+  }, [] )
 
   useEffect( () => {
     // Set initial positions
@@ -48,7 +57,7 @@ export default function PhotoStack( { className }: { className?: string } ) {
         ease       : 'power2.in',
         onComplete : () => {
           // Update frame on the exiting card before recycling it
-          imgRefs.current[frontIdx].src = FRAMES[nextFrame.current % FRAMES.length]
+          imgRefs.current[frontIdx].src = `${FRAMES[nextFrame.current % FRAMES.length]}${cacheBuster ? `&t=${cacheBuster}` : ''}`
           nextFrame.current++
 
           // New order: old front → back, old back → middle, old middle → front
@@ -106,7 +115,7 @@ export default function PhotoStack( { className }: { className?: string } ) {
       clearInterval( id )
       gsap.killTweensOf( cardsRef.current )
     }
-  }, [] )
+  }, [cacheBuster] )
 
   // Initial frame assignment per card slot
   const initFrames = [FRAMES[0], FRAMES[1], FRAMES[0]]
@@ -135,7 +144,7 @@ export default function PhotoStack( { className }: { className?: string } ) {
                 ref={( el ) => {
                   if ( el ) imgRefs.current[cardIdx] = el 
                 }}
-                src={initFrames[cardIdx]}
+                src={`${initFrames[cardIdx]}${cacheBuster ? `&t=${cacheBuster}` : ''}`}
                 alt="photo frame"
                 className="w-full h-full object-contain"
               />
