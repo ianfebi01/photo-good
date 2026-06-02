@@ -81,6 +81,7 @@ async function generatePreviewBuffer( buffer: Buffer ) {
 export async function GET( request: Request ) {
   const { searchParams } = new URL( request.url )
   const key = searchParams.get( 'key' )
+  const raw = searchParams.get( 'raw' ) === 'true'
 
   if ( !key ) {
     return Response.json( { error : 'Missing key parameter' }, { status : 400 } )
@@ -93,6 +94,45 @@ export async function GET( request: Request ) {
 
   try {
     const buffer = await fs.readFile( frame.image )
+
+    if ( raw ) {
+      const detected = await detectGreenSlots( buffer )
+      if ( !detected || detected.slots.length === 0 ) {
+        return new Response( new Uint8Array( buffer ), {
+          headers : {
+            'Content-Type'  : frame.publicUrl.endsWith( '.png' ) ? 'image/png' : 'image/jpeg',
+            'Cache-Control' : 'no-store, no-cache, must-revalidate, proxy-revalidate',
+          },
+        } )
+      }
+
+      const overlayInfo = await sharp( buffer )
+        .ensureAlpha()
+        .raw()
+        .toBuffer( { resolveWithObject : true } )
+
+      const channels = overlayInfo.info.channels
+      const pixels = Buffer.from( overlayInfo.data )
+      for ( let i = 0; i < pixels.length; i += channels ) {
+        if ( isGreen( pixels[i], pixels[i + 1], pixels[i + 2] ) ) {
+          pixels[i + 3] = 0 // Make transparent
+        }
+      }
+
+      const overlayBuffer = await sharp( pixels, {
+        raw : { width : overlayInfo.info.width, height : overlayInfo.info.height, channels },
+      } )
+        .png()
+        .toBuffer()
+
+      return new Response( new Uint8Array( overlayBuffer ), {
+        headers : {
+          'Content-Type'  : 'image/png',
+          'Cache-Control' : 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        },
+      } )
+    }
+
     const composed = await generatePreviewBuffer( buffer )
 
     if ( !composed ) {

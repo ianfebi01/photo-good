@@ -20,11 +20,15 @@ export async function POST( request: Request ) {
   let files: string[] = [];
   let sessionId = "";
   let frameKey: string = DEFAULT_FRAME;
+  let adjustments: { x: number; y: number; zoom: number; filter: string }[] | undefined = undefined;
   try {
     const body = await request.json();
     files = Array.isArray( body.files ) ? body.files.map( String ) : [];
     sessionId = String( body.sessionId ?? "" );
     if ( typeof body.frame === "string" ) frameKey = body.frame;
+    if ( Array.isArray( body.adjustments ) ) {
+      adjustments = body.adjustments as { x: number; y: number; zoom: number; filter: string }[];
+    }
   } catch {
     return Response.json( { error : "Invalid JSON body" }, { status : 400 } );
   }
@@ -54,7 +58,7 @@ export async function POST( request: Request ) {
     const buffers = await Promise.all(
       files.map( ( f ) => readFile( path.join( CAPTURES_DIR, path.basename( f ) ) ) ),
     );
-    const strip = await composeStrip( buffers, frameKey );
+    const strip = await composeStrip( buffers, frameKey, adjustments );
     const name = `strip-${sessionId}-${frameKey}.jpg`;
     await writeFile( path.join( CAPTURES_DIR, name ), strip );
 

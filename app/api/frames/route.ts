@@ -76,6 +76,7 @@ export async function GET() {
     width      : f.width,
     height     : f.height,
     photoCount : f.slots.length,
+    slots      : f.slots,
     builtIn    : f.builtIn,
   } ) );
 

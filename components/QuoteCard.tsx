@@ -35,7 +35,7 @@ export default function QuoteCard( { className }: QuoteCardProps ) {
 
   useEffect( () => {
     const ctx = gsap.context( () => {
-      const tl = gsap.timeline( { repeat: -1, delay: 0.5 } )
+      const tl = gsap.timeline( { repeat : -1, delay : 0.5 } )
 
       const hold = 4
       const animDur = 0.6
@@ -44,7 +44,7 @@ export default function QuoteCard( { className }: QuoteCardProps ) {
         // Entrance
         tl.fromTo(
           [markRef.current, quoteRef.current, authorRef.current],
-          { autoAlpha: 0, y: 24 },
+          { autoAlpha : 0, y : 24 },
           {
             autoAlpha : 1,
             y         : 0,
@@ -56,7 +56,7 @@ export default function QuoteCard( { className }: QuoteCardProps ) {
         )
 
         // Hold
-        tl.to( {}, { duration: hold } )
+        tl.to( {}, { duration : hold } )
 
         // Exit
         tl.to(
@@ -83,21 +83,21 @@ export default function QuoteCard( { className }: QuoteCardProps ) {
       <span
         ref={markRef}
         className="text-white/30 text-8xl font-serif leading-none select-none -mt-4"
-        style={{ visibility: 'hidden' }}
+        style={{ visibility : 'hidden' }}
       >
         &ldquo;
       </span>
       <p
         ref={quoteRef}
         className="text-white text-base font-medium leading-relaxed flex-1"
-        style={{ visibility: 'hidden' }}
+        style={{ visibility : 'hidden' }}
       >
         {quotes[index].text}
       </p>
       <span
         ref={authorRef}
         className="text-white/60 text-sm mt-4 block"
-        style={{ visibility: 'hidden' }}
+        style={{ visibility : 'hidden' }}
       >
         — {quotes[index].author}
       </span>

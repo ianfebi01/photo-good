@@ -14,7 +14,8 @@ export type Phase =
   | "reviewing"
   | "composing"
   | "done"
-  | "error";
+  | "error"
+  | "adjusting";
 export type Status = {
   connected: boolean;
   mock: boolean;
@@ -58,7 +59,8 @@ export interface BoothState {
   retakePending: () => void;
   addFrame: ( frame: ClientFrame ) => void;
   takeShot: ( replaceIndex?: number ) => Promise<void>;
-  acceptPending: () => Promise<void>;
+  acceptPending: ( replaceIndex?: number ) => Promise<void>;
+  composeStripWithAdjustments: ( adjustments: { x: number; y: number; zoom: number; filter: string }[] ) => Promise<void>;
 }
 
 export const useBoothStore = create<BoothState>()(
@@ -185,8 +187,8 @@ export const useBoothStore = create<BoothState>()(
       },
 
       // ── Accept pending shot ────────────────────────
-      acceptPending : async () => {
-        const { pending, phase, photos, frames, frameKey, sessionId } = get();
+      acceptPending : async ( replaceIndex ) => {
+        const { pending, phase, photos, frames, frameKey } = get();
         if ( !pending || phase !== "reviewing" ) return;
         if ( _capturing ) return;
         _capturing = true;
@@ -195,36 +197,56 @@ export const useBoothStore = create<BoothState>()(
         try {
           const frame = frames.find( ( f ) => f.key === frameKey ) ?? frames[0];
           const photoCount = frame?.photoCount ?? 0;
-          const nextPhotos = [...photos, pending];
+          
+          const nextPhotos = [...photos];
+          if ( replaceIndex !== undefined && replaceIndex < photos.length ) {
+            nextPhotos[replaceIndex] = pending;
+          } else {
+            nextPhotos.push( pending );
+          }
           set( { photos : nextPhotos, pending : null } );
 
           if ( nextPhotos.length >= photoCount ) {
-            set( { phase : "composing" } );
-            const activeSession = sessionId || newId();
-            const res = await fetch( "/api/camera/compose", {
-              method  : "POST",
-              headers : { "Content-Type" : "application/json" },
-              body    : JSON.stringify( {
-                sessionId : activeSession,
-                frame     : frameKey,
-                files     : nextPhotos.map( ( s ) => s.file ),
-              } ),
-            } );
-            const composed = await res.json();
-            if ( !res.ok ) throw new Error( composed.error ?? "Compose failed" );
-            set( { strip : composed.url, phase : "done", step : 2 } );
+            set( { phase : "adjusting" } );
           } else {
             set( { phase : "idle" } );
             get().restartPreview();
           }
         } catch ( err ) {
           set( {
-            error : err instanceof Error ? err.message : "Compose failed",
+            error : err instanceof Error ? err.message : "Accept failed",
             phase : "error",
           } );
           get().restartPreview();
         } finally {
           _capturing = false;
+        }
+      },
+
+      // ── Compose strip with custom adjustments ──────
+      composeStripWithAdjustments : async ( adjustments ) => {
+        const { photos, frameKey, sessionId } = get();
+        set( { phase : "composing", error : null } );
+        try {
+          const activeSession = sessionId || newId();
+          const res = await fetch( "/api/camera/compose", {
+            method  : "POST",
+            headers : { "Content-Type" : "application/json" },
+            body    : JSON.stringify( {
+              sessionId : activeSession,
+              frame     : frameKey,
+              files     : photos.map( ( s ) => s.file ),
+              adjustments,
+            } ),
+          } );
+          const composed = await res.json();
+          if ( !res.ok ) throw new Error( composed.error ?? "Compose failed" );
+          set( { strip : composed.url, phase : "done", step : 2 } );
+        } catch ( err ) {
+          set( {
+            error : err instanceof Error ? err.message : "Compose failed",
+            phase : "error",
+          } );
         }
       },
     } ),

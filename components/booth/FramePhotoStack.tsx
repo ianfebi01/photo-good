@@ -296,7 +296,7 @@ export function FramePhotoStack( {
               className="absolute inset-0 bg-transparent w-fit mx-auto shadow-2xl transition-shadow duration-300 hover:shadow-black/20"
               style={{ transformOrigin : 'center bottom' }}
             >
-              <div className="w-fit h-full overflow-hidden rounded-none border border-neutral-100/50 bg-white">
+              <div className="w-fit h-full overflow-hidden">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   ref={( el ) => {
