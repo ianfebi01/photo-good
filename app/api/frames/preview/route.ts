@@ -45,10 +45,13 @@ async function generatePreviewBuffer( buffer: Buffer ) {
 
   const slotComposites = detected.slots.map( ( slot, idx ) => {
     const swatch = colors[idx % colors.length]
+    const padding = 8
+    const w = slot.width + padding * 2
+    const h = slot.height + padding * 2
     const fontSize = Math.max( 12, Math.floor( Math.min( slot.width, slot.height ) * 0.4 ) )
 
     const svg = Buffer.from(
-      `<svg width="${slot.width}" height="${slot.height}">
+      `<svg width="${w}" height="${h}">
         <rect width="100%" height="100%" fill="${swatch.bg}" />
         <text x="50%" y="54%" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-size="${fontSize}px" font-weight="bold" fill="${swatch.text}">${idx + 1}</text>
       </svg>`
@@ -56,8 +59,8 @@ async function generatePreviewBuffer( buffer: Buffer ) {
 
     return {
       input : svg,
-      left  : slot.left,
-      top   : slot.top,
+      left  : slot.left - padding,
+      top   : slot.top - padding,
     }
   } )
 
@@ -71,7 +74,7 @@ async function generatePreviewBuffer( buffer: Buffer ) {
     },
   } )
     .composite( [...slotComposites, { input : overlayBuffer, left : 0, top : 0 }] )
-    .jpeg( { quality : 90 } )
+    .png()
     .toBuffer()
 }
 
@@ -96,15 +99,15 @@ export async function GET( request: Request ) {
       return new Response( new Uint8Array( buffer ), {
         headers : {
           'Content-Type'  : frame.publicUrl.endsWith( '.png' ) ? 'image/png' : 'image/jpeg',
-          'Cache-Control' : 'public, max-age=86400',
+          'Cache-Control' : 'no-store, no-cache, must-revalidate, proxy-revalidate',
         },
       } )
     }
 
     return new Response( new Uint8Array( composed ), {
       headers : {
-        'Content-Type'  : 'image/jpeg',
-        'Cache-Control' : 'public, max-age=86400',
+        'Content-Type'  : 'image/png',
+        'Cache-Control' : 'no-store, no-cache, must-revalidate, proxy-revalidate',
       },
     } )
   } catch ( e ) {
@@ -154,7 +157,7 @@ export async function POST( request: Request ) {
 
   try {
     const composed = await generatePreviewBuffer( buffer )
-    const dataUrl = composed ? `data:image/jpeg;base64,${composed.toString( 'base64' )}` : null
+    const dataUrl = composed ? `data:image/png;base64,${composed.toString( 'base64' )}` : null
 
     return Response.json( {
       width      : detected.width,

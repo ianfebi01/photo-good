@@ -19,6 +19,15 @@ export default function AdminPage() {
   const [loading, setLoading] = useState( true )
   const [error, setError] = useState<string | null>( null )
   const [deletingKey, setDeletingKey] = useState<string | null>( null )
+  const [cacheBuster, setCacheBuster] = useState( '' )
+
+  useEffect( () => {
+    const timer = setTimeout( () => {
+      setCacheBuster( String( Date.now() ) )
+    }, 0 )
+
+    return () => clearTimeout( timer )
+  }, [] )
 
   useEffect( () => {
     let active = true
@@ -201,7 +210,7 @@ export default function AdminPage() {
                   <div className="aspect-3/4 bg-transparent p-4 border-b flex items-center justify-center relative overflow-hidden group">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
-                      src={`/api/frames/preview?key=${frame.key}`}
+                      src={`/api/frames/preview?key=${frame.key}${cacheBuster ? `&t=${cacheBuster}` : ''}`}
                       alt={frame.label}
                       className="h-full w-full object-contain drop-shadow transition-transform duration-300 group-hover:scale-105"
                     />

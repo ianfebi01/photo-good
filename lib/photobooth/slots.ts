@@ -4,13 +4,26 @@ import sharp from "sharp";
 
 import type { FrameSlot } from "./config";
 
-/**
- * Treat a pixel as "slot green" when it's clearly green-dominant. Matches the
- * solid greens used by the bundled summer-day and good-vibes templates and
- * what a user is expected to paint over their slots.
- */
 export function isGreen( r: number, g: number, b: number ): boolean {
-  return g > 80 && g > r * 1.2 && g > b * 1.2 && r < 130 && b < 130;
+  // Fast RGB pre-filter for performance and slot intensity
+  if ( g <= r || g <= b || g < 95 ) return false;
+
+  const max = g;
+  const min = Math.min( r, b );
+  const d = max - min;
+  const l = ( max + min ) / 510;
+
+  // Avoid near-neutrals (gray, white, black)
+  if ( d < 8 ) return false;
+
+  let h = ( b - r ) / d + 2;
+  h = ( h * 60 ) % 360;
+  if ( h < 0 ) h += 360;
+
+  // Strict green hue (70..175), minimum saturation (0.15) and lightness range (0.20..0.82)
+  // - l < 0.82 prevents matching bright white elements (like flower petals) with JPEG noise.
+  // - l > 0.20 and g >= 95 protects dark anti-aliased outlines/black borders from becoming transparent.
+  return h >= 70 && h <= 175 && ( d / max ) > 0.15 && l < 0.82 && l > 0.20;
 }
 
 export type DetectResult = {

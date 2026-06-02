@@ -57,12 +57,16 @@ export async function composeStrip(
   const photoOverlays = await Promise.all(
     photos.slice( 0, frame.slots.length ).map( async ( buf, i ) => {
       const slot = frame.slots[i];
+      const padding = 8;
+      const w = slot.width + padding * 2;
+      const h = slot.height + padding * 2;
+
       const input = await sharp( buf )
-        .resize( slot.width, slot.height, { fit : "cover", position : "centre" } )
+        .resize( w, h, { fit : "cover", position : "centre" } )
         .png()
         .toBuffer();
 
-      return { input, left : slot.left, top : slot.top };
+      return { input, left : slot.left - padding, top : slot.top - padding };
     } ),
   );
 
