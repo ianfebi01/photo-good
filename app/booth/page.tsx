@@ -10,14 +10,29 @@ import { StepResult } from '@/components/booth/StepResult'
 import { StepSelectFrame } from '@/components/booth/StepSelectFrame'
 
 export default function BoothPage() {
-  const { step, setStatus, setFrames } = useBoothStore()
+  const { step, setStatus, setFrames, restartPreview } = useBoothStore()
 
   useEffect( () => {
-    fetch( '/api/camera/status' )
-      .then( ( r ) => r.json() )
-      .then( setStatus )
-      .catch( () => setStatus( { connected : false, mock : true, gphoto2 : false } ) )
-  }, [setStatus] )
+    let prevConnected: boolean | null = null
+
+    const checkStatus = () => {
+      fetch( '/api/camera/status' )
+        .then( ( r ) => r.json() )
+        .then( ( s ) => {
+          if ( prevConnected !== null && prevConnected !== s.connected ) {
+            restartPreview()
+          }
+          prevConnected = s.connected
+          setStatus( s )
+        } )
+        .catch( () => setStatus( { connected : false, mock : true, gphoto2 : false } ) )
+    }
+
+    checkStatus()
+    const interval = setInterval( checkStatus, 4_000 )
+
+    return () => clearInterval( interval )
+  }, [setStatus, restartPreview] )
 
   useEffect( () => {
     fetch( '/api/frames' )
