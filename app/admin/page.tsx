@@ -198,10 +198,10 @@ export default function AdminPage() {
               >
                 <div>
                   {/* Aspect Ratio Controlled Preview */}
-                  <div className="aspect-3/4 bg-neutral-100/60 p-4 border-b flex items-center justify-center relative overflow-hidden group">
+                  <div className="aspect-3/4 bg-transparent p-4 border-b flex items-center justify-center relative overflow-hidden group">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
-                      src={frame.publicUrl}
+                      src={`/api/frames/preview?key=${frame.key}`}
                       alt={frame.label}
                       className="h-full w-full object-contain drop-shadow transition-transform duration-300 group-hover:scale-105"
                     />
