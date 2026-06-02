@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { Camera, Check, RotateCcw } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -88,13 +89,34 @@ export function StepCapture() {
               </div>
             )}
 
+            {canCapture && (
+              <div className="absolute inset-x-0 bottom-4 flex justify-center">
+                <Button
+                  size="icon"
+                  className="h-16 w-16 rounded-full shadow-lg"
+                  onClick={() => takeShot()}
+                >
+                  <Camera className="h-7 w-7" />
+                </Button>
+              </div>
+            )}
+
             {reviewing && (
-              <div className="absolute inset-x-0 bottom-0 flex items-center justify-center gap-2 bg-linear-to-t from-black/70 to-transparent px-3 py-4">
-                <Button onClick={acceptPending}>Keep this shot</Button>
-                <Button variant="secondary"
+              <div className="absolute inset-x-0 bottom-4 flex items-center justify-center gap-3">
+                <Button
+                  size="icon"
+                  variant="secondary"
+                  className="h-14 w-14 rounded-full shadow-lg"
                   onClick={retakePending}
                 >
-                  Retake
+                  <RotateCcw className="h-6 w-6" />
+                </Button>
+                <Button
+                  size="icon"
+                  className="h-14 w-14 rounded-full shadow-lg"
+                  onClick={acceptPending}
+                >
+                  <Check className="h-6 w-6" />
                 </Button>
               </div>
             )}
@@ -110,21 +132,6 @@ export function StepCapture() {
               />
 
               <div className="flex gap-2">
-                <Button
-                  className="flex-1"
-                  onClick={() => takeShot()}
-                  disabled={!canCapture}
-                >
-                  {composing
-                    ? 'Composing…'
-                    : running
-                      ? 'Capturing…'
-                      : reviewing
-                        ? 'Review the shot above'
-                        : remaining === 0
-                          ? 'All shots taken'
-                          : `Capture photo (${remaining} left)`}
-                </Button>
                 <Button variant="outline"
                   onClick={reset}
                   disabled={busy}
