@@ -119,7 +119,7 @@ export function FramesManager() {
               <LayoutGrid className="size-4 text-neutral-600" />
             </div>
           </div>
-          <p className="text-lg font-bold text-neutral-900">{totalCount}</p>
+          <p className="font-sans text-lg font-bold text-neutral-900">{totalCount}</p>
           <p className="mt-0.5 text-xs text-neutral-400">Total templates</p>
         </div>
 
@@ -129,7 +129,7 @@ export function FramesManager() {
               <Images className="size-4 text-neutral-600" />
             </div>
           </div>
-          <p className="text-lg font-bold text-neutral-900">{builtInCount}</p>
+          <p className="font-sans text-lg font-bold text-neutral-900">{builtInCount}</p>
           <p className="mt-0.5 text-xs text-neutral-400">Built-in</p>
         </div>
 
@@ -139,7 +139,7 @@ export function FramesManager() {
               <Sparkles className="size-4 text-neutral-600" />
             </div>
           </div>
-          <p className="text-lg font-bold text-neutral-900">{customCount}</p>
+          <p className="font-sans text-lg font-bold text-neutral-900">{customCount}</p>
           <p className="mt-0.5 text-xs text-neutral-400">Custom uploads</p>
         </div>
       </div>
@@ -197,7 +197,7 @@ export function FramesManager() {
 
                 <div className="pt-3 flex flex-col gap-1.5">
                   <div className="flex items-start justify-between gap-2">
-                    <h3 className="line-clamp-1 text-sm font-semibold text-neutral-900">
+                    <h3 className="line-clamp-1 font-sans text-xs font-semibold text-neutral-900">
                       {frame.label}
                     </h3>
                     {frame.builtIn ? (
