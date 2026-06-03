@@ -96,7 +96,7 @@ export function AddFrameDialog( { onUploaded, trigger }: AddFrameDialogProps ) {
   }
 
   const handleCopyGreenColor = () => {
-    navigator.clipboard.writeText( '#00A651' )
+    navigator.clipboard.writeText( '#00bf63' )
     setCopied( true )
     setTimeout( () => setCopied( false ), 2000 )
   }
@@ -334,7 +334,7 @@ export function AddFrameDialog( { onUploaded, trigger }: AddFrameDialogProps ) {
                 <input
                   ref={fileInputRef}
                   type="file"
-                  accept="image/png,image/jpeg,image/webp"
+                  accept="image/png"
                   onChange={( e ) => handleFileChange( e.target.files?.[0] ?? null )}
                   className="hidden"
                   disabled={uploading}
@@ -395,9 +395,9 @@ export function AddFrameDialog( { onUploaded, trigger }: AddFrameDialogProps ) {
                 >
                   <div className="flex items-center gap-2">
                     <span className="size-4 rounded-full border border-neutral-300"
-                      style={{ backgroundColor : '#00A651' }}
+                      style={{ backgroundColor : '#00bf63' }}
                     />
-                    <span>#00A651</span>
+                    <span>#00bf63</span>
                   </div>
                   <span className="text-[10px] text-primary font-semibold font-sans opacity-0 group-hover:opacity-100 transition-opacity">
                     {copied ? 'Copied!' : 'Click to copy'}

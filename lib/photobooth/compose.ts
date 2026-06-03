@@ -3,7 +3,7 @@ import "server-only";
 import sharp from "sharp";
 
 import { type FrameDef, getFrame } from "./config";
-import { isGreen } from "./slots";
+import { clearGreenPixels } from "./slots";
 
 /**
  * Cached frame overlays keyed by frame key + image-path mtime fingerprint.
@@ -24,11 +24,7 @@ async function buildFrameOverlay( frame: FrameDef ): Promise<Buffer> {
 
   const channels = info.channels;
   const pixels = Buffer.from( data );
-  for ( let i = 0; i < pixels.length; i += channels ) {
-    if ( isGreen( pixels[i], pixels[i + 1], pixels[i + 2] ) ) {
-      pixels[i + 3] = 0;
-    }
-  }
+  clearGreenPixels( pixels, info.width, info.height, channels );
 
   const overlay = await sharp( pixels, {
     raw : { width : info.width, height : info.height, channels },

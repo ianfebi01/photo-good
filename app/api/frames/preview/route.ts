@@ -1,13 +1,13 @@
 import sharp from 'sharp'
 import fs from 'node:fs/promises'
 import { getFrame } from '@/lib/photobooth/config'
-import { detectGreenSlots, isGreen } from '@/lib/photobooth/slots'
+import { detectGreenSlots, clearGreenPixels } from '@/lib/photobooth/slots'
 import { getCurrentUser } from '@/lib/auth/session'
 import { hasRole } from '@/lib/auth/types'
 
 export const runtime = 'nodejs'
 
-const ALLOWED_TYPES = new Set( ['image/png', 'image/jpeg', 'image/webp'] )
+const ALLOWED_TYPES = new Set( ['image/png'] )
 const MAX_BYTES = 8 * 1024 * 1024 // 8 MB
 
 async function generatePreviewBuffer( buffer: Buffer ) {
@@ -25,11 +25,7 @@ async function generatePreviewBuffer( buffer: Buffer ) {
 
   const channels = overlayInfo.info.channels
   const pixels = Buffer.from( overlayInfo.data )
-  for ( let i = 0; i < pixels.length; i += channels ) {
-    if ( isGreen( pixels[i], pixels[i + 1], pixels[i + 2] ) ) {
-      pixels[i + 3] = 0 // Make transparent
-    }
-  }
+  clearGreenPixels( pixels, overlayInfo.info.width, overlayInfo.info.height, channels )
 
   const overlayBuffer = await sharp( pixels, {
     raw : { width : overlayInfo.info.width, height : overlayInfo.info.height, channels },
@@ -115,11 +111,7 @@ export async function GET( request: Request ) {
 
       const channels = overlayInfo.info.channels
       const pixels = Buffer.from( overlayInfo.data )
-      for ( let i = 0; i < pixels.length; i += channels ) {
-        if ( isGreen( pixels[i], pixels[i + 1], pixels[i + 2] ) ) {
-          pixels[i + 3] = 0 // Make transparent
-        }
-      }
+      clearGreenPixels( pixels, overlayInfo.info.width, overlayInfo.info.height, channels )
 
       const overlayBuffer = await sharp( pixels, {
         raw : { width : overlayInfo.info.width, height : overlayInfo.info.height, channels },

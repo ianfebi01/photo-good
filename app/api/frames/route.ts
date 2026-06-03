@@ -17,7 +17,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const MAX_BYTES = 8 * 1024 * 1024; // 8 MB upload cap
-const ALLOWED_TYPES = new Set( ["image/png", "image/jpeg", "image/webp"] );
+const ALLOWED_TYPES = new Set( ["image/png"] );
 
 function slugify( raw: string ): string {
   return raw
@@ -124,7 +124,7 @@ export async function POST( request: Request ) {
   }
   if ( !ALLOWED_TYPES.has( file.type ) ) {
     return Response.json(
-      { error : "Unsupported image type (use PNG, JPEG, or WEBP)" },
+      { error : "Unsupported image type (use PNG)" },
       { status : 400 },
     );
   }
