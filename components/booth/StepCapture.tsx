@@ -72,8 +72,12 @@ export function StepCapture() {
   )
 
   const isSlotInteractive = useCallback(
-    ( i: number ) => ( reviewing ? i === activeSlotIdx : i < photos.length ),
-    [reviewing, activeSlotIdx, photos.length],
+    ( i: number ) => {
+      if ( reviewing ) return i === activeSlotIdx
+
+      return i < photos.length && adjustments[i].zoom > 1
+    },
+    [reviewing, activeSlotIdx, photos.length, adjustments],
   )
 
   // pending takes priority over stored photo when reviewing its slot
@@ -109,11 +113,21 @@ export function StepCapture() {
   }
 
   const handleCompose = () => {
+    const scale = frameContainerRef.current
+      ? frameContainerRef.current.clientHeight / frame.height
+      : 1
     const finalAdjustments = adjustments
       .slice( 0, photoCount )
-      .map( ( adj ) => ( { ...adj, filter : globalFilter } ) )
+      .map( ( adj ) => ( {
+        ...adj,
+        filter : globalFilter,
+        x      : adj.x / scale,
+        y      : adj.y / scale,
+      } ) )
     composeStripWithAdjustments( finalAdjustments )
   }
+
+  const frameContainerRef = useRef<HTMLDivElement>( null )
 
   const dragStartRef = useRef<{
     x: number
@@ -133,23 +147,54 @@ export function StepCapture() {
     }
   }
 
-  const handleMouseMove = useCallback(
-    ( e: MouseEvent ) => {
-      if ( !dragStartRef.current || activeSlotIdx === null ) return
-      const dx = e.clientX - dragStartRef.current.x
-      const dy = e.clientY - dragStartRef.current.y
+  const handleZoomChange = useCallback(
+    ( i: number, newZoom: number ) => {
+      const clampedZoom = Math.max( 1.0, Math.min( 2.5, newZoom ) )
       setAdjustments( ( prev ) => {
+        const scale = frameContainerRef.current
+          ? frameContainerRef.current.clientHeight / frame.height
+          : 1
+        const slot = frame.slots[i]
+        const maxDx = slot ? ( slot.width * scale * ( clampedZoom - 1 ) ) / 2 : 0
+        const maxDy = slot ? ( slot.height * scale * ( clampedZoom - 1 ) ) / 2 : 0
         const next = [...prev]
-        next[activeSlotIdx] = {
-          ...next[activeSlotIdx],
-          x : dragStartRef.current!.initX + dx,
-          y : dragStartRef.current!.initY + dy,
+        next[i] = {
+          ...next[i],
+          zoom : clampedZoom,
+          x    : Math.max( -maxDx, Math.min( maxDx, next[i].x ) ),
+          y    : Math.max( -maxDy, Math.min( maxDy, next[i].y ) ),
         }
 
         return next
       } )
     },
-    [activeSlotIdx],
+    [frame],
+  )
+
+  const handleMouseMove = useCallback(
+    ( e: MouseEvent ) => {
+      if ( !dragStartRef.current || activeSlotIdx === null ) return
+      const dx = e.clientX - dragStartRef.current.x
+      const dy = e.clientY - dragStartRef.current.y
+      const scale = frameContainerRef.current
+        ? frameContainerRef.current.clientHeight / frame.height
+        : 1
+      const slot = frame.slots[activeSlotIdx]
+      setAdjustments( ( prev ) => {
+        const zoom = prev[activeSlotIdx].zoom
+        const maxDx = slot ? ( slot.width * scale * ( zoom - 1 ) ) / 2 : 0
+        const maxDy = slot ? ( slot.height * scale * ( zoom - 1 ) ) / 2 : 0
+        const next = [...prev]
+        next[activeSlotIdx] = {
+          ...next[activeSlotIdx],
+          x : Math.max( -maxDx, Math.min( maxDx, dragStartRef.current!.initX + dx ) ),
+          y : Math.max( -maxDy, Math.min( maxDy, dragStartRef.current!.initY + dy ) ),
+        }
+
+        return next
+      } )
+    },
+    [activeSlotIdx, frame],
   )
 
   const handleMouseUp = useCallback( () => {
@@ -173,18 +218,25 @@ export function StepCapture() {
       const touch = e.touches[0]
       const dx = touch.clientX - dragStartRef.current.x
       const dy = touch.clientY - dragStartRef.current.y
+      const scale = frameContainerRef.current
+        ? frameContainerRef.current.clientHeight / frame.height
+        : 1
+      const slot = frame.slots[activeSlotIdx]
       setAdjustments( ( prev ) => {
+        const zoom = prev[activeSlotIdx].zoom
+        const maxDx = slot ? ( slot.width * scale * ( zoom - 1 ) ) / 2 : 0
+        const maxDy = slot ? ( slot.height * scale * ( zoom - 1 ) ) / 2 : 0
         const next = [...prev]
         next[activeSlotIdx] = {
           ...next[activeSlotIdx],
-          x : dragStartRef.current!.initX + dx,
-          y : dragStartRef.current!.initY + dy,
+          x : Math.max( -maxDx, Math.min( maxDx, dragStartRef.current!.initX + dx ) ),
+          y : Math.max( -maxDy, Math.min( maxDy, dragStartRef.current!.initY + dy ) ),
         }
 
         return next
       } )
     },
-    [activeSlotIdx],
+    [activeSlotIdx, frame],
   )
 
   const handleTouchEnd = useCallback( () => {
@@ -261,12 +313,12 @@ export function StepCapture() {
               </div>
             </div>
 
-            <div className="bg-white p-8 flex flex-col justify-center">
-              <div className="mb-8">
+            <div className="bg-white flex flex-col h-full overflow-hidden">
+              <div className="grow pt-8 pb-4 px-8 flex flex-col">
                 <p className="text-xs font-bold uppercase tracking-widest text-primary">
                   Choose your style
                 </p>
-                <h1 className="mt-2 text-3xl font-bold text-foreground">
+                <h1 className="my-2 text-3xl font-bold text-foreground">
                   Apply filters
                 </h1>
                 <FilterPicker
@@ -317,6 +369,8 @@ export function StepCapture() {
             onSlotClick={setSelectedSlotIdx}
             onMouseDown={handleMouseDown}
             onTouchStart={handleTouchStart}
+            containerRef={frameContainerRef}
+            onZoomChange={adjusting ? handleZoomChange : undefined}
           />
         )}
       </div>

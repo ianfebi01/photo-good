@@ -78,28 +78,39 @@ export async function composeStrip(
       const coverW = origW * coverScale;
       const coverH = origH * coverScale;
 
-      const zoomedW = coverW * zoom;
-      const zoomedH = coverH * zoom;
+      // Use integer resize dimensions so crop math is exact
+      const rZoomedW = Math.round( coverW * zoom );
+      const rZoomedH = Math.round( coverH * zoom );
 
-      // Position of top-left corner of zoomed image relative to container slot
-      const posX = ( w - zoomedW ) / 2 + dx;
-      const posY = ( h - zoomedH ) / 2 + dy;
+      // Crop position in the resized image (may be out-of-bounds when panned past edge)
+      const leftRaw = ( rZoomedW - w ) / 2 - dx;
+      const topRaw  = ( rZoomedH - h ) / 2 - dy;
 
-      // Position to extract (crop) inside the zoomed image
-      let left = -posX;
-      let top = -posY;
+      // Ceil padding ensures the extended image always covers the full extract window
+      const leftPad   = Math.max( 0, Math.ceil( -leftRaw ) );
+      const topPad    = Math.max( 0, Math.ceil( -topRaw ) );
+      const rightPad  = Math.max( 0, Math.ceil( leftRaw + w - rZoomedW ) );
+      const bottomPad = Math.max( 0, Math.ceil( topRaw  + h - rZoomedH ) );
 
-      left = Math.max( 0, Math.min( left, zoomedW - w ) );
-      top = Math.max( 0, Math.min( top, zoomedH - h ) );
+      let img = sharp( buf ).resize( rZoomedW, rZoomedH );
 
-      let img = sharp( buf )
-        .resize( Math.round( zoomedW ), Math.round( zoomedH ) )
-        .extract( {
-          left   : Math.round( left ),
-          top    : Math.round( top ),
-          width  : w,
-          height : h,
+      if ( leftPad > 0 || topPad > 0 || rightPad > 0 || bottomPad > 0 ) {
+        img = img.extend( {
+          left       : leftPad,
+          top        : topPad,
+          right      : rightPad,
+          bottom     : bottomPad,
+          background : { r : 255, g : 255, b : 255, alpha : 1 },
         } );
+      }
+
+      // Floor keeps extractLeft within image bounds; leftPad=0 when leftRaw>=0
+      img = img.extract( {
+        left   : Math.max( 0, Math.floor( leftRaw ) ),
+        top    : Math.max( 0, Math.floor( topRaw ) ),
+        width  : w,
+        height : h,
+      } );
 
       // Apply color filter transformations
       if ( filter === "grayscale" ) {

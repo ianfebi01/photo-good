@@ -1,3 +1,5 @@
+import type { RefObject } from 'react'
+
 import { cn } from '@/lib/utils'
 import type { ClientFrame } from '@/lib/photobooth/frames.client'
 import type { Shot } from '@/store/boothStore'
@@ -16,6 +18,8 @@ interface FramePreviewProps {
   onSlotClick: ( i: number ) => void
   onMouseDown: ( e: React.MouseEvent, i: number ) => void
   onTouchStart: ( e: React.TouchEvent, i: number ) => void
+  containerRef?: RefObject<HTMLDivElement | null>
+  onZoomChange?: ( i: number, zoom: number ) => void
 }
 
 export function FramePreview( {
@@ -31,11 +35,14 @@ export function FramePreview( {
   onSlotClick,
   onMouseDown,
   onTouchStart,
+  containerRef,
+  onZoomChange,
 }: FramePreviewProps ) {
   return (
     <div className="flex flex-col overflow-hidden xl:col-start-9 xl:col-span-4 xl:row-start-1 xl:row-span-10">
       <div className="relative flex-1 flex items-center justify-center overflow-hidden">
         <div
+          ref={containerRef}
           className="relative overflow-hidden max-h-full"
           style={{
             aspectRatio : `${frame.width} / ${frame.height}`,
@@ -101,6 +108,45 @@ export function FramePreview( {
                     {i + 1}
                   </div>
                 )}
+              </div>
+            )
+          } )}
+
+          {/* Zoom controls — one per occupied slot, above frame overlay */}
+          {onZoomChange && frame.slots.map( ( slot, i ) => {
+            if ( i >= photos.length ) return null
+            const adj = adjustments[i]
+
+            return (
+              <div
+                key={`zoom-${i}`}
+                className="absolute z-40 flex items-center gap-0.5 rounded-full bg-black/60 backdrop-blur-sm px-1.5 py-0.5"
+                style={{
+                  left      : `${( ( slot.left + slot.width / 2 ) / frame.width ) * 100}%`,
+                  top       : `${( ( slot.top + slot.height ) / frame.height ) * 100}%`,
+                  transform : 'translate(-50%, calc(-100% - 4px))',
+                }}
+                onClick={( e ) => e.stopPropagation()}
+                onMouseDown={( e ) => e.stopPropagation()}
+                onTouchStart={( e ) => e.stopPropagation()}
+              >
+                <button
+                  className="text-white text-sm font-bold w-5 h-5 flex items-center justify-center rounded-full hover:bg-white/20 transition-colors disabled:opacity-30"
+                  disabled={adj.zoom <= 1.0}
+                  onClick={() => onZoomChange( i, Math.max( 1.0, Number( ( adj.zoom - 0.1 ).toFixed( 1 ) ) ) )}
+                >
+                  −
+                </button>
+                <span className="text-white text-[10px] font-mono w-7 text-center tabular-nums select-none">
+                  {adj.zoom.toFixed( 1 )}×
+                </span>
+                <button
+                  className="text-white text-sm font-bold w-5 h-5 flex items-center justify-center rounded-full hover:bg-white/20 transition-colors disabled:opacity-30"
+                  disabled={adj.zoom >= 2.5}
+                  onClick={() => onZoomChange( i, Math.min( 2.5, Number( ( adj.zoom + 0.1 ).toFixed( 1 ) ) ) )}
+                >
+                  +
+                </button>
               </div>
             )
           } )}

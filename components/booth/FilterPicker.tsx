@@ -1,5 +1,3 @@
-import { Sliders } from 'lucide-react'
-
 import type { Shot } from '@/store/boothStore'
 import { cn } from '@/lib/utils'
 import { filtersList, getCSSFilter } from './filters'
@@ -25,10 +23,6 @@ export function FilterPicker( {
   return (
     <div className="flex flex-row items-center gap-6 w-full h-full">
       <div className="flex flex-col gap-1.5 flex-2 justify-center h-full overflow-hidden">
-        <div className="flex items-center gap-1.5 text-xs font-bold text-white font-sans">
-          <Sliders className="size-3.5 text-white" />
-          <span>Choose Color Filter</span>
-        </div>
         <div className="flex gap-2 overflow-x-auto scrollbar-none h-full items-center">
           {filtersList.map( ( f ) => (
             <button
