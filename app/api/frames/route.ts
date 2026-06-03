@@ -10,6 +10,8 @@ import {
   loadAllFrames,
 } from "@/lib/photobooth/config";
 import { detectGreenSlots } from "@/lib/photobooth/slots";
+import { getCurrentUser } from "@/lib/auth/session";
+import { hasRole } from "@/lib/auth/types";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -66,6 +68,15 @@ async function writeManifest( manifest: { frames: ManifestEntry[] } ) {
   );
 }
 
+async function requireFrameAdmin() {
+  const user = await getCurrentUser();
+  if ( !user || !hasRole( user.role, "admin" ) ) {
+    return Response.json( { error : "Forbidden" }, { status : 403 } );
+  }
+
+  return null;
+}
+
 /** Return the full frame catalog (built-in + user-uploaded) for the client. */
 export async function GET() {
   const frames = await loadAllFrames();
@@ -89,6 +100,9 @@ export async function GET() {
  *   - label: human-readable name
  */
 export async function POST( request: Request ) {
+  const forbidden = await requireFrameAdmin();
+  if ( forbidden ) return forbidden;
+
   let form: FormData;
   try {
     form = await request.formData();
@@ -189,6 +203,9 @@ export async function POST( request: Request ) {
  *   - key: the frame key (must start with "user-")
  */
 export async function DELETE( request: Request ) {
+  const forbidden = await requireFrameAdmin();
+  if ( forbidden ) return forbidden;
+
   const { searchParams } = new URL( request.url );
   const key = searchParams.get( "key" );
 

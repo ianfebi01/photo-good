@@ -2,6 +2,8 @@ import sharp from 'sharp'
 import fs from 'node:fs/promises'
 import { getFrame } from '@/lib/photobooth/config'
 import { detectGreenSlots, isGreen } from '@/lib/photobooth/slots'
+import { getCurrentUser } from '@/lib/auth/session'
+import { hasRole } from '@/lib/auth/types'
 
 export const runtime = 'nodejs'
 
@@ -159,6 +161,11 @@ export async function GET( request: Request ) {
 }
 
 export async function POST( request: Request ) {
+  const user = await getCurrentUser()
+  if ( !user || !hasRole( user.role, 'admin' ) ) {
+    return Response.json( { error : 'Forbidden' }, { status : 403 } )
+  }
+
   let form: FormData
   try {
     form = await request.formData()
