@@ -1,115 +1,148 @@
 import Link from 'next/link'
-import { Camera, Images, ShieldCheck, Sparkles } from 'lucide-react'
+import { ArrowRight, Camera, Images, ShieldCheck, Sparkles } from 'lucide-react'
 
-import AppCard from '@/components/AppCard'
 import { requireUser } from '@/lib/auth/require'
 import { hasRole } from '@/lib/auth/types'
 
 export default async function DashboardPage() {
   const user = await requireUser()
 
+  const dateLabel = new Date().toLocaleDateString( 'en-US', {
+    weekday : 'long',
+    year    : 'numeric',
+    month   : 'long',
+    day     : 'numeric',
+  } )
+
   return (
     <div className="space-y-6">
-      <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
+      {/* Header */}
+      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
-          <p className="text-xs font-bold uppercase tracking-widest text-primary">
-            Dashboard
-          </p>
-          <h1 className="mt-2 text-4xl font-bold text-foreground font-sans">
-            Welcome, {user.name}
+          <p className="text-xs text-neutral-400">{dateLabel}</p>
+          <h1 className="mt-1 text-xl font-bold text-neutral-900">
+            Welcome back, {user.name.split( ' ' )[0]}
           </h1>
-          <p className="mt-2 max-w-2xl text-sm text-muted-foreground font-inter">
-            Manage booth operations, frame templates, and team access from one
-            secure workspace.
-          </p>
         </div>
         <Link
           href="/booth"
-          className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-bold uppercase tracking-wide text-white transition hover:bg-primary/90"
+          className="inline-flex h-9 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-white transition hover:bg-primary/90"
         >
           <Camera className="size-4" />
           Open Booth
         </Link>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
-        <AppCard className="bg-primary text-white">
-          <Sparkles className="mb-5 size-6" />
-          <p className="text-3xl font-bold">Live</p>
-          <p className="mt-1 text-sm text-white/70 font-poppins">
-            Booth tools are ready.
-          </p>
-        </AppCard>
-        <AppCard className="bg-secondary text-secondary-foreground">
-          <Images className="mb-5 size-6 text-primary" />
-          <p className="text-3xl font-bold">Frames</p>
-          <p className="mt-1 text-sm text-muted-foreground font-poppins">
-            Upload and review templates.
-          </p>
-        </AppCard>
-        <AppCard className="bg-accent text-accent-foreground">
-          <ShieldCheck className="mb-5 size-6" />
-          <p className="text-3xl font-bold">
-            {user.role.replace( '_', ' ' )}
-          </p>
-          <p className="mt-1 text-sm text-accent-foreground/70 font-poppins">
-            Active RBAC role.
-          </p>
-        </AppCard>
-      </div>
+      {/* Stat cards */}
+      <div className="grid gap-4 sm:grid-cols-3">
+        <div className="rounded-2xl border border-neutral-100 bg-white p-5 transition-all duration-300 ease-in-out hover:shadow-xl">
+          <div className="mb-4 flex items-start justify-between">
+            <div className="flex size-9 items-center justify-center rounded-xl bg-secondary">
+              <Sparkles className="size-4 text-neutral-600" />
+            </div>
+            <span className="rounded-full bg-green-50 px-2.5 py-0.5 text-[11px] font-semibold text-green-600">
+              Active
+            </span>
+          </div>
+          <p className="text-lg font-bold text-neutral-900">Live</p>
+          <p className="mt-0.5 text-xs text-neutral-400">Booth tools are ready</p>
+        </div>
 
-      <div className="grid gap-4 lg:grid-cols-[1.3fr_0.7fr]">
-        <AppCard>
-          <div className="mb-6 flex items-center justify-between gap-3">
-            <div>
-              <h2 className="text-xl font-bold text-foreground">
-                Quick actions
-              </h2>
-              <p className="text-sm text-muted-foreground font-poppins">
-                Common booth management tasks.
-              </p>
+        <div className="rounded-2xl border border-neutral-100 bg-white p-5 transition-all duration-300 ease-in-out hover:shadow-xl">
+          <div className="mb-4">
+            <div className="flex size-9 items-center justify-center rounded-xl bg-accent/40">
+              <Images className="size-4 text-neutral-600" />
             </div>
           </div>
-          <div className="grid gap-3 sm:grid-cols-2">
+          <p className="text-lg font-bold text-neutral-900">Frames</p>
+          <p className="mt-0.5 text-xs text-neutral-400">Upload & review templates</p>
+        </div>
+
+        <div className="rounded-2xl border border-neutral-100 bg-white p-5 transition-all duration-300 ease-in-out hover:shadow-xl">
+          <div className="mb-4">
+            <div className="flex size-9 items-center justify-center rounded-xl bg-neutral-100">
+              <ShieldCheck className="size-4 text-neutral-600" />
+            </div>
+          </div>
+          <p className="text-lg font-bold capitalize text-neutral-900">
+            {user.role.replace( '_', ' ' )}
+          </p>
+          <p className="mt-0.5 text-xs text-neutral-400">Your active RBAC role</p>
+        </div>
+      </div>
+
+      {/* Content grid */}
+      <div className="grid gap-4 lg:grid-cols-[1fr_280px]">
+        {/* Quick actions */}
+        <div className="rounded-2xl border border-neutral-100 bg-white p-5 transition-all duration-300 ease-in-out hover:shadow-xl">
+          <h2 className="text-sm font-bold text-neutral-900">Quick Actions</h2>
+          <p className="mt-0.5 text-xs text-neutral-400">Common booth management tasks</p>
+
+          <div className="mt-4 grid gap-2 sm:grid-cols-2">
             <Link
               href="/booth"
-              className="rounded-2xl bg-secondary p-4 text-sm font-bold text-foreground transition hover:bg-secondary/80"
+              className="group flex items-center justify-between rounded-xl border border-neutral-100 bg-neutral-50 p-4 transition hover:border-neutral-200 hover:bg-neutral-100"
             >
-              Start a capture session
+              <div>
+                <p className="text-sm font-semibold text-neutral-900">Start a capture session</p>
+                <p className="mt-0.5 text-xs text-neutral-400">Open the photo booth</p>
+              </div>
+              <ArrowRight className="size-4 text-neutral-300 transition group-hover:text-neutral-600" />
             </Link>
+
             {hasRole( user.role, 'admin' ) && (
               <Link
                 href="/dashboard/frames"
-                className="rounded-2xl bg-secondary p-4 text-sm font-bold text-foreground transition hover:bg-secondary/80"
+                className="group flex items-center justify-between rounded-xl border border-neutral-100 bg-neutral-50 p-4 transition hover:border-neutral-200 hover:bg-neutral-100"
               >
-                Manage frame templates
+                <div>
+                  <p className="text-sm font-semibold text-neutral-900">Manage frame templates</p>
+                  <p className="mt-0.5 text-xs text-neutral-400">Upload and review frames</p>
+                </div>
+                <ArrowRight className="size-4 text-neutral-300 transition group-hover:text-neutral-600" />
               </Link>
             )}
+
             <Link
               href="/dashboard/profile"
-              className="rounded-2xl bg-secondary p-4 text-sm font-bold text-foreground transition hover:bg-secondary/80"
+              className="group flex items-center justify-between rounded-xl border border-neutral-100 bg-neutral-50 p-4 transition hover:border-neutral-200 hover:bg-neutral-100"
             >
-              Update profile
+              <div>
+                <p className="text-sm font-semibold text-neutral-900">Update profile</p>
+                <p className="mt-0.5 text-xs text-neutral-400">Edit your account info</p>
+              </div>
+              <ArrowRight className="size-4 text-neutral-300 transition group-hover:text-neutral-600" />
             </Link>
+
             {hasRole( user.role, 'super_admin' ) && (
               <Link
                 href="/dashboard/users"
-                className="rounded-2xl bg-secondary p-4 text-sm font-bold text-foreground transition hover:bg-secondary/80"
+                className="group flex items-center justify-between rounded-xl border border-neutral-100 bg-neutral-50 p-4 transition hover:border-neutral-200 hover:bg-neutral-100"
               >
-                Manage team roles
+                <div>
+                  <p className="text-sm font-semibold text-neutral-900">Manage team roles</p>
+                  <p className="mt-0.5 text-xs text-neutral-400">Control user access</p>
+                </div>
+                <ArrowRight className="size-4 text-neutral-300 transition group-hover:text-neutral-600" />
               </Link>
             )}
           </div>
-        </AppCard>
+        </div>
 
-        <AppCard className="bg-chart-2 text-white">
-          <h2 className="text-xl font-bold">RBAC</h2>
-          <p className="mt-3 text-sm leading-6 text-white/75 font-poppins">
-            Super admins can manage users and roles. Admins can manage booth
-            frames. Operators and viewers keep dashboard access without admin
-            controls.
+        {/* Access control card */}
+        <div className="rounded-2xl bg-primary p-5 text-white">
+          <h2 className="text-sm font-bold">Access Control</h2>
+          <p className="mt-2 text-xs leading-5 text-white/70">
+            Super admins manage users & roles. Admins control booth frames. Operators and viewers
+            keep dashboard access without admin controls.
           </p>
-        </AppCard>
+          <div className="mt-4">
+            <div className="inline-flex items-center gap-1.5 rounded-xl bg-white/15 px-3 py-1.5 text-xs font-semibold capitalize">
+              <ShieldCheck className="size-3.5" />
+              {user.role.replace( '_', ' ' )}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   )

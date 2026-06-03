@@ -1,24 +1,9 @@
 import Link from 'next/link'
-import {
-  Camera,
-  Images,
-  LayoutDashboard,
-  LogOut,
-  ShieldCheck,
-  User,
-  Users,
-} from 'lucide-react'
+import { Camera, LogOut, ShieldCheck } from 'lucide-react'
 
 import { logoutAction } from '@/app/auth/actions'
-import { Button } from '@/components/ui/button'
-import { hasRole, type AuthUser } from '@/lib/auth/types'
-
-const navItems = [
-  { href : '/dashboard', label : 'Dashboard', icon : LayoutDashboard },
-  { href : '/dashboard/frames', label : 'Frames', icon : Images, role : 'admin' as const },
-  { href : '/dashboard/profile', label : 'Profile', icon : User },
-  { href : '/dashboard/users', label : 'Users', icon : Users, role : 'super_admin' as const },
-]
+import { type AuthUser } from '@/lib/auth/types'
+import { DashboardNav } from './DashboardNav'
 
 export function DashboardShell( {
   user,
@@ -28,74 +13,75 @@ export function DashboardShell( {
   children: React.ReactNode
 } ) {
   return (
-    <main className="min-h-screen bg-secondary/45 p-3 font-inter md:p-6">
-      <div className="mx-auto flex max-w-7xl flex-col gap-4 lg:min-h-[calc(100vh-3rem)] lg:flex-row">
-        <aside className="flex flex-col rounded-3xl bg-white p-4 shadow-xl lg:w-72">
+    <div className="flex min-h-screen bg-neutral-100 font-jakarta">
+      {/* Sidebar */}
+      <aside className="hidden w-60 shrink-0 flex-col border-r border-neutral-200 bg-white lg:flex">
+        <div className="p-5 pb-4">
           <Link
             href="/dashboard"
-            className="mb-6 flex items-center gap-3 px-2"
+            className="flex items-center gap-3"
           >
-            <span className="flex size-11 items-center justify-center rounded-full bg-primary text-white">
-              <Camera className="size-5" />
+            <span
+              className="flex size-9 items-center justify-center rounded-xl bg-primary"
+            >
+              <Camera className="size-4 text-white" />
             </span>
-            <span className="font-sans text-3xl text-foreground">photo good.</span>
+            <span className="text-lg font-bold text-neutral-900">photo good.</span>
           </Link>
+        </div>
 
-          <nav className="grid gap-2">
-            {navItems.map( ( item ) => {
-              if ( item.role && !hasRole( user.role, item.role ) ) return null
-              const Icon = item.icon
+        <div className="flex-1 overflow-y-auto px-3 py-2">
+          <p className="mb-2 px-3 text-[10px] font-bold uppercase tracking-widest text-neutral-400">
+            Menu
+          </p>
+          <DashboardNav user={user} />
+        </div>
 
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className="flex items-center gap-3 rounded-2xl px-3 py-3 text-sm font-bold text-neutral-600 transition hover:bg-secondary hover:text-primary"
-                >
-                  <Icon className="size-4" />
-                  {item.label}
-                </Link>
-              )
-            } )}
-          </nav>
-
-          <div className="mt-auto pt-6">
-            <div className="rounded-3xl bg-secondary p-4">
-              <div className="mb-3 flex items-center gap-3">
-                <div className="flex size-11 items-center justify-center rounded-2xl bg-primary text-sm font-bold uppercase text-white">
-                  {user.name.slice( 0, 1 )}
-                </div>
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-bold text-foreground">
-                    {user.name}
-                  </p>
-                  <p className="truncate text-xs text-muted-foreground">
-                    {user.email}
-                  </p>
-                </div>
-              </div>
-              <div className="mb-3 inline-flex items-center gap-1 rounded-full bg-white px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-primary">
-                <ShieldCheck className="size-3" />
-                {user.role.replace( '_', ' ' )}
-              </div>
-              <form action={logoutAction}>
-                <Button
-                  type="submit"
-                  variant="outline"
-                  className="w-full justify-start rounded-xl font-bold"
-                >
-                  <LogOut className="size-4" />
-                  Logout
-                </Button>
-              </form>
+        <div className="border-t border-neutral-100 p-4">
+          <div className="flex items-center gap-3">
+            <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary text-sm font-bold uppercase text-white">
+              {user.name.slice( 0, 1 )}
             </div>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-semibold text-neutral-900">{user.name}</p>
+              <p className="truncate text-xs text-neutral-400">{user.email}</p>
+            </div>
+            <form action={logoutAction}>
+              <button
+                type="submit"
+                title="Logout"
+                className="rounded-lg p-1.5 text-neutral-400 transition hover:bg-neutral-100 hover:text-neutral-700"
+              >
+                <LogOut className="size-4" />
+              </button>
+            </form>
           </div>
-        </aside>
+          <div className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-neutral-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-neutral-500">
+            <ShieldCheck className="size-3" />
+            {user.role.replace( '_', ' ' )}
+          </div>
+        </div>
+      </aside>
 
-        <section className="min-w-0 flex-1 rounded-3xl bg-white p-4 shadow-xl md:p-6 lg:p-8">
-          {children}
-        </section>
+      {/* Mobile header */}
+      <div className="fixed inset-x-0 top-0 z-20 flex h-14 items-center border-b border-neutral-200 bg-white px-4 lg:hidden">
+        <Link
+          href="/dashboard"
+          className="flex items-center gap-2"
+        >
+          <span
+            className="flex size-8 items-center justify-center rounded-lg bg-primary"
+          >
+            <Camera className="size-3.5 text-white" />
+          </span>
+          <span className="text-base font-bold text-neutral-900">photo good.</span>
+        </Link>
       </div>
-    </main>
+
+      {/* Main content */}
+      <main className="min-w-0 flex-1 p-5 pt-20 lg:p-8 lg:pt-8">
+        {children}
+      </main>
+    </div>
   )
 }

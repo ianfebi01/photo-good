@@ -7,13 +7,14 @@ import {
   Trash2,
   Loader2,
   Image as ImageIcon,
+  Images,
+  LayoutGrid,
+  Sparkles,
 } from 'lucide-react'
 
-import AppCard from '@/components/AppCard'
 import { Button } from '@/components/ui/button'
 import { type ClientFrame } from '@/lib/photobooth/frames.client'
 import { AddFrameDialog } from '@/components/booth/AddFrameDialog'
-import { cn } from '@/lib/utils'
 
 export function FramesManager() {
   const [frames, setFrames] = useState<ClientFrame[]>( [] )
@@ -83,7 +84,6 @@ export function FramesManager() {
     }
   }
 
-  // Calculate stats
   const totalCount = frames.length
   const builtInCount = frames.filter( ( f ) => f.builtIn ).length
   const customCount = totalCount - builtInCount
@@ -91,117 +91,101 @@ export function FramesManager() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-8">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <div className="flex items-center gap-2 mb-2">
-            <Link
-              href="/booth"
-              className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors font-sans"
-            >
-              <ArrowLeft className="size-3" /> Back to Photobooth
-            </Link>
-          </div>
-          <h1 className="text-4xl font-bold tracking-tight text-foreground font-sans">
-              Frame Templates
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1 font-sans">
-              Manage photobooth templates, upload custom green-slot frames, and
-              configure assets.
+          <Link
+            href="/booth"
+            className="inline-flex items-center gap-1 text-xs text-neutral-400 transition-colors hover:text-neutral-900"
+          >
+            <ArrowLeft className="size-3" />
+            Back to Photobooth
+          </Link>
+          <h1 className="mt-2 text-xl font-bold text-neutral-900">Frame Templates</h1>
+          <p className="mt-0.5 text-xs text-neutral-400">
+            Manage photobooth templates and upload custom frames.
           </p>
         </div>
-
         <AddFrameDialog
           onUploaded={( newFrame ) => setFrames( ( prev ) => [...prev, newFrame] )}
         />
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-3 gap-4 mb-8">
-        <AppCard className={cn(
-          'border border-neutral-200'
-        )}
-        >
-          <div className="text-xs text-muted-foreground font-medium uppercase tracking-wider font-sans">
-              Total Templates
+      {/* Stat cards */}
+      <div className="grid grid-cols-3 gap-4">
+        <div className="rounded-2xl border border-neutral-100 bg-white p-5 transition-all duration-300 ease-in-out hover:shadow-xl">
+          <div className="mb-4">
+            <div className="flex size-9 items-center justify-center rounded-xl bg-secondary">
+              <LayoutGrid className="size-4 text-neutral-600" />
+            </div>
           </div>
-          <div className="text-3xl font-bold mt-1 text-foreground font-sans">
-            {totalCount}
+          <p className="text-lg font-bold text-neutral-900">{totalCount}</p>
+          <p className="mt-0.5 text-xs text-neutral-400">Total templates</p>
+        </div>
+
+        <div className="rounded-2xl border border-neutral-100 bg-white p-5 transition-all duration-300 ease-in-out hover:shadow-xl">
+          <div className="mb-4">
+            <div className="flex size-9 items-center justify-center rounded-xl bg-neutral-100">
+              <Images className="size-4 text-neutral-600" />
+            </div>
           </div>
-        </AppCard>
-        <AppCard className={cn(
-          'border border-neutral-200'
-        )}
-        >
-          <div className="text-xs text-muted-foreground font-medium uppercase tracking-wider font-sans">
-              Built-In
+          <p className="text-lg font-bold text-neutral-900">{builtInCount}</p>
+          <p className="mt-0.5 text-xs text-neutral-400">Built-in</p>
+        </div>
+
+        <div className="rounded-2xl border border-neutral-100 bg-white p-5 transition-all duration-300 ease-in-out hover:shadow-xl">
+          <div className="mb-4">
+            <div className="flex size-9 items-center justify-center rounded-xl bg-accent/40">
+              <Sparkles className="size-4 text-neutral-600" />
+            </div>
           </div>
-          <div className="text-3xl font-bold mt-1 text-neutral-500 font-sans">
-            {builtInCount}
-          </div>
-        </AppCard>
-        <AppCard className={cn(
-          'border border-neutral-200'
-        )}
-        >
-          <div className="text-xs text-muted-foreground font-medium uppercase tracking-wider font-sans">
-              Custom Uploads
-          </div>
-          <div className="text-3xl font-bold mt-1 text-primary font-sans">
-            {customCount}
-          </div>
-        </AppCard>
+          <p className="text-lg font-bold text-neutral-900">{customCount}</p>
+          <p className="mt-0.5 text-xs text-neutral-400">Custom uploads</p>
+        </div>
       </div>
 
-      {/* Error State */}
+      {/* Error state */}
       {error && (
-        <div className="mb-8 p-4 rounded-xl bg-destructive/10 text-destructive text-sm font-medium border border-destructive/20 font-sans">
+        <div className="rounded-xl border border-destructive/20 bg-destructive/10 p-4 text-sm font-medium text-destructive">
           {error}
         </div>
       )}
 
-      {/* Loading State */}
+      {/* Loading state */}
       {loading ? (
-        <div className="flex flex-col items-center justify-center py-20 gap-3">
-          <Loader2 className="size-8 text-primary animate-spin" />
-          <p className="text-sm text-muted-foreground font-medium font-sans">
-              Fetching templates...
-          </p>
+        <div className="flex flex-col items-center justify-center gap-3 py-20">
+          <Loader2 className="size-7 animate-spin text-neutral-400" />
+          <p className="text-xs text-neutral-400">Fetching templates…</p>
         </div>
       ) : frames.length === 0 ? (
-        <AppCard className="flex flex-col items-center justify-center p-16 text-center shadow-sm">
-          <div className="size-12 rounded-full bg-neutral-100 flex items-center justify-center text-neutral-400 mb-4">
-            <ImageIcon className="size-6" />
+        <div className="flex flex-col items-center justify-center rounded-2xl border border-neutral-100 bg-white p-16 text-center transition-all duration-300 ease-in-out hover:shadow-xl">
+          <div className="mb-4 flex size-12 items-center justify-center rounded-full bg-neutral-100">
+            <ImageIcon className="size-5 text-neutral-400" />
           </div>
-          <h3 className="text-base font-semibold text-foreground font-sans">
-              No frames available
-          </h3>
-          <p className="text-sm text-muted-foreground mt-1 max-w-sm font-sans">
-              Create your first custom frame with green slots where captured
-              photos should go.
+          <h3 className="text-sm font-semibold text-neutral-900">No frames available</h3>
+          <p className="mt-1 max-w-sm text-xs text-neutral-400">
+            Create your first custom frame with green slots where captured photos should go.
           </p>
           <AddFrameDialog
             onUploaded={( newFrame ) => setFrames( ( prev ) => [...prev, newFrame] )}
             trigger={
               <Button
-                className="mt-4 font-sans"
+                className="mt-4"
                 size="sm"
               >
-                  Add first frame
+                Add first frame
               </Button>
             }
           />
-        </AppCard>
+        </div>
       ) : (
-      /* Grid of Frames */
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
           {frames.map( ( frame ) => (
             <div
               key={frame.key}
               className="flex flex-col justify-between"
             >
               <div>
-                {/* Aspect Ratio Controlled Preview */}
-                <div className="aspect-3/4 rounded-2xl bg-muted/60 p-4 flex items-center justify-center relative overflow-hidden group">
+                <div className="group relative aspect-3/4 overflow-hidden rounded-2xl bg-neutral-100 p-4 flex items-center justify-center">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={`/api/frames/preview?key=${frame.key}${cacheBuster ? `&t=${cacheBuster}` : ''}`}
@@ -210,47 +194,45 @@ export function FramesManager() {
                   />
                 </div>
 
-                <div className="pt-4 flex flex-col gap-2">
+                <div className="pt-3 flex flex-col gap-1.5">
                   <div className="flex items-start justify-between gap-2">
-                    <h3 className="font-semibold text-foreground text-sm line-clamp-1 font-sans">
+                    <h3 className="line-clamp-1 text-sm font-semibold text-neutral-900">
                       {frame.label}
                     </h3>
                     {frame.builtIn ? (
-                      <span className="shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-neutral-100 text-neutral-600 border border-neutral-200 uppercase tracking-wider font-sans">
-                          Built-in
+                      <span className="shrink-0 rounded-full border border-neutral-200 bg-neutral-100 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-neutral-500">
+                        Built-in
                       </span>
                     ) : (
-                      <span className="shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20 uppercase tracking-wider font-sans">
-                          Custom
+                      <span className="shrink-0 rounded-full border border-neutral-200 bg-neutral-100 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-neutral-500">
+                        Custom
                       </span>
                     )}
                   </div>
 
-                  <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground mt-1 font-sans">
+                  <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-neutral-400">
                     <span>{frame.photoCount} slots</span>
-                    <span className="text-neutral-300">•</span>
-                    <span>
-                      {frame.width} × {frame.height} px
-                    </span>
+                    <span className="text-neutral-200">•</span>
+                    <span>{frame.width} × {frame.height} px</span>
                   </div>
                 </div>
               </div>
 
               {!frame.builtIn && (
-                <div className="pt-3 flex justify-end">
+                <div className="pt-3">
                   <Button
                     variant="destructive"
                     size="sm"
                     onClick={() => handleDelete( frame.key )}
                     disabled={deletingKey === frame.key}
-                    className="w-full gap-1 font-sans"
+                    className="w-full gap-1"
                   >
                     {deletingKey === frame.key ? (
                       <Loader2 className="size-3.5 animate-spin" />
                     ) : (
                       <Trash2 className="size-3.5" />
                     )}
-                      Delete
+                    Delete
                   </Button>
                 </div>
               )}
