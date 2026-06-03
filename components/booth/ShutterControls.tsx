@@ -6,6 +6,7 @@ interface ShutterControlsProps {
   canCapture: boolean
   photosTaken: number
   photoCount: number
+  countdown: number | null
   onRetake: () => void
   onAccept: () => void
   onCompose: () => void
@@ -18,6 +19,7 @@ export function ShutterControls( {
   canCapture,
   photosTaken,
   photoCount,
+  countdown,
   onRetake,
   onAccept,
   onCompose,
@@ -68,15 +70,26 @@ export function ShutterControls( {
           <span className="text-[9px] font-bold text-neutral-400 uppercase tracking-widest font-sans">
             {photosTaken}/{photoCount} Shots
           </span>
-          <button
-            onClick={onSnap}
-            disabled={!canCapture}
-            className="group relative flex h-20 w-20 items-center justify-center cursor-pointer disabled:cursor-not-allowed select-none rounded-full focus:outline-none disabled:opacity-50"
-            title="Snap"
-          >
-            <span className="absolute inset-0 rounded-full border-[3px] border-primary" />
-            <span className="absolute inset-1.5 rounded-full bg-primary transition-transform duration-150 group-hover:scale-105 group-active:scale-90 group-disabled:scale-100" />
-          </button>
+
+          {countdown !== null ? (
+            <div className="relative flex h-20 w-20 items-center justify-center rounded-full">
+              <span className="absolute inset-0 rounded-full border-[3px] border-primary animate-ping opacity-40" />
+              <span className="absolute inset-0 rounded-full border-[3px] border-primary" />
+              <span className="relative text-3xl font-black text-primary tabular-nums">
+                {countdown}
+              </span>
+            </div>
+          ) : (
+            <button
+              onClick={onSnap}
+              disabled={!canCapture}
+              className="group relative flex h-20 w-20 items-center justify-center cursor-pointer disabled:cursor-not-allowed select-none rounded-full focus:outline-none disabled:opacity-50"
+              title="Snap"
+            >
+              <span className="absolute inset-0 rounded-full border-[3px] border-primary" />
+              <span className="absolute inset-1.5 rounded-full bg-primary transition-transform duration-150 group-hover:scale-105 group-active:scale-90 group-disabled:scale-100" />
+            </button>
+          )}
         </div>
       )}
     </div>

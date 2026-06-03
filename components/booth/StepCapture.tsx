@@ -37,8 +37,25 @@ export function StepCapture() {
   const reviewing = phase === 'reviewing'
   const adjusting = phase === 'adjusting'
   const busy = phase === 'running' || phase === 'composing'
+
+  const [countdown, setCountdown] = useState<number | null>( null )
+
   const canCapture =
-    !busy && !reviewing && !adjusting && photoCount - photos.length > 0
+    !busy && !reviewing && !adjusting && photoCount - photos.length > 0 && countdown === null
+
+  useEffect( () => {
+    if ( countdown === null ) return
+    const timer = setTimeout( () => {
+      if ( countdown === 1 ) {
+        setCountdown( null )
+        takeShot()
+      } else {
+        setCountdown( countdown - 1 )
+      }
+    }, 1000 )
+
+    return () => clearTimeout( timer )
+  }, [countdown, takeShot] )
 
   const [adjustments, setAdjustments] = useState<
     { x: number; y: number; zoom: number; filter: string }[]
@@ -101,9 +118,9 @@ export function StepCapture() {
     retakePending()
   }
 
-  const handleSnap = async () => {
+  const handleSnap = () => {
     setTargetSlotIdx( photos.length )
-    await takeShot()
+    setCountdown( 3 )
   }
 
   const handleAcceptPending = async () => {
@@ -342,6 +359,7 @@ export function StepCapture() {
             canCapture={canCapture}
             photosTaken={photos.length}
             photoCount={photoCount}
+            countdown={countdown}
             onRetake={handleRetake}
             onAccept={handleAcceptPending}
             onCompose={handleCompose}
