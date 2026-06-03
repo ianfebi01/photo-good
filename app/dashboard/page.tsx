@@ -15,10 +15,10 @@ export default async function DashboardPage() {
           <p className="text-xs font-bold uppercase tracking-widest text-primary">
             Dashboard
           </p>
-          <h1 className="mt-2 text-4xl font-bold text-foreground">
+          <h1 className="mt-2 text-4xl font-bold text-foreground font-sans">
             Welcome, {user.name}
           </h1>
-          <p className="mt-2 max-w-2xl text-sm text-muted-foreground font-poppins">
+          <p className="mt-2 max-w-2xl text-sm text-muted-foreground font-inter">
             Manage booth operations, frame templates, and team access from one
             secure workspace.
           </p>
@@ -79,7 +79,7 @@ export default async function DashboardPage() {
             </Link>
             {hasRole( user.role, 'admin' ) && (
               <Link
-                href="/admin"
+                href="/dashboard/frames"
                 className="rounded-2xl bg-secondary p-4 text-sm font-bold text-foreground transition hover:bg-secondary/80"
               >
                 Manage frame templates

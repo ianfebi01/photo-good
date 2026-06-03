@@ -13,14 +13,8 @@ import {
   DialogClose,
 } from '@/components/ui/dialog'
 import gsap from 'gsap'
-import { Inter } from 'next/font/google'
 import { type ClientFrame } from '@/lib/photobooth/frames.client'
 import { cn } from '@/lib/utils'
-
-const inter = Inter( {
-  subsets  : ['latin'],
-  variable : '--font-sans',
-} )
 
 type FrameSlot = {
   left: number
@@ -291,7 +285,7 @@ export function AddFrameDialog( { onUploaded, trigger }: AddFrameDialogProps ) {
       <DialogContent
         ref={handlePopupRef}
         overlayRef={overlayRef}
-        className={`w-full max-w-full h-dvh max-h-dvh sm:h-auto sm:max-h-[calc(100vh-4rem)] rounded-none sm:rounded-3xl overflow-y-auto sm:max-w-2xl flex flex-col origin-center bg-white p-0 border border-neutral-100 shadow-2xl ${inter.variable} font-sans`}
+        className="w-full max-w-full h-dvh max-h-dvh sm:h-auto sm:max-h-[calc(100vh-4rem)] rounded-none sm:rounded-3xl overflow-y-auto sm:max-w-2xl flex flex-col origin-center bg-white p-0 border border-neutral-100 shadow-2xl font-sans"
       >
         <div
           ref={contentRef}

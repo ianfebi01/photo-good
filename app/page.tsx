@@ -75,7 +75,7 @@ export default function Home() {
 
         <div className="mt-8 flex justify-center">
           <Link
-            href="/admin"
+            href="/dashboard/frames"
             className="text-xs text-muted-foreground/60 hover:text-primary transition-colors font-medium"
           >
             Admin Panel
