@@ -15,6 +15,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { type ClientFrame } from '@/lib/photobooth/frames.client'
 import { AddFrameDialog } from '@/components/booth/AddFrameDialog'
+import { DashboardPageHeader } from './DashboardPageHeader'
 
 export function FramesManager() {
   const [frames, setFrames] = useState<ClientFrame[]>( [] )
@@ -91,22 +92,22 @@ export function FramesManager() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <Link
-            href="/booth"
-            className="inline-flex items-center gap-1 text-xs text-neutral-400 transition-colors hover:text-neutral-900"
-          >
-            <ArrowLeft className="size-3" />
-            Back to Photobooth
-          </Link>
-          <h1 className="mt-2 text-xl font-bold text-neutral-900">Frame Templates</h1>
-          <p className="mt-0.5 text-xs text-neutral-400">
-            Manage photobooth templates and upload custom frames.
-          </p>
-        </div>
-        <AddFrameDialog
-          onUploaded={( newFrame ) => setFrames( ( prev ) => [...prev, newFrame] )}
+      <div className="space-y-1">
+        <Link
+          href="/booth"
+          className="inline-flex items-center gap-1 text-xs text-neutral-400 transition-colors hover:text-neutral-900"
+        >
+          <ArrowLeft className="size-3" />
+          Back to Photobooth
+        </Link>
+        <DashboardPageHeader
+          title="Frame Templates"
+          description="Manage photobooth templates and upload custom frames."
+          action={
+            <AddFrameDialog
+              onUploaded={( newFrame ) => setFrames( ( prev ) => [...prev, newFrame] )}
+            />
+          }
         />
       </div>
 

@@ -21,17 +21,20 @@ export function DashboardShell( {
             href="/dashboard"
             className="flex items-center gap-3"
           >
-            <span
-              className="flex size-9 items-center justify-center rounded-xl bg-primary"
+            <div
+              className="group relative flex size-8 items-center justify-center cursor-pointer disabled:cursor-not-allowed select-none rounded-full focus:outline-none disabled:opacity-50"
+              title="Snap"
             >
-              <Camera className="size-4 text-white" />
-            </span>
-            <span className="text-lg font-bold text-neutral-900">photo good.</span>
+              <span className="absolute inset-0 rounded-full border-2 border-primary" />
+              <span className="absolute inset-1 rounded-full bg-primary transition-transform duration-150 group-hover:scale-105 group-active:scale-90 group-disabled:scale-100" >
+              </span>
+            </div>
+            <span className="text-lg font-bold text-neutral-900 font-sans">photo good.</span>
           </Link>
         </div>
 
         <div className="flex-1 overflow-y-auto px-3 py-2">
-          <p className="mb-2 px-3 text-[10px] font-bold uppercase tracking-widest text-neutral-400">
+          <p className="mb-2 px-3 text-[10px] font-bold uppercase tracking-widest text-neutral-400 font-sans">
             Menu
           </p>
           <DashboardNav user={user} />

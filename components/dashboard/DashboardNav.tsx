@@ -28,13 +28,13 @@ export function DashboardNav( { user }: { user: AuthUser } ) {
             key={item.href}
             href={item.href}
             className={cn(
-              'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition-colors',
+              'flex items-center gap-3 rounded-xl px-3 py-2.5 text-xs font-semibold transition-colors duration-200',
               isActive
-                ? 'bg-primary text-white'
-                : 'text-neutral-500 hover:bg-neutral-50 hover:text-neutral-900',
+                ? 'bg-neutral-50 text-neutral-600 border-neutral-200 border'
+                : 'text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900 border border-transparent',
             )}
           >
-            <Icon className="size-4 shrink-0" />
+            <Icon className="size-3 shrink-0" />
             {item.label}
           </Link>
         )

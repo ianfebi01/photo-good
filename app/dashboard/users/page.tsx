@@ -1,9 +1,9 @@
 import { updateRoleAction } from '@/app/auth/actions'
-import AppCard from '@/components/AppCard'
 import { Button } from '@/components/ui/button'
 import { requireRole } from '@/lib/auth/require'
 import { listUsers } from '@/lib/auth/users'
 import { roles } from '@/lib/auth/types'
+import { DashboardPageHeader } from '@/components/dashboard/DashboardPageHeader'
 
 export default async function UsersPage() {
   const currentUser = await requireRole( 'super_admin' )
@@ -11,20 +11,16 @@ export default async function UsersPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <p className="text-xs font-bold uppercase tracking-widest text-primary">
-          Access control
-        </p>
-        <h1 className="mt-2 text-4xl font-bold text-foreground">Users</h1>
-        <p className="mt-2 text-sm text-muted-foreground font-poppins">
-          Assign roles for dashboard and frame-management access.
-        </p>
-      </div>
+      <DashboardPageHeader
+        label="Access control"
+        title="Users"
+        description="Assign roles for dashboard and frame-management access."
+      />
 
-      <AppCard className="overflow-x-auto">
+      <div className="rounded-2xl border border-neutral-100 bg-white p-6 transition-all duration-300 ease-in-out hover:shadow-xl overflow-x-auto">
         <table className="w-full min-w-[720px] text-left text-sm">
           <thead>
-            <tr className="border-b border-border text-xs font-bold uppercase tracking-wider text-muted-foreground">
+            <tr className="border-b border-neutral-100 text-xs font-bold uppercase tracking-wider text-neutral-400">
               <th className="pb-3">User</th>
               <th className="pb-3">Email</th>
               <th className="pb-3">Role</th>
@@ -32,11 +28,11 @@ export default async function UsersPage() {
               <th className="pb-3 text-right">Action</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-border/70">
+          <tbody className="divide-y divide-neutral-100">
             {users.map( ( user ) => (
               <tr key={user.id}>
-                <td className="py-4 font-bold text-foreground">{user.name}</td>
-                <td className="py-4 text-muted-foreground">{user.email}</td>
+                <td className="py-4 font-semibold text-neutral-900">{user.name}</td>
+                <td className="py-4 text-neutral-400">{user.email}</td>
                 <td className="py-4">
                   <form
                     action={updateRoleAction}
@@ -51,7 +47,7 @@ export default async function UsersPage() {
                       name="role"
                       defaultValue={user.role}
                       disabled={user.id === currentUser.id}
-                      className="h-9 rounded-xl border border-border bg-white px-3 text-sm font-bold text-foreground outline-none focus:border-primary"
+                      className="h-9 rounded-xl border border-neutral-200 bg-white px-3 text-sm font-semibold text-neutral-900 outline-none focus:border-primary"
                     >
                       {roles.map( ( role ) => (
                         <option
@@ -72,19 +68,19 @@ export default async function UsersPage() {
                     </Button>
                   </form>
                 </td>
-                <td className="py-4 text-muted-foreground">
+                <td className="py-4 text-neutral-400">
                   {new Intl.DateTimeFormat( 'en', {
                     dateStyle : 'medium',
                   } ).format( new Date( user.created_at ) )}
                 </td>
-                <td className="py-4 text-right text-xs font-bold uppercase tracking-wider text-primary">
+                <td className="py-4 text-right text-xs font-bold uppercase tracking-wider text-neutral-400">
                   {user.id === currentUser.id ? 'You' : 'Managed'}
                 </td>
               </tr>
             ) )}
           </tbody>
         </table>
-      </AppCard>
+      </div>
     </div>
   )
 }
