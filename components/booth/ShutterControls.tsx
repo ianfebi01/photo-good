@@ -51,16 +51,16 @@ export function ShutterControls( {
         </div>
       ) : adjusting ? (
         <div className="flex flex-col items-center justify-center h-full w-full relative z-10 gap-4">
-          <span className="text-[10px] font-black text-primary uppercase tracking-wider font-sans">
-            Ready!
+          <span className="text-[10px] font-black text-emerald-500 uppercase tracking-wider font-sans">
+            Complete!
           </span>
           <button
             onClick={onCompose}
             className="group relative flex h-20 w-20 items-center justify-center cursor-pointer select-none rounded-full focus:outline-none"
             title="Compose"
           >
-            <span className="absolute inset-0 rounded-full border-[3px] border-primary" />
-            <span className="absolute inset-1.5 rounded-full bg-primary transition-transform duration-150 group-hover:scale-105 group-active:scale-90" />
+            <span className="absolute inset-0 rounded-full border-[3px] border-emerald-500" />
+            <span className="absolute inset-1.5 rounded-full bg-emerald-500 transition-transform duration-150 group-hover:scale-105 group-active:scale-90" />
           </button>
         </div>
       ) : (
