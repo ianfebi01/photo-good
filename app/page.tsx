@@ -4,18 +4,8 @@ import PhotoStack from '@/components/PhotoStack'
 import PalleteStack from '../components/PalleteStack'
 import PhotoboothCard from '@/components/PhotoboothCard'
 import QuoteCard from '@/components/QuoteCard'
+import AppCard from '@/components/AppCard'
 import Link from 'next/link'
-
-function Card( {
-  className,
-  children,
-}: React.PropsWithChildren<{ className?: string }> ) {
-  return (
-    <div className={cn( 'rounded-3xl bg-white p-6 hover:shadow-xl transition-all duration-300 ease-in-out', className )}>
-      {children}
-    </div>
-  )
-}
 
 export default function Home() {
   return (
@@ -34,7 +24,7 @@ export default function Home() {
           <PhotoStack className="xl:col-span-4 xl:row-span-9" />
 
           {/* Hero */}
-          <Card className="relative overflow-hidden bg-secondary p-8 xl:col-span-4 xl:row-span-5 text-secondary-foreground flex flex-col justify-between">
+          <AppCard className="relative overflow-hidden bg-secondary p-8 xl:col-span-4 xl:row-span-5 text-secondary-foreground flex flex-col justify-between">
             {/* Ambient glow */}
             <div className="pointer-events-none absolute -top-16 -right-16 h-56 w-56 rounded-full bg-secondary-foreground/10 blur-3xl" />
 
@@ -64,17 +54,17 @@ export default function Home() {
                 </span>
               </Link>
             </div>
-          </Card>
+          </AppCard>
 
           {/* Right Portrait */}
-          <Card className="xl:col-span-4 xl:row-span-5 p-0! overflow-hidden">
+          <AppCard className="xl:col-span-4 xl:row-span-5 p-0! overflow-hidden">
             <PhotoboothCard />
-          </Card>
+          </AppCard>
 
           {/* Quote */}
-          <Card className="text-white bg-chart-2 xl:col-span-3 xl:row-span-4 flex flex-col">
+          <AppCard className="text-white bg-chart-2 xl:col-span-3 xl:row-span-4 flex flex-col">
             <QuoteCard />
-          </Card>
+          </AppCard>
 
           {/* Logo */}
           <LogoCard className="xl:col-span-5 xl:row-span-2" />

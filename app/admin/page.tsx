@@ -9,10 +9,11 @@ import {
   Image as ImageIcon,
 } from 'lucide-react'
 
+import AppCard from '@/components/AppCard'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
 import { type ClientFrame } from '@/lib/photobooth/frames.client'
 import { AddFrameDialog } from '@/components/booth/AddFrameDialog'
+import { cn } from '@/lib/utils'
 
 export default function AdminPage() {
   const [frames, setFrames] = useState<ClientFrame[]>( [] )
@@ -88,7 +89,7 @@ export default function AdminPage() {
   const customCount = totalCount - builtInCount
 
   return (
-    <main className="min-h-screen bg-neutral-50/50 py-12 font-sans">
+    <main className="min-h-screen bg-white py-12 font-sans">
       <div className="container max-w-6xl mx-auto px-4">
         {/* Header */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-8">
@@ -117,45 +118,39 @@ export default function AdminPage() {
 
         {/* Stats Grid */}
         <div className="grid grid-cols-3 gap-4 mb-8">
-          <Card
-            size="sm"
-            className="bg-white shadow-sm ring-1 ring-neutral-200"
+          <AppCard className={cn(
+            'shadow-sm'
+          )}
           >
-            <CardContent className="pt-4">
-              <div className="text-xs text-muted-foreground font-medium uppercase tracking-wider font-sans">
-                Total Templates
-              </div>
-              <div className="text-3xl font-bold mt-1 text-foreground font-sans">
-                {totalCount}
-              </div>
-            </CardContent>
-          </Card>
-          <Card
-            size="sm"
-            className="bg-white shadow-sm ring-1 ring-neutral-200"
+            <div className="text-xs text-muted-foreground font-medium uppercase tracking-wider font-sans">
+              Total Templates
+            </div>
+            <div className="text-3xl font-bold mt-1 text-foreground font-sans">
+              {totalCount}
+            </div>
+          </AppCard>
+          <AppCard className={cn(
+            'shadow-sm'
+          )}
           >
-            <CardContent className="pt-4">
-              <div className="text-xs text-muted-foreground font-medium uppercase tracking-wider font-sans">
-                Built-In
-              </div>
-              <div className="text-3xl font-bold mt-1 text-neutral-500 font-sans">
-                {builtInCount}
-              </div>
-            </CardContent>
-          </Card>
-          <Card
-            size="sm"
-            className="bg-white shadow-sm ring-1 ring-neutral-200"
+            <div className="text-xs text-muted-foreground font-medium uppercase tracking-wider font-sans">
+              Built-In
+            </div>
+            <div className="text-3xl font-bold mt-1 text-neutral-500 font-sans">
+              {builtInCount}
+            </div>
+          </AppCard>
+          <AppCard className={cn(
+            'shadow-sm'
+          )}
           >
-            <CardContent className="pt-4">
-              <div className="text-xs text-muted-foreground font-medium uppercase tracking-wider font-sans">
-                Custom Uploads
-              </div>
-              <div className="text-3xl font-bold mt-1 text-primary font-sans">
-                {customCount}
-              </div>
-            </CardContent>
-          </Card>
+            <div className="text-xs text-muted-foreground font-medium uppercase tracking-wider font-sans">
+              Custom Uploads
+            </div>
+            <div className="text-3xl font-bold mt-1 text-primary font-sans">
+              {customCount}
+            </div>
+          </AppCard>
         </div>
 
         {/* Error State */}
@@ -174,7 +169,7 @@ export default function AdminPage() {
             </p>
           </div>
         ) : frames.length === 0 ? (
-          <div className="flex flex-col items-center justify-center border-2 border-dashed border-neutral-200 rounded-3xl p-16 text-center bg-white shadow-sm">
+          <AppCard className="flex flex-col items-center justify-center p-16 text-center shadow-sm">
             <div className="size-12 rounded-full bg-neutral-100 flex items-center justify-center text-neutral-400 mb-4">
               <ImageIcon className="size-6" />
             </div>
@@ -196,18 +191,18 @@ export default function AdminPage() {
                 </Button>
               }
             />
-          </div>
+          </AppCard>
         ) : (
           /* Grid of Frames */
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             {frames.map( ( frame ) => (
-              <Card
+              <div
                 key={frame.key}
-                className="bg-white shadow-sm hover:shadow-md ring-1 ring-neutral-200 transition-all flex flex-col justify-between"
+                className="flex flex-col justify-between"
               >
                 <div>
                   {/* Aspect Ratio Controlled Preview */}
-                  <div className="aspect-3/4 bg-transparent p-4 border-b flex items-center justify-center relative overflow-hidden group">
+                  <div className="aspect-3/4 rounded-2xl bg-muted/60 p-4 flex items-center justify-center relative overflow-hidden group">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={`/api/frames/preview?key=${frame.key}${cacheBuster ? `&t=${cacheBuster}` : ''}`}
@@ -216,7 +211,7 @@ export default function AdminPage() {
                     />
                   </div>
 
-                  <CardContent className="pt-4 flex flex-col gap-2">
+                  <div className="pt-4 flex flex-col gap-2">
                     <div className="flex items-start justify-between gap-2">
                       <h3 className="font-semibold text-foreground text-sm line-clamp-1 font-sans">
                         {frame.label}
@@ -239,11 +234,11 @@ export default function AdminPage() {
                         {frame.width} × {frame.height} px
                       </span>
                     </div>
-                  </CardContent>
+                  </div>
                 </div>
 
                 {!frame.builtIn && (
-                  <div className="px-4 pb-4 pt-1 flex justify-end">
+                  <div className="pt-3 flex justify-end">
                     <Button
                       variant="destructive"
                       size="sm"
@@ -260,7 +255,7 @@ export default function AdminPage() {
                     </Button>
                   </div>
                 )}
-              </Card>
+              </div>
             ) )}
           </div>
         )}

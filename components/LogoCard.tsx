@@ -3,6 +3,7 @@
 import { useRef, useEffect } from 'react'
 import gsap from 'gsap'
 import { cn } from '@/lib/utils'
+import AppCard from '@/components/AppCard'
 
 const CHARS = 'Photo Good'.split( '' )
 const COLORS = [ '#eb4c4c', '#f07070', '#ffa6a6' ]
@@ -79,10 +80,8 @@ export default function LogoCard( { className }: { className?: string } ) {
   }, [] )
 
   return (
-    <div
+    <AppCard
       className={cn(
-        'rounded-3xl bg-white p-6',
-        'hover:shadow-xl transition-all duration-300 ease-in-out',
         'relative overflow-hidden',
         'flex items-center justify-center',
         className
@@ -107,6 +106,6 @@ export default function LogoCard( { className }: { className?: string } ) {
           </span>
         ) )}
       </span>
-    </div>
+    </AppCard>
   )
 }

@@ -4,23 +4,12 @@ import { useEffect, useRef, useState, useCallback, useMemo } from 'react'
 
 import { Button } from '@/components/ui/button'
 import { useBoothStore } from '@/store/boothStore'
-import { cn } from '@/lib/utils'
+import AppCard from '@/components/AppCard'
 
 import { CameraPreview } from './CameraPreview'
 import { FilterPicker } from './FilterPicker'
 import { FramePreview } from './FramePreview'
 import { ShutterControls } from './ShutterControls'
-
-function Card( {
-  className,
-  children,
-}: React.PropsWithChildren<{ className?: string }> ) {
-  return (
-    <div className={cn( 'rounded-3xl bg-white p-6 hover:shadow-xl transition-all duration-300 ease-in-out', className )}>
-      {children}
-    </div>
-  )
-}
 
 export function StepCapture() {
   const {
@@ -212,16 +201,16 @@ export function StepCapture() {
     <div className="container px-4 mx-auto xl:h-full">
       <div className="grid gap-12 h-full grid-cols-1 md:grid-cols-6 xl:grid-cols-12 xl:auto-rows-fr">
 
-        <Card className="bg-secondary text-neutral-800 p-6 flex flex-col justify-center xl:col-span-3 xl:row-span-2">
+        <AppCard className="bg-secondary text-neutral-800 p-6 flex flex-col justify-center xl:col-span-3 xl:row-span-2">
           <span className="text-[10px] font-bold text-primary/70 uppercase tracking-widest font-sans">
             Step 2 of 3
           </span>
           <span className="text-xl font-bold text-neutral-800 font-sans">
             Capture &amp; Edit
           </span>
-        </Card>
+        </AppCard>
 
-        <Card className="bg-chart-2 text-neutral-800 p-6 flex flex-col justify-center xl:col-span-5 xl:row-span-4">
+        <AppCard className="bg-chart-2 text-neutral-800 p-6 flex flex-col justify-center xl:col-span-5 xl:row-span-4">
           <FilterPicker
             photos={photos}
             pending={pending}
@@ -229,9 +218,9 @@ export function StepCapture() {
             globalFilter={globalFilter}
             onFilterChange={setGlobalFilter}
           />
-        </Card>
+        </AppCard>
 
-        <Card className="bg-accent text-secondary-foreground p-3 flex items-center xl:col-span-3 xl:row-span-2">
+        <AppCard className="bg-accent text-secondary-foreground p-3 flex items-center xl:col-span-3 xl:row-span-2">
           <Button
             variant="ghost"
             size="sm"
@@ -242,7 +231,7 @@ export function StepCapture() {
             <span className="transition-transform group-hover:-translate-x-1">←</span>
             Back
           </Button>
-        </Card>
+        </AppCard>
 
         <div className="xl:col-span-8 xl:row-span-6 flex flex-row gap-12">
           <ShutterControls
