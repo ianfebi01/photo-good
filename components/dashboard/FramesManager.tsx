@@ -1,9 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import Link from 'next/link'
 import {
-  ArrowLeft,
   Trash2,
   Loader2,
   Image as ImageIcon,
@@ -93,13 +91,6 @@ export function FramesManager() {
     <div className="space-y-6">
       {/* Header */}
       <div className="space-y-1">
-        <Link
-          href="/booth"
-          className="inline-flex items-center gap-1 text-xs text-neutral-400 transition-colors hover:text-neutral-900"
-        >
-          <ArrowLeft className="size-3" />
-          Back to Photobooth
-        </Link>
         <DashboardPageHeader
           title="Frame Templates"
           description="Manage photobooth templates and upload custom frames."
