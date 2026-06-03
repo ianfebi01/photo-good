@@ -119,7 +119,7 @@ export default function AdminPage() {
         {/* Stats Grid */}
         <div className="grid grid-cols-3 gap-4 mb-8">
           <AppCard className={cn(
-            'shadow-sm'
+            'border border-neutral-200'
           )}
           >
             <div className="text-xs text-muted-foreground font-medium uppercase tracking-wider font-sans">
@@ -130,7 +130,7 @@ export default function AdminPage() {
             </div>
           </AppCard>
           <AppCard className={cn(
-            'shadow-sm'
+            'border border-neutral-200'
           )}
           >
             <div className="text-xs text-muted-foreground font-medium uppercase tracking-wider font-sans">
@@ -141,7 +141,7 @@ export default function AdminPage() {
             </div>
           </AppCard>
           <AppCard className={cn(
-            'shadow-sm'
+            'border border-neutral-200'
           )}
           >
             <div className="text-xs text-muted-foreground font-medium uppercase tracking-wider font-sans">
