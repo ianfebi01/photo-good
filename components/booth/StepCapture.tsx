@@ -112,10 +112,18 @@ export function StepCapture() {
     await acceptPending( idx ?? undefined )
   }
 
+  const getScale = useCallback( () => {
+    if ( !frameContainerRef.current ) return 1
+    const el = frameContainerRef.current
+
+    return Math.min(
+      el.clientHeight / frame.height,
+      ( el.parentElement?.clientWidth ?? el.clientWidth ) / frame.width,
+    )
+  }, [frame] )
+
   const handleCompose = () => {
-    const scale = frameContainerRef.current
-      ? frameContainerRef.current.clientHeight / frame.height
-      : 1
+    const scale = getScale()
     const finalAdjustments = adjustments
       .slice( 0, photoCount )
       .map( ( adj ) => ( {
@@ -151,9 +159,7 @@ export function StepCapture() {
     ( i: number, newZoom: number ) => {
       const clampedZoom = Math.max( 1.0, Math.min( 2.5, newZoom ) )
       setAdjustments( ( prev ) => {
-        const scale = frameContainerRef.current
-          ? frameContainerRef.current.clientHeight / frame.height
-          : 1
+        const scale = getScale()
         const slot = frame.slots[i]
         const maxDx = slot ? ( slot.width * scale * ( clampedZoom - 1 ) ) / 2 : 0
         const maxDy = slot ? ( slot.height * scale * ( clampedZoom - 1 ) ) / 2 : 0
@@ -176,9 +182,7 @@ export function StepCapture() {
       if ( !dragStartRef.current || activeSlotIdx === null ) return
       const dx = e.clientX - dragStartRef.current.x
       const dy = e.clientY - dragStartRef.current.y
-      const scale = frameContainerRef.current
-        ? frameContainerRef.current.clientHeight / frame.height
-        : 1
+      const scale = getScale()
       const slot = frame.slots[activeSlotIdx]
       setAdjustments( ( prev ) => {
         const zoom = prev[activeSlotIdx].zoom
@@ -194,7 +198,7 @@ export function StepCapture() {
         return next
       } )
     },
-    [activeSlotIdx, frame],
+    [activeSlotIdx, frame, getScale],
   )
 
   const handleMouseUp = useCallback( () => {
@@ -218,9 +222,7 @@ export function StepCapture() {
       const touch = e.touches[0]
       const dx = touch.clientX - dragStartRef.current.x
       const dy = touch.clientY - dragStartRef.current.y
-      const scale = frameContainerRef.current
-        ? frameContainerRef.current.clientHeight / frame.height
-        : 1
+      const scale = getScale()
       const slot = frame.slots[activeSlotIdx]
       setAdjustments( ( prev ) => {
         const zoom = prev[activeSlotIdx].zoom
@@ -236,7 +238,7 @@ export function StepCapture() {
         return next
       } )
     },
-    [activeSlotIdx, frame],
+    [activeSlotIdx, frame, getScale],
   )
 
   const handleTouchEnd = useCallback( () => {
