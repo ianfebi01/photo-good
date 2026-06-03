@@ -84,12 +84,13 @@ export const FALLBACK_FRAMES: ClientFrame[] = [
     publicUrl  : "/frames/family-polaroid.png",
     width      : 1200,
     height     : 3600,
-    photoCount : 3,
+    photoCount : 4,
     builtIn    : true,
     slots      : [
       { left : 202, top : 206,  width : 776, height : 718 },
       { left : 210, top : 942,  width : 786, height : 769 },
-      { left : 206, top : 1824, width : 777, height : 1463 },
+      { left : 240, top : 1824, width : 707, height : 706 },
+      { left : 199, top : 2615, width : 776, height : 760 },
     ],
   },
   {
