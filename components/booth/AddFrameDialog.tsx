@@ -280,7 +280,7 @@ export function AddFrameDialog( { onUploaded, trigger }: AddFrameDialogProps ) {
         render={
           trigger || (
             <Button
-              className="self-start sm:self-center gap-1.5 shadow-sm hover:shadow transition-all font-sans"
+              className="self-start sm:self-center gap-1.5 rounded-xl px-4 py-2 font-sans text-sm font-bold tracking-wide transition-all"
               size="lg"
             >
               <Plus className="size-4" /> Add Frame
