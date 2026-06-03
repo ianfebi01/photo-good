@@ -1,17 +1,14 @@
-'use client'
-
+'use client';
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react'
 
 import { Button } from '@/components/ui/button'
 import { useBoothStore } from '@/store/boothStore'
-import AppCard from '@/components/AppCard'
 
 import { CameraPreview } from './CameraPreview'
 import { FilterPicker } from './FilterPicker'
 import { FramePreview } from './FramePreview'
 import { ShutterControls } from './ShutterControls'
-import Link from 'next/dist/client/link'
-import { ArrowLeft, ChevronLeft } from 'lucide-react'
+import { ChevronLeft } from 'lucide-react';
 
 export function StepCapture() {
   const {
