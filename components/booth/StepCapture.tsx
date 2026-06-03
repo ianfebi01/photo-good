@@ -10,6 +10,8 @@ import { CameraPreview } from './CameraPreview'
 import { FilterPicker } from './FilterPicker'
 import { FramePreview } from './FramePreview'
 import { ShutterControls } from './ShutterControls'
+import Link from 'next/dist/client/link'
+import { ArrowLeft, ChevronLeft } from 'lucide-react'
 
 export function StepCapture() {
   const {
@@ -30,17 +32,26 @@ export function StepCapture() {
 
   const frame = frames.find( ( f ) => f.key === frameKey ) ?? frames[0]
   const photoCount = frame?.photoCount ?? 0
-  const liveSrc = useMemo( () => `/api/camera/stream?key=${streamKey}`, [streamKey] )
+  const liveSrc = useMemo(
+    () => `/api/camera/stream?key=${streamKey}`,
+    [streamKey],
+  )
 
   const reviewing = phase === 'reviewing'
   const adjusting = phase === 'adjusting'
   const busy = phase === 'running' || phase === 'composing'
-  const canCapture = !busy && !reviewing && !adjusting && photoCount - photos.length > 0
+  const canCapture =
+    !busy && !reviewing && !adjusting && photoCount - photos.length > 0
 
   const [adjustments, setAdjustments] = useState<
     { x: number; y: number; zoom: number; filter: string }[]
   >( () =>
-    Array.from( { length : 10 } ).map( () => ( { x : 0, y : 0, zoom : 1.0, filter : 'none' } ) ),
+    Array.from( { length : 10 } ).map( () => ( {
+      x      : 0,
+      y      : 0,
+      zoom   : 1.0,
+      filter : 'none',
+    } ) ),
   )
   const [selectedSlotIdx, setSelectedSlotIdx] = useState<number | null>( null )
   const [targetSlotIdx, setTargetSlotIdx] = useState<number | null>( null )
@@ -200,8 +211,7 @@ export function StepCapture() {
   return (
     <div className="container px-4 mx-auto xl:h-full">
       <div className="grid gap-12 h-full grid-cols-1 md:grid-cols-6 xl:grid-cols-12 xl:auto-rows-fr">
-
-        <AppCard className="bg-secondary text-neutral-800 p-6 flex flex-col justify-center xl:col-span-3 xl:row-span-2">
+        {/* <AppCard className="bg-secondary text-neutral-800 p-6 flex flex-col justify-center xl:col-span-3 xl:row-span-2">
           <span className="text-[10px] font-bold text-primary/70 uppercase tracking-widest font-sans">
             Step 2 of 3
           </span>
@@ -231,7 +241,48 @@ export function StepCapture() {
             <span className="transition-transform group-hover:-translate-x-1">←</span>
             Back
           </Button>
-        </AppCard>
+        </AppCard> */}
+        <div className="xl:col-span-8 xl:row-span-4 flex flex-col h-full">
+          <div className="grid w-full max-w-5xl grow overflow-hidden rounded-3xl bg-secondary shadow-xl md:grid-cols-[1fr_1.1fr]">
+            <div className="relative hidden flex-col justify-between overflow-hidden bg-primary p-8 text-primary-foreground md:flex">
+              <Button
+                variant="link"
+                className="relative z-10 text-lg font-bold text-white w-fit p-0"
+                onClick={reset}
+                disabled={busy}
+              >
+                <ChevronLeft />
+                Back
+              </Button>
+              <div className="relative z-10 space-y-4 text-white flex flex-col">
+                <span className="text-md font-bold tracking-widest font-sans">
+                  Step 2 of 3
+                </span>
+                <span className="max-w-xs text-xs text-white/70 font-poppins">
+                  Capture &amp; Edit your photos. Take shots, apply filters, and adjust framing to create the perfect strip before moving to the final review.
+                </span>
+              </div>
+            </div>
+
+            <div className="bg-white p-8 flex flex-col justify-center">
+              <div className="mb-8">
+                <p className="text-xs font-bold uppercase tracking-widest text-primary">
+                  Choose your style
+                </p>
+                <h1 className="mt-2 text-3xl font-bold text-foreground">
+                  Apply filters
+                </h1>
+                <FilterPicker
+                  photos={photos}
+                  pending={pending}
+                  activePhoto={activePhoto}
+                  globalFilter={globalFilter}
+                  onFilterChange={setGlobalFilter}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
 
         <div className="xl:col-span-8 xl:row-span-6 flex flex-row gap-12">
           <ShutterControls

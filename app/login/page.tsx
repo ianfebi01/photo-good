@@ -10,7 +10,7 @@ export default async function LoginPage() {
   return (
     <main className="min-h-screen bg-white px-4 py-8 flex items-center justify-center">
       <div className="grid w-full max-w-5xl overflow-hidden rounded-3xl bg-secondary shadow-xl md:grid-cols-[1fr_1.1fr]">
-        <div className="relative hidden min-h-[560px] flex-col justify-between overflow-hidden bg-primary p-8 text-primary-foreground md:flex">
+        <div className="relative hidden min-h-140 flex-col justify-between overflow-hidden bg-primary p-8 text-primary-foreground md:flex">
           <div className="absolute -right-24 -top-24 size-72 rounded-full bg-white/10 blur-3xl" />
           <div className="relative z-10 text-lg font-bold">photo good.</div>
           <div className="relative z-10 space-y-4">
