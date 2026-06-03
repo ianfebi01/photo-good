@@ -32,9 +32,8 @@ export default async function LoginPage() {
             <h1 className="mt-2 text-3xl font-bold text-foreground">
               Sign in to Photo Good
             </h1>
-            <p className="mt-2 text-sm text-muted-foreground font-poppins">
-              The first Google account to sign in automatically becomes super
-              admin.
+            <p className="mt-2 text-sm text-neutral-400 font-poppins">
+              Manage your photo booth frames, view captured photos, and control user access with ease.
             </p>
           </div>
           <GoogleSignInButton />

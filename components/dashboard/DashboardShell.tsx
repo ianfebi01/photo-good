@@ -4,6 +4,7 @@ import { Camera, LogOut, ShieldCheck } from 'lucide-react'
 import { logoutAction } from '@/app/auth/actions'
 import { type AuthUser } from '@/lib/auth/types'
 import { DashboardNav } from './DashboardNav'
+import LogoLink from '../LogoLink'
 
 export function DashboardShell( {
   user,
@@ -17,20 +18,7 @@ export function DashboardShell( {
       {/* Sidebar */}
       <aside className="hidden w-60 shrink-0 flex-col border-r border-neutral-200 bg-white lg:flex">
         <div className="p-5 pb-4">
-          <Link
-            href="/dashboard"
-            className="flex items-center gap-3"
-          >
-            <div
-              className="group relative flex size-8 items-center justify-center cursor-pointer disabled:cursor-not-allowed select-none rounded-full focus:outline-none disabled:opacity-50"
-              title="Snap"
-            >
-              <span className="absolute inset-0 rounded-full border-2 border-primary" />
-              <span className="absolute inset-1 rounded-full bg-primary transition-transform duration-150 group-hover:scale-105 group-active:scale-90 group-disabled:scale-100" >
-              </span>
-            </div>
-            <span className="text-lg font-bold text-neutral-900 font-sans">photo good.</span>
-          </Link>
+          <LogoLink/>
         </div>
 
         <div className="flex-1 overflow-y-auto px-3 py-2">

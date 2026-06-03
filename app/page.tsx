@@ -42,15 +42,17 @@ export default function Home() {
             <div className="relative z-10 flex items-center justify-center">
               <Link
                 href="/booth"
-                className="group relative flex h-56 w-56 items-center justify-center"
+                className="group relative flex items-center"
               >
-                {/* Shadow starburst */}
-                <div className="starburst absolute inset-0 translate-x-3 translate-y-3 bg-accent transition-transform duration-300 group-hover:translate-x-4 group-hover:translate-y-4" />
-                {/* Spinning starburst */}
-                <div className="starburst starburst-spin absolute inset-0 bg-white" />
-                {/* START label — stays still */}
-                <span className="relative z-10 text-2xl font-bold text-primary transition-transform duration-300 group-hover:scale-110">
-                  START
+                <div
+                  className="group relative flex size-20 items-center justify-center cursor-pointer disabled:cursor-not-allowed select-none rounded-full focus:outline-none disabled:opacity-50"
+                  title="Snap"
+                >
+                  <span className="absolute inset-0 rounded-full border-3 border-primary" />
+                  <span className="absolute inset-1.5 rounded-full bg-primary transition-transform duration-150 group-hover:scale-105 group-active:scale-90 group-disabled:scale-100"></span>
+                </div>
+                <span className="text-2xl font-bold text-neutral-700 font-sans ml-2">
+                  Start!
                 </span>
               </Link>
             </div>
