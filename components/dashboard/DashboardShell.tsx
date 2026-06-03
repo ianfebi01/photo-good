@@ -70,7 +70,7 @@ export function DashboardShell( {
       </div>
 
       {/* Main content */}
-      <main className="min-w-0 flex-1 p-5 pt-20 lg:p-8 lg:pt-8">
+      <main className="min-w-0 flex-1 p-5 pt-20 lg:p-8 lg:pt-8 h-screen overflow-y-auto scrollbar-thin scrollbar-thumb-neutral-200 scrollbar-track-transparent">
         {children}
       </main>
     </div>
