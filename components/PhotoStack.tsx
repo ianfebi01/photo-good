@@ -4,7 +4,12 @@ import { useRef, useEffect, useState } from 'react'
 import gsap from 'gsap'
 import { cn } from '@/lib/utils'
 
-const FRAMES = ['/api/frames/preview?key=summer-day', '/api/frames/preview?key=good-vibes']
+const FRAMES = [
+  '/api/frames/preview?key=summer-day',
+  '/api/frames/preview?key=memory-sender',
+  '/api/frames/preview?key=red-friendship',
+  '/api/frames/preview?key=family-polaroid',
+]
 
 // back → middle → front
 const STACK = [

@@ -4,6 +4,7 @@ import path from "node:path";
 import sharp from "sharp";
 
 import {
+  BUILT_IN_KEYS,
   MAX_SLOTS_PER_FRAME,
   USER_FRAMES_DIR,
   USER_FRAMES_MANIFEST,
@@ -166,7 +167,7 @@ export async function POST( request: Request ) {
   const existing = new Set( manifest.frames.map( ( f ) => f.key ) );
   let key = `user-${baseSlug}`;
   let suffix = 2;
-  while ( existing.has( key ) || key === "summer-day" || key === "good-vibes" ) {
+  while ( existing.has( key ) || BUILT_IN_KEYS.has( key ) ) {
     key = `user-${baseSlug}-${suffix++}`;
   }
 

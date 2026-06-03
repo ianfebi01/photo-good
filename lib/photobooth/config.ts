@@ -35,38 +35,129 @@ export type FrameDef = {
   builtIn: boolean;
 };
 
-/** Bundled frames shipped with the app. */
+function builtInImage( filename: string ): string {
+  return path.join( process.cwd(), "public", "frames", filename );
+}
+
+/** Bundled frames shipped with the app. Slots auto-detected from #00bf63 panels. */
 const BUILT_IN: FrameDef[] = [
   {
     key       : "summer-day",
     label     : "Summer Day",
-    image     : path.join( process.cwd(), "public", "frames", "summer-day.png" ),
+    image     : builtInImage( "summer-day.png" ),
     publicUrl : "/frames/summer-day.png",
-    width     : 707,
-    height    : 2000,
+    width     : 1414,
+    height    : 4000,
     builtIn   : true,
     slots     : [
-      { left : 38, top : 71,   width : 631, height : 360 },
-      { left : 45, top : 476,  width : 630, height : 360 },
-      { left : 45, top : 881,  width : 630, height : 360 },
-      { left : 32, top : 1286, width : 630, height : 360 },
+      { left : 76, top : 142,  width : 1262, height : 720 },
+      { left : 76, top : 952,  width : 1262, height : 721 },
+      { left : 76, top : 1762, width : 1262, height : 721 },
+      { left : 76, top : 2573, width : 1262, height : 720 },
     ],
   },
   {
-    key       : "good-vibes",
-    label     : "Good Vibes",
-    image     : path.join( process.cwd(), "public", "frames", "good-vibes.jpg" ),
-    publicUrl : "/frames/good-vibes.jpg",
-    width     : 533,
-    height    : 1600,
+    key       : "memory-sender",
+    label     : "Memory Sender",
+    image     : builtInImage( "memory-sender.png" ),
+    publicUrl : "/frames/memory-sender.png",
+    width     : 1414,
+    height    : 4000,
     builtIn   : true,
     slots     : [
-      { left : 56, top : 47,  width : 421, height : 354 },
-      { left : 56, top : 448, width : 421, height : 312 },
-      { left : 60, top : 813, width : 413, height : 400 },
+      { left : 86, top : 142,  width : 1243, height : 747 },
+      { left : 86, top : 937,  width : 1243, height : 748 },
+      { left : 86, top : 1732, width : 1243, height : 748 },
+      { left : 86, top : 2528, width : 1243, height : 748 },
+    ],
+  },
+  {
+    key       : "multicolor-photography",
+    label     : "Multicolor Photography",
+    image     : builtInImage( "multicolor-photography.png" ),
+    publicUrl : "/frames/multicolor-photography.png",
+    width     : 1600,
+    height    : 4000,
+    builtIn   : true,
+    slots     : [
+      { left : 159, top : 392,  width : 1441, height : 716 },
+      { left : 173, top : 1114, width : 1427, height : 1243 },
+      { left : 188, top : 2364, width : 1412, height : 1242 },
+    ],
+  },
+  {
+    key       : "retro-portraits",
+    label     : "Retro Portraits",
+    image     : builtInImage( "retro-portraits.png" ),
+    publicUrl : "/frames/retro-portraits.png",
+    width     : 1200,
+    height    : 3600,
+    builtIn   : true,
+    slots     : [
+      { left : 359, top : 126,  width : 715, height : 1077 },
+      { left : 359, top : 1260, width : 715, height : 1077 },
+      { left : 359, top : 2397, width : 715, height : 1077 },
+    ],
+  },
+  {
+    key       : "family-polaroid",
+    label     : "Family Polaroid",
+    image     : builtInImage( "family-polaroid.png" ),
+    publicUrl : "/frames/family-polaroid.png",
+    width     : 1200,
+    height    : 3600,
+    builtIn   : true,
+    slots     : [
+      { left : 202, top : 206,  width : 776, height : 718 },
+      { left : 210, top : 942,  width : 786, height : 769 },
+      { left : 206, top : 1824, width : 777, height : 1463 },
+    ],
+  },
+  {
+    key       : "red-friendship",
+    label     : "Red Friendship",
+    image     : builtInImage( "red-friendship.png" ),
+    publicUrl : "/frames/red-friendship.png",
+    width     : 1200,
+    height    : 3600,
+    builtIn   : true,
+    slots     : [
+      { left : 126, top : 102,  width : 948, height : 803 },
+      { left : 127, top : 1008, width : 946, height : 703 },
+      { left : 143, top : 1826, width : 914, height : 906 },
+    ],
+  },
+  {
+    key       : "red-white-friends",
+    label     : "Red & White Friends",
+    image     : builtInImage( "red-white-friends.png" ),
+    publicUrl : "/frames/red-white-friends.png",
+    width     : 1200,
+    height    : 3600,
+    builtIn   : true,
+    slots     : [
+      { left : 125, top : 436,  width : 948, height : 948 },
+      { left : 125, top : 1663, width : 948, height : 948 },
+    ],
+  },
+  {
+    key       : "white-pink",
+    label     : "White & Pink",
+    image     : builtInImage( "white-pink.png" ),
+    publicUrl : "/frames/white-pink.png",
+    width     : 1181,
+    height    : 3543,
+    builtIn   : true,
+    slots     : [
+      { left : 177, top : 192,  width : 827, height : 755 },
+      { left : 177, top : 1317, width : 827, height : 754 },
+      { left : 177, top : 2442, width : 827, height : 754 },
     ],
   },
 ];
+
+/** Keys reserved by built-in frames — user uploads must not collide with these. */
+export const BUILT_IN_KEYS = new Set( BUILT_IN.map( ( f ) => f.key ) );
 
 /** Where user-uploaded frames live (image + manifest.json). Served from /public. */
 export const USER_FRAMES_DIR = path.join(
