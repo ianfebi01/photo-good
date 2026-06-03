@@ -285,11 +285,11 @@ export function AddFrameDialog( { onUploaded, trigger }: AddFrameDialogProps ) {
       <DialogContent
         ref={handlePopupRef}
         overlayRef={overlayRef}
-        className="w-full max-w-full h-dvh max-h-dvh sm:h-auto sm:max-h-[calc(100vh-4rem)] rounded-none sm:rounded-3xl overflow-y-auto sm:max-w-2xl flex flex-col origin-center bg-white p-0 border border-neutral-100 shadow-2xl font-sans"
+        className="w-full max-w-full h-dvh max-h-dvh sm:h-auto sm:max-h-[calc(100vh-4rem)] rounded-none sm:rounded-3xl overflow-y-auto sm:max-w-2xl flex flex-col origin-center bg-white p-0 border border-neutral-100 shadow-2xl"
       >
         <div
           ref={contentRef}
-          className="contents font-sans"
+          className="contents"
         >
           {/* Header */}
           <DialogHeader className="flex flex-row items-center justify-between border-b border-neutral-100 px-6 py-5 shrink-0 font-sans">
@@ -309,10 +309,10 @@ export function AddFrameDialog( { onUploaded, trigger }: AddFrameDialogProps ) {
           </DialogHeader>
 
           {/* Form Fields Body (3-column layout) */}
-          <div className="flex flex-col sm:grid sm:grid-cols-[160px_1fr_160px] gap-6 px-6 py-6 font-sans grow min-h-[300px]">
+          <div className="flex flex-col sm:grid sm:grid-cols-[160px_1fr_160px] gap-6 px-6 py-6 grow min-h-[300px] font-jakarta">
             {/* Column 1: Upload Dragzone Box */}
-            <div className="flex flex-col gap-1.5 font-sans h-full">
-              <span className="font-semibold text-neutral-500 text-[10px] uppercase tracking-wider">Upload Template</span>
+            <div className="flex flex-col gap-1.5 h-full">
+              <span className="font-semibold text-neutral-500 text-[10px] tracking-wider">Upload Template</span>
               <div
                 onDragEnter={handleDrag}
                 onDragOver={handleDrag}
@@ -370,10 +370,10 @@ export function AddFrameDialog( { onUploaded, trigger }: AddFrameDialogProps ) {
             </div>
 
             {/* Column 2: Inputs & Color Swatch */}
-            <div className="flex flex-col gap-5 justify-center font-sans">
+            <div className="flex flex-col gap-5 justify-center">
               {/* Frame Name Field */}
-              <label className="flex flex-col gap-1.5 text-sm font-sans">
-                <span className="font-semibold text-neutral-500 text-[10px] uppercase tracking-wider">Frame Name</span>
+              <label className="flex flex-col gap-1.5 text-sm">
+                <span className="font-semibold text-neutral-500 text-[10px] tracking-wider">Frame Name</span>
                 <input
                   type="text"
                   value={label}
@@ -386,8 +386,8 @@ export function AddFrameDialog( { onUploaded, trigger }: AddFrameDialogProps ) {
               </label>
 
               {/* Slot Green Color Code */}
-              <div className="flex flex-col gap-1.5 font-sans">
-                <span className="font-semibold text-neutral-500 text-[10px] uppercase tracking-wider">Slot Green Color Code</span>
+              <div className="flex flex-col gap-1.5">
+                <span className="font-semibold text-neutral-500 text-[10px] tracking-wider">Slot Green Color Code</span>
                 <button
                   type="button"
                   onClick={handleCopyGreenColor}
@@ -407,8 +407,8 @@ export function AddFrameDialog( { onUploaded, trigger }: AddFrameDialogProps ) {
 
               {/* Slots Detected Info */}
               {file && (
-                <div className="flex flex-col gap-1 font-sans">
-                  <span className="font-semibold text-neutral-500 text-[10px] uppercase tracking-wider">Status</span>
+                <div className="flex flex-col gap-1">
+                  <span className="font-semibold text-neutral-500 text-[10px] tracking-wider">Status</span>
                   <div className="rounded-lg border border-neutral-100 bg-neutral-50/30 px-3 py-2 text-xs font-medium text-neutral-600">
                     {previewLoading ? (
                       <span className="text-neutral-400 flex items-center gap-1.5 animate-pulse">
@@ -432,8 +432,8 @@ export function AddFrameDialog( { onUploaded, trigger }: AddFrameDialogProps ) {
             </div>
 
             {/* Column 3: Preview Slots */}
-            <div className="flex flex-col gap-1.5 font-sans h-full">
-              <span className="font-semibold text-neutral-500 text-[10px] uppercase tracking-wider">Preview Slots</span>
+            <div className="flex flex-col gap-1.5 h-full">
+              <span className="font-semibold text-neutral-500 text-[10px] tracking-wider">Preview Slots</span>
               <div
                 className={cn(
                   'flex-1 overflow-hidden flex items-center justify-center relative min-h-[260px] sm:min-h-[unset] sm:h-full font-sans rounded-none',
