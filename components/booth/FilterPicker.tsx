@@ -23,19 +23,19 @@ export function FilterPicker( {
   return (
     <div className="flex flex-row items-center gap-6 w-full h-full">
       <div className="flex flex-col gap-1.5 flex-2 justify-center h-full overflow-hidden">
-        <div className="flex flex-col xl:flex-row gap-2 overflow-auto scrollbar-none h-full xl:items-center">
+        <div className="flex flex-row gap-2 overflow-auto scrollbar-none h-full xl:items-center pb-5">
           {filtersList.map( ( f ) => (
             <button
               key={f.name}
               type="button"
               onClick={() => onFilterChange( f.name )}
               className={cn(
-                'flex flex-col gap-1 text-center transition cursor-pointer select-none xl:h-full xl:w-fit!',
+                'flex flex-col gap-1 text-center transition cursor-pointer select-none h-full w-fit! relative',
                 globalFilter === f.name ? 'bg-primary/2 text-black' : 'text-neutral-500',
               )}
             >
               {hasPhoto ? (
-                <div className="aspect-3/2 w-full xl:h-full overflow-hidden rounded-md bg-accent relative">
+                <div className="aspect-3/2 h-full overflow-hidden rounded-xs xl:rounded-xl bg-accent relative">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={previewUrl}
@@ -45,11 +45,11 @@ export function FilterPicker( {
                   />
                 </div>
               ) : (
-                <div className="aspect-4/3 h-full overflow-hidden rounded-md bg-accent relative flex items-center justify-center text-white">
+                <div className="aspect-3/2 h-full overflow-hidden rounded-md bg-accent relative flex items-center justify-center text-white">
                   {f.label}
                 </div>
               )}
-              <span className="text-[9px] font-bold truncate w-full">
+              <span className="text-[9px] xl:text-xs font-bold truncate w-full absolute bottom-0 inset-x-0 -mb-4 xl:-mb-6">
                 {f.label}
               </span>
             </button>

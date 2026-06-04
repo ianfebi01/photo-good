@@ -517,7 +517,7 @@ export function StepCapture() {
           )}
         </div>
       ) : (
-        <div className="flex flex-row gap-4">
+        <div className="flex flex-col gap-4 grow items-center">
           {/* Bounded strip: height caps it, aspect ratio sets the width */}
           {frame && (
             <FramePreview
@@ -527,7 +527,7 @@ export function StepCapture() {
                   '--frame-ar' : `${frame.width} / ${frame.height}`,
                 } as CSSProperties
               }
-              className="flex flex-col shrink-0 h-[60vh] max-w-[60%] aspect-[var(--frame-ar)]"
+              className="flex flex-col shrink-0 h-[60vh] max-w-[60%] aspect-[var(--frame-ar)] grow"
               frame={frame}
               photos={photos}
               pending={pending}
@@ -548,17 +548,17 @@ export function StepCapture() {
           {/* Filters take the rest, matched in height, scrolling vertically */}
           <div
             ref={filterPanelRef}
-            className="flex flex-col flex-1 min-w-0 h-[60vh] overflow-y-auto rounded-md bg-secondary shadow-xl"
+            className="flex overflow-y-auto bg-white shadow-xl w-full p-2 flex-col h-32"
           >
-            <div className="grow pt-6 pb-4 px-3 flex flex-col bg-white">
-              <p className="text-[0.625rem] font-bold uppercase tracking-widest text-primary">
+
+            {/* <p className="text-[0.625rem] font-bold uppercase tracking-widest text-primary">
                 Choose your style
-              </p>
-              <h1 className="my-2 text-xl font-bold text-foreground">
+              </p> */}
+            <h1 className="my-2 text-md font-bold text-foreground">
                 Apply filters
-              </h1>
-              {filterPicker}
-            </div>
+            </h1>
+            {filterPicker}
+
           </div>
         </div>
       )}
@@ -598,10 +598,10 @@ export function StepCapture() {
   )
 
   return (
-    <div className="flex flex-col gap-6 grow overflow-hidden">
+    <div className="flex flex-col gap-6 grow">
+      {!isXl && stepperNav}
       {isXl ? desktopLayout : stepperLayout}
       {errorBanner}
-      {!isXl && stepperNav}
     </div>
   )
 }
