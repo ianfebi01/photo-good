@@ -476,7 +476,7 @@ export function StepCapture() {
 
   // ── Below xl: 2-step stepper (1. Capture → 2. Edit) ───────────────────────
   const stepperLayout = (
-    <div className="container px-4 mx-auto flex flex-col grow min-h-0 justify-center border">
+    <div className="container px-4 mx-auto flex flex-col grow min-h-0 justify-center">
       {activeTab === 'capture' ? (
         <div
           ref={capturePanelRef}
