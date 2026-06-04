@@ -483,7 +483,7 @@ export function StepCapture() {
           <div className="flex flex-col items-center justify-center gap-2 w-full grow p-2 bg-white">
             {renderCamera( 'w-full max-h-[45vh] shrink-0 rounded-none' )}
           </div>
-          <div className="h-32 w-full">
+          <div className="h-32">
             {shutterControls}
           </div>
 
