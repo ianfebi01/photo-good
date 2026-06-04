@@ -51,6 +51,7 @@ export function CameraPreview( {
     <div className={cn( 'relative aspect-3/2 overflow-hidden rounded-3xl hover:shadow-xl transition-all duration-300 ease-in-out', className )}>
       {showStream ? (
         <LiveStream
+          key="stream"
           ref={liveImgRef}
           src={liveSrc}
           className="absolute inset-0 h-full w-full object-cover"
@@ -58,20 +59,25 @@ export function CameraPreview( {
       ) : pending ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
+          key="pending"
           src={pending.url}
           alt="Captured photo preview"
-          className="absolute inset-0 h-full w-full object-cover"
+          className="absolute inset-0 h-full w-full object-cover animate-in fade-in zoom-in-95 duration-300"
         />
       ) : activePhoto ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
+          key="active"
           src={activePhoto.url}
           alt="Active slot photo preview"
-          className="absolute inset-0 h-full w-full object-cover"
+          className="absolute inset-0 h-full w-full object-cover animate-in fade-in duration-300"
           style={{ filter : getCSSFilter( globalFilter ) }}
         />
       ) : (
-        <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-neutral-900 text-neutral-500">
+        <div
+          key="standby"
+          className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-neutral-900 text-neutral-500 animate-in fade-in duration-300"
+        >
           <Camera className="size-10 text-neutral-600 animate-pulse" />
           <span className="text-xs font-semibold tracking-wider uppercase font-sans">
             Camera Standby
@@ -87,7 +93,7 @@ export function CameraPreview( {
       )}
 
       {running && (
-        <div className="absolute inset-0 bg-black/45 backdrop-blur-xs flex items-center justify-center text-white z-20">
+        <div className="absolute inset-0 bg-black/45 backdrop-blur-xs flex items-center justify-center text-white z-20 animate-in fade-in duration-300">
           <div className="flex flex-col items-center gap-2 animate-pulse">
             <div className="size-2 bg-primary rounded-full animate-ping" />
             <span className="text-sm font-bold tracking-wider uppercase font-sans">
@@ -98,7 +104,7 @@ export function CameraPreview( {
       )}
 
       {composing && (
-        <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex flex-col items-center justify-center text-white z-20">
+        <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex flex-col items-center justify-center text-white z-20 animate-in fade-in duration-300">
           <div className="flex flex-col items-center gap-3">
             <span className="size-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
             <span className="text-sm font-bold tracking-wider uppercase font-sans">
