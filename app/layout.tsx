@@ -44,9 +44,9 @@ export default function RootLayout( {
   return (
     <html
       lang="en"
-      className={`${shadowFont.variable} ${geistMono.variable} ${poppins.variable} ${inter.variable} ${jakarta.variable} h-full antialiased`}
+      className={`${shadowFont.variable} ${geistMono.variable} ${poppins.variable} ${inter.variable} ${jakarta.variable} h-full w-screen overflow-hidden antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="h-full flex flex-col overflow-y-auto">{children}</body>
     </html>
   );
 }
