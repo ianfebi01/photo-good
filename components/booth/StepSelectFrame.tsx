@@ -16,7 +16,7 @@ export function StepSelectFrame() {
   const frame = frames.find( ( f ) => f.key === frameKey ) ?? frames[0]
 
   return (
-    <div className="flex flex-col gap-6 grow overflow-hidden">
+    <div className="container mx-auto px-4 py-8 lg:py-16 flex flex-col gap-6 grow overflow-hidden">
       <FrameSelector
         frames={frames}
         active={frameKey}

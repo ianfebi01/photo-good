@@ -403,7 +403,7 @@ export function StepCapture() {
 
   // ── Desktop (xl+): filters, capture, and the strip share one 12-col grid ──
   const desktopLayout = (
-    <div className="container px-4 mx-auto grow min-h-0">
+    <div className="container px-4 mx-auto grow min-h-0 py-8 lg:py-16">
       <div className="grid gap-12 h-full grid-cols-12 auto-rows-fr">
         {/* Filters */}
         <div className="col-span-8 row-span-4 flex flex-col h-full">
@@ -517,8 +517,9 @@ export function StepCapture() {
           )}
         </div>
       ) : (
-        <div className="flex flex-col gap-4 grow items-center">
-          {/* Bounded strip: height caps it, aspect ratio sets the width */}
+        // Strip fills the height left above the docked filter bar; aspect ratio
+        // turns that height into the width.
+        <div className="flex grow items-center justify-center min-h-0">
           {frame && (
             <FramePreview
               rootRef={framePanelRef}
@@ -527,7 +528,7 @@ export function StepCapture() {
                   '--frame-ar' : `${frame.width} / ${frame.height}`,
                 } as CSSProperties
               }
-              className="flex flex-col shrink-0 h-[60vh] max-w-[60%] aspect-[var(--frame-ar)] grow"
+              className="flex flex-col h-full max-w-full aspect-(--frame-ar)"
               frame={frame}
               photos={photos}
               pending={pending}
@@ -544,22 +545,6 @@ export function StepCapture() {
               onZoomChange={adjusting ? handleZoomChange : undefined}
             />
           )}
-
-          {/* Filters take the rest, matched in height, scrolling vertically */}
-          <div
-            ref={filterPanelRef}
-            className="flex overflow-y-auto bg-white shadow-xl w-full p-2 flex-col h-32"
-          >
-
-            {/* <p className="text-[0.625rem] font-bold uppercase tracking-widest text-primary">
-                Choose your style
-              </p> */}
-            <h1 className="my-2 text-md font-bold text-foreground">
-                Apply filters
-            </h1>
-            {filterPicker}
-
-          </div>
         </div>
       )}
     </div>
@@ -567,7 +552,7 @@ export function StepCapture() {
 
   // Bottom Back/Next bar — drives the stepper between its two steps
   const stepperNav = (
-    <div className="flex justify-between px-4">
+    <div className="flex justify-between px-4 pt-4">
       <Button
         size="lg"
         variant="outline"
@@ -597,11 +582,24 @@ export function StepCapture() {
     </div>
   )
 
+  // Full-width filter bar docked at the bottom of the edit step (mobile navbar
+  // style). Lives outside the padded container so it spans the full width.
+  const filterBar = (
+    <div
+      ref={filterPanelRef}
+      className="w-full shrink-0 h-28 overflow-hidden bg-white px-4 pt-2 shadow-[0_-2px_12px_rgba(0,0,0,0.08)] flex flex-col"
+    >
+      <h1 className="text-md font-bold text-foreground mb-2">Apply filters</h1>
+      {filterPicker}
+    </div>
+  )
+
   return (
     <div className="flex flex-col gap-6 grow">
       {!isXl && stepperNav}
       {isXl ? desktopLayout : stepperLayout}
       {errorBanner}
+      {!isXl && activeTab === 'edit' && filterBar}
     </div>
   )
 }

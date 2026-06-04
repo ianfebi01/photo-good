@@ -7,7 +7,7 @@ export function StepResult() {
   if ( !strip ) return null
 
   return (
-    <div className="flex flex-col items-center gap-6">
+    <div className="container mx-auto px-4 py-8 lg:py-16 flex flex-col items-center gap-6">
       <h2 className="text-lg font-semibold text-foreground">
         Your strip is ready
       </h2>

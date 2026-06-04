@@ -45,7 +45,8 @@ export default function BoothPage() {
 
   return (
     <main className="">
-      <div className="h-screen bg-neutral-100 xl:min-h-[unset] xl:h-screen overflow-hidden container mx-auto px-4 py-8 lg:py-16 flex flex-col">
+      {/* Full-height shell only — each step owns its container/padding */}
+      <div className="h-screen bg-neutral-100 xl:min-h-[unset] xl:h-screen overflow-hidden flex flex-col">
         {/* <header className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h1 className="text-3xl font-semibold tracking-tight text-foreground">
