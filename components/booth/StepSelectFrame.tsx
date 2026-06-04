@@ -17,15 +17,15 @@ export function StepSelectFrame() {
 
   return (
     <div className="container mx-auto px-4 py-8 lg:py-16 flex flex-col gap-6 grow overflow-hidden">
-      <FrameSelector
-        frames={frames}
-        active={frameKey}
-        disabled={false}
-        onSelect={selectFrame}
-        onAdd={( f: ClientFrame ) => addFrame( f )}
-      />
-
-      <div className="flex justify-end">
+      <div className="flex justify-between gap-4">
+        <div className="flex flex-col">
+          <span className="text-sm font-bold text-neutral-800 font-sans">
+            Select Frame Template
+          </span>
+          <span className="text-xs text-neutral-400 font-sans">
+            Click the stack or use the arrows to choose a template
+          </span>
+        </div>
         <Button
           size="lg"
           onClick={start}
@@ -34,6 +34,13 @@ export function StepSelectFrame() {
           Start session <ChevronRight/>
         </Button>
       </div>
+      <FrameSelector
+        frames={frames}
+        active={frameKey}
+        disabled={false}
+        onSelect={selectFrame}
+        onAdd={( f: ClientFrame ) => addFrame( f )}
+      />
     </div>
   )
 }
