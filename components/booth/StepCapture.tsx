@@ -480,13 +480,17 @@ export function StepCapture() {
       {activeTab === 'capture' ? (
         <div
           ref={capturePanelRef}
-          className="flex flex-col items-center justify-center gap-4 w-full h-full min-h-0 overflow-y-auto py-2"
+          className="flex flex-col items-center gap-24 w-full h-full min-h-0 overflow-y-auto py-8"
         >
-          {renderCamera( 'w-full max-h-[45vh] shrink-0' )}
-          {shutterControls}
+          <div className="flex flex-col items-center justify-center gap-2 w-full grow p-2 bg-white">
+            {renderCamera( 'w-full max-h-[45vh] shrink-0 rounded-none' )}
+          </div>
+          <div className="h-32 w-full">
+            {shutterControls}
+          </div>
 
           {/* Captured shots, filling as you snap */}
-          {photoCount > 0 && (
+          {/* {photoCount > 0 && (
             <div className="grid grid-cols-2 w-full gap-2 shrink-0">
               {Array.from( { length : photoCount } ).map( ( _, i ) => (
                 <div
@@ -514,7 +518,7 @@ export function StepCapture() {
                 </div>
               ) )}
             </div>
-          )}
+          )} */}
         </div>
       ) : (
         // Strip fills the height left above the docked filter bar; aspect ratio
@@ -555,13 +559,14 @@ export function StepCapture() {
     <div className="flex justify-between px-4 pt-8 lg:pt-16">
       <Button
         size="lg"
-        variant="outline"
+        variant="ghost"
+        className="-mx-2.5"
         onClick={
           activeTab === 'capture' ? reset : () => setActiveTab( 'capture' )
         }
         disabled={busy || !frame}
       >
-        <ChevronLeft /> Back
+        <ChevronLeft className="size-6" />
       </Button>
       {activeTab === 'capture' ? (
         <Button
@@ -587,7 +592,7 @@ export function StepCapture() {
   const filterBar = (
     <div
       ref={filterPanelRef}
-      className="w-full shrink-0 h-28 overflow-hidden bg-white px-4 pt-2 shadow-[0_-2px_12px_rgba(0,0,0,0.08)] flex flex-col"
+      className="w-full shrink-0 h-28 overflow-hidden bg-white px-4 pt-2 flex flex-col"
     >
       <h1 className="text-md font-bold text-foreground mb-2">Apply filters</h1>
       {filterPicker}
