@@ -10,14 +10,12 @@ import {
 import gsap from 'gsap'
 
 import { Button } from '@/components/ui/button'
-import { cn } from '@/lib/utils'
 import { useBoothStore } from '@/store/boothStore'
 
 import { CameraPreview } from './CameraPreview'
 import { FilterPicker } from './FilterPicker'
 import { FramePreview } from './FramePreview'
 import { ShutterControls } from './ShutterControls'
-import { getCSSFilter } from './filters'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 
 export function StepCapture() {

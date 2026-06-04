@@ -1,4 +1,4 @@
-import { Check, RotateCcw } from 'lucide-react'
+import { CheckIcon, RotateCcw } from 'lucide-react'
 
 interface ShutterControlsProps {
   reviewing: boolean
@@ -31,23 +31,25 @@ export function ShutterControls( {
 
       {reviewing ? (
         <div className="flex flex-col items-center justify-center h-full w-full relative z-10 gap-4">
-          <span className="text-[10px] font-black text-primary uppercase tracking-wider font-sans">
+          <span className="text-[10px] font-black text-primary uppercase tracking-wider font-sans invisible">
             Accept?
           </span>
-          <div className="flex gap-2">
-            <button
-              onClick={onRetake}
-              className="p-2.5 rounded-xl border border-neutral-300 hover:bg-neutral-100 bg-white text-neutral-600 cursor-pointer flex items-center justify-center transition focus:outline-none"
-              title="Retake"
-            >
-              <RotateCcw className="size-4" />
-            </button>
+          <div className="flex gap-2 relative">
             <button
               onClick={onAccept}
-              className="p-2.5 rounded-xl bg-primary hover:bg-primary/95 text-white cursor-pointer flex items-center justify-center transition focus:outline-none"
+              className="group relative h-20 w-20 items-center justify-center cursor-pointer select-none rounded-full focus:outline-none flex"
               title="Accept"
             >
-              <Check className="size-4" />
+              <span className="absolute inset-0 rounded-full border-[3px] border-emerald-500" />
+              <span className="absolute inset-1.5 rounded-full bg-emerald-500 transition-transform duration-150 group-hover:scale-105 group-active:scale-90" />
+              <CheckIcon className="size-8 relative text-white" />
+            </button>
+            <button
+              onClick={onRetake}
+              className="p-2.5 aspect-square h-fit rounded-full bg-transparent group hover:bg-white text-neutral-500 cursor-pointer flex items-center justify-center transition focus:outline-none absolute left-full inset-y-0 my-auto ml-2"
+              title="Retake"
+            >
+              <RotateCcw className="size-6 group-hover:-rotate-45 transition-all duration-200 ease-in-out" />
             </button>
           </div>
         </div>
