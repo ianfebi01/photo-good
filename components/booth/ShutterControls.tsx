@@ -26,7 +26,7 @@ export function ShutterControls( {
   onSnap,
 }: ShutterControlsProps ) {
   return (
-    <div className="xl:grow">
+    <div className="relative xl:grow">
       <div className="pointer-events-none absolute -top-10 -right-10 h-20 w-20 rounded-full bg-primary/5 blur-xl" />
 
       {reviewing ? (

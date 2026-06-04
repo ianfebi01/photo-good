@@ -476,18 +476,18 @@ export function StepCapture() {
 
   // ── Below xl: 2-step stepper (1. Capture → 2. Edit) ───────────────────────
   const stepperLayout = (
-    <div className="container px-4 mx-auto flex flex-col grow min-h-0 justify-center">
+    <div className="container px-4 mx-auto flex flex-col grow min-h-0 justify-center border">
       {activeTab === 'capture' ? (
         <div
           ref={capturePanelRef}
-          className="flex flex-col items-center gap-4 w-full"
+          className="flex flex-col items-center justify-center gap-4 w-full h-full min-h-0 overflow-y-auto py-2"
         >
-          {renderCamera( 'w-full' )}
+          {renderCamera( 'w-full max-h-[45vh] shrink-0' )}
           {shutterControls}
 
           {/* Captured shots, filling as you snap */}
           {photoCount > 0 && (
-            <div className="grid grid-cols-2 w-full gap-2">
+            <div className="grid grid-cols-2 w-full gap-2 shrink-0">
               {Array.from( { length : photoCount } ).map( ( _, i ) => (
                 <div
                   key={i}
@@ -552,7 +552,7 @@ export function StepCapture() {
 
   // Bottom Back/Next bar — drives the stepper between its two steps
   const stepperNav = (
-    <div className="flex justify-between px-4 pt-4">
+    <div className="flex justify-between px-4 pt-8 lg:pt-16">
       <Button
         size="lg"
         variant="outline"
