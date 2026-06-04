@@ -279,37 +279,7 @@ export function StepCapture() {
   return (
     <div className="container px-4 mx-auto xl:h-full">
       <div className="grid gap-12 h-full grid-cols-1 md:grid-cols-6 xl:grid-cols-12 xl:auto-rows-fr">
-        {/* <AppCard className="bg-secondary text-neutral-800 p-6 flex flex-col justify-center xl:col-span-3 xl:row-span-2">
-          <span className="text-[10px] font-bold text-primary/70 uppercase tracking-widest font-sans">
-            Step 2 of 3
-          </span>
-          <span className="text-xl font-bold text-neutral-800 font-sans">
-            Capture &amp; Edit
-          </span>
-        </AppCard>
 
-        <AppCard className="bg-chart-2 text-neutral-800 p-6 flex flex-col justify-center xl:col-span-5 xl:row-span-4">
-          <FilterPicker
-            photos={photos}
-            pending={pending}
-            activePhoto={activePhoto}
-            globalFilter={globalFilter}
-            onFilterChange={setGlobalFilter}
-          />
-        </AppCard>
-
-        <AppCard className="bg-accent text-secondary-foreground p-3 flex items-center xl:col-span-3 xl:row-span-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={reset}
-            disabled={busy}
-            className="group font-sans text-sm font-bold tracking-wide uppercase text-secondary-foreground hover:bg-white/10 hover:text-secondary-foreground rounded-xl px-4 py-2 cursor-pointer flex items-center gap-1.5"
-          >
-            <span className="transition-transform group-hover:-translate-x-1">←</span>
-            Back
-          </Button>
-        </AppCard> */}
         <div className="xl:col-span-8 xl:row-span-4 flex flex-col h-full">
           <div className="grid w-full max-w-5xl grow overflow-hidden rounded-3xl bg-secondary shadow-xl md:grid-cols-[1fr_1.1fr]">
             <div className="relative hidden flex-col justify-between overflow-hidden bg-primary p-8 text-primary-foreground md:flex">
