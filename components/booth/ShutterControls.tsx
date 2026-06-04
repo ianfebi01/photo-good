@@ -26,7 +26,7 @@ export function ShutterControls( {
   onSnap,
 }: ShutterControlsProps ) {
   return (
-    <div className="grow">
+    <div className="xl:grow">
       <div className="pointer-events-none absolute -top-10 -right-10 h-20 w-20 rounded-full bg-primary/5 blur-xl" />
 
       {reviewing ? (
@@ -56,13 +56,24 @@ export function ShutterControls( {
           <span className="text-[10px] font-black text-emerald-500 uppercase tracking-wider font-sans">
             Complete!
           </span>
+          {/* xl: compose here. Below xl composing is handled by the stepper's
+              "Finish" button, so the shutter is just shown disabled. */}
           <button
             onClick={onCompose}
-            className="group relative flex h-20 w-20 items-center justify-center cursor-pointer select-none rounded-full focus:outline-none"
+            className="group relative hidden h-20 w-20 items-center justify-center cursor-pointer select-none rounded-full focus:outline-none xl:flex"
             title="Compose"
           >
             <span className="absolute inset-0 rounded-full border-[3px] border-emerald-500" />
             <span className="absolute inset-1.5 rounded-full bg-emerald-500 transition-transform duration-150 group-hover:scale-105 group-active:scale-90" />
+          </button>
+          <button
+            type="button"
+            disabled
+            className="relative flex h-20 w-20 items-center justify-center cursor-not-allowed select-none rounded-full opacity-50 focus:outline-none xl:hidden"
+            title="Complete"
+          >
+            <span className="absolute inset-0 rounded-full border-[3px] border-emerald-500" />
+            <span className="absolute inset-1.5 rounded-full bg-emerald-500" />
           </button>
         </div>
       ) : (

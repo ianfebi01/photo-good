@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react'
 import { Camera } from 'lucide-react'
 
 import type { Phase, Shot } from '@/store/boothStore'
+import { cn } from '@/lib/utils'
 import { LiveStream } from './LiveStream'
 import { getCSSFilter } from './filters'
 import { createPortal } from 'react-dom'
@@ -13,6 +14,7 @@ interface CameraPreviewProps {
   activePhoto: Shot | null
   globalFilter: string
   flash: boolean
+  className?: string
 }
 
 export function CameraPreview( {
@@ -22,6 +24,7 @@ export function CameraPreview( {
   activePhoto,
   globalFilter,
   flash,
+  className,
 }: CameraPreviewProps ) {
   const showStream = phase !== 'reviewing' && phase !== 'adjusting'
   const running = phase === 'running'
@@ -45,7 +48,7 @@ export function CameraPreview( {
   }, [running] )
 
   return (
-    <div className="relative aspect-3/2 overflow-hidden rounded-3xl hover:shadow-xl transition-all duration-300 ease-in-out">
+    <div className={cn( 'relative aspect-3/2 overflow-hidden rounded-3xl hover:shadow-xl transition-all duration-300 ease-in-out', className )}>
       {showStream ? (
         <LiveStream
           ref={liveImgRef}

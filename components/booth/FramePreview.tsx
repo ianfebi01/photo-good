@@ -1,4 +1,4 @@
-import type { RefObject } from 'react'
+import type { CSSProperties, RefObject } from 'react'
 
 import { cn } from '@/lib/utils'
 import type { ClientFrame } from '@/lib/photobooth/frames.client'
@@ -20,6 +20,9 @@ interface FramePreviewProps {
   onTouchStart: ( e: React.TouchEvent, i: number ) => void
   containerRef?: RefObject<HTMLDivElement | null>
   onZoomChange?: ( i: number, zoom: number ) => void
+  className?: string
+  style?: CSSProperties
+  rootRef?: RefObject<HTMLDivElement | null>
 }
 
 export function FramePreview( {
@@ -37,9 +40,16 @@ export function FramePreview( {
   onTouchStart,
   containerRef,
   onZoomChange,
+  className,
+  style,
+  rootRef,
 }: FramePreviewProps ) {
   return (
-    <div className="flex flex-col overflow-hidden xl:col-start-9 xl:col-span-4 xl:row-start-1 xl:row-span-10">
+    <div
+      ref={rootRef}
+      style={style}
+      className={cn( 'overflow-hidden', className )}
+    >
       <div className="relative flex-1 flex items-center justify-center overflow-hidden">
         <div
           ref={containerRef}

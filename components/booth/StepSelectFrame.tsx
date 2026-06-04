@@ -2,6 +2,7 @@ import { Button } from '@/components/ui/button'
 import { type ClientFrame } from '@/lib/photobooth/frames.client'
 import { useBoothStore } from '@/store/boothStore'
 import { FrameSelector } from './FrameSelector'
+import { ChevronRight } from 'lucide-react'
 
 export function StepSelectFrame() {
   const {
@@ -30,7 +31,7 @@ export function StepSelectFrame() {
           onClick={start}
           disabled={!frame}
         >
-          Start session →
+          Start session <ChevronRight/>
         </Button>
       </div>
     </div>
