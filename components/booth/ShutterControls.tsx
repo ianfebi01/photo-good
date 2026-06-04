@@ -49,7 +49,7 @@ export function ShutterControls( {
             </button>
             <button
               onClick={onRetake}
-              className="p-2.5 aspect-square h-fit rounded-full bg-transparent group hover:bg-white text-neutral-500 cursor-pointer flex items-center justify-center transition focus:outline-none absolute left-full inset-y-0 my-auto ml-2"
+              className="p-2.5 aspect-square w-fit h-fit rounded-full bg-transparent group hover:bg-white text-neutral-500 cursor-pointer flex items-center justify-center transition focus:outline-none absolute left-full inset-y-0 my-auto ml-2 xl:top-full xl:inset-y-[unset] xl:mt-2 xl:inset-x-0 xl:mx-auto xl:ml-auto"
               title="Retake"
             >
               <RotateCcw className="size-6 group-hover:-rotate-45 transition-all duration-200 ease-in-out" />
