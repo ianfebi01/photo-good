@@ -32,6 +32,7 @@ export default function PalleteStack( {
   className?: string;
 } ) {
   const cardsRef = useRef<HTMLDivElement[]>( [] );
+  const skeletonRef = useRef<HTMLDivElement>( null )
 
   const STACK_WIDTH = 50;
   const OVERLAP = 18;
@@ -47,8 +48,11 @@ export default function PalleteStack( {
         right    : 0,
         xPercent : -( total - 1 - index ) * OVERLAP,
         zIndex   : index + 1,
+        opacity  : 1
       } );
     } );
+
+    skeletonRef.current?.classList.add( 'hidden' )
 
     const tl = gsap.timeline( {
       repeat   : -1,
@@ -119,6 +123,9 @@ export default function PalleteStack( {
             // right           : 0,
             // transform       : `translateX(${-( CARDS.length - 1 - index ) * OVERLAP}%)`,
             // zIndex          : index + 1,
+            transformOrigin : 'center bottom',
+            opacity         : 0,
+            transition      : 'opacity 0.4s ease',
           }}
         >
           <div
@@ -135,6 +142,27 @@ export default function PalleteStack( {
           </div>
         </div>
       ) )}
+      <div ref={skeletonRef}
+        className="h-full w-full absolute inset-0 z-20"
+      >
+        {Array.from( { length : 3 } ).map( ( _, index ) => (
+          <div
+            key={index}
+            className="absolute top-0 bottom-0 rounded-3xl bg-neutral-200 shadow animate-pulse"
+            style={{
+              width     : `${STACK_WIDTH}%`,
+              right     : 0,
+              transform : `translateX(${
+                -( length - 1 - index ) * OVERLAP
+              }%)`,
+              zIndex : index + 1,
+            }}
+          >
+            <div className="absolute left-8 top-1/2 -translate-y-1/2 space-y-3">
+            </div>
+          </div>
+        ) )}
+      </div>
     </div>
   );
 }
