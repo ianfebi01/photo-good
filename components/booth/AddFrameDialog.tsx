@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Button } from '@/components/ui/button'
 import { Plus, X, Image as ImageIcon, Loader2 } from 'lucide-react'
 import {
@@ -14,14 +15,13 @@ import {
 } from '@/components/ui/dialog'
 import gsap from 'gsap'
 import { type ClientFrame } from '@/lib/photobooth/frames.client'
+import {
+  type FrameSlot,
+  FRAMES_QUERY_KEY,
+  previewFrame,
+  uploadFrame,
+} from '@/lib/photobooth/frames.query'
 import { cn } from '@/lib/utils'
-
-type FrameSlot = {
-  left: number
-  top: number
-  width: number
-  height: number
-}
 
 interface AddFrameDialogProps {
   onUploaded: ( frame: ClientFrame ) => void
@@ -31,8 +31,6 @@ interface AddFrameDialogProps {
 export function AddFrameDialog( { onUploaded, trigger }: AddFrameDialogProps ) {
   const [label, setLabel] = useState( '' )
   const [file, setFile] = useState<File | null>( null )
-  const [uploading, setUploading] = useState( false )
-  const [previewLoading, setPreviewLoading] = useState( false )
   const [err, setErr] = useState<string | null>( null )
   const [copied, setCopied] = useState( false )
   const [dragActive, setDragActive] = useState( false )
@@ -48,6 +46,8 @@ export function AddFrameDialog( { onUploaded, trigger }: AddFrameDialogProps ) {
   const tlRef = useRef<gsap.core.Timeline | null>( null )
   const isAnimatingRef = useRef( false )
 
+  const queryClient = useQueryClient()
+
   const previewUrl = useMemo(
     () => ( file ? URL.createObjectURL( file ) : null ),
     [file],
@@ -59,6 +59,34 @@ export function AddFrameDialog( { onUploaded, trigger }: AddFrameDialogProps ) {
     }
   }, [previewUrl] )
 
+  const previewMutation = useMutation( {
+    mutationFn : previewFrame,
+    onSuccess  : ( data ) => {
+      setDetectedSlots( data.slots ?? [] )
+      setServerPreviewUrl( data.previewUrl )
+    },
+    onError : ( error ) => {
+      setErr( error instanceof Error ? error.message : 'Failed to generate preview' )
+    },
+  } )
+
+  const uploadMutation = useMutation( {
+    mutationFn : ( { file, label }: { file: File; label: string } ) =>
+      uploadFrame( { file, label } ),
+    onSuccess : ( data ) => {
+      queryClient.invalidateQueries( { queryKey : FRAMES_QUERY_KEY } )
+      onUploaded( data.frame )
+      resetForm()
+      actionsRef.current?.close()
+    },
+    onError : ( error ) => {
+      setErr( error instanceof Error ? error.message : 'Upload failed' )
+    },
+  } )
+
+  const previewLoading = previewMutation.isPending
+  const uploading = uploadMutation.isPending
+
   // Reset form when dialog opens
   const resetForm = () => {
     setLabel( '' )
@@ -68,7 +96,7 @@ export function AddFrameDialog( { onUploaded, trigger }: AddFrameDialogProps ) {
     setServerPreviewUrl( null )
   }
 
-  const handleFileChange = async ( selectedFile: File | null ) => {
+  const handleFileChange = ( selectedFile: File | null ) => {
     setFile( selectedFile )
     setErr( null )
     setServerPreviewUrl( null )
@@ -76,23 +104,7 @@ export function AddFrameDialog( { onUploaded, trigger }: AddFrameDialogProps ) {
 
     if ( !selectedFile ) return
 
-    setPreviewLoading( true )
-    try {
-      const formData = new FormData()
-      formData.append( 'file', selectedFile )
-      const res = await fetch( '/api/frames/preview', {
-        method : 'POST',
-        body   : formData,
-      } )
-      const data = await res.json()
-      if ( !res.ok ) throw new Error( data.error ?? 'Failed to generate preview' )
-      setDetectedSlots( data.slots ?? [] )
-      setServerPreviewUrl( data.previewUrl )
-    } catch ( e ) {
-      setErr( e instanceof Error ? e.message : 'Failed to parse frame' )
-    } finally {
-      setPreviewLoading( false )
-    }
+    previewMutation.mutate( selectedFile )
   }
 
   const handleCopyGreenColor = () => {
@@ -120,25 +132,10 @@ export function AddFrameDialog( { onUploaded, trigger }: AddFrameDialogProps ) {
     }
   }
 
-  const submit = async () => {
+  const submit = () => {
     if ( !file || !label.trim() ) return
-    setUploading( true )
     setErr( null )
-    try {
-      const form = new FormData()
-      form.append( 'file', file )
-      form.append( 'label', label.trim() )
-      const res = await fetch( '/api/frames', { method : 'POST', body : form } )
-      const data = await res.json()
-      if ( !res.ok ) throw new Error( data.error ?? 'Upload failed' )
-      onUploaded( data.frame as ClientFrame )
-      resetForm()
-      actionsRef.current?.close()
-    } catch ( e ) {
-      setErr( e instanceof Error ? e.message : 'Upload failed' )
-    } finally {
-      setUploading( false )
-    }
+    uploadMutation.mutate( { file, label : label.trim() } )
   }
 
   // Run enter animation whenever popup mounts

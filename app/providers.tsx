@@ -8,19 +8,19 @@ export interface ProvidersProps {
   dehydratedState?: DehydratedState | null
 }
 
-export default function Providers({ children, dehydratedState }: ProvidersProps) {
+export default function Providers( { children, dehydratedState }: ProvidersProps ) {
   const [queryClient] = useState(
     () =>
-      new QueryClient({
-        defaultOptions: {
-          queries: {
-            refetchOnWindowFocus: false,
-            refetchOnMount: false,
-            retry: false,
-            staleTime: 1000 * 60,
+      new QueryClient( {
+        defaultOptions : {
+          queries : {
+            refetchOnWindowFocus : false,
+            refetchOnMount       : false,
+            retry                : false,
+            staleTime            : 1000 * 60,
           },
         },
-      }),
+      } ),
   )
 
   return (

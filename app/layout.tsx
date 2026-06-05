@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Shadows_Into_Light_Two, Geist_Mono, Poppins, Inter, Plus_Jakarta_Sans } from "next/font/google";
+import Providers from "./providers";
 import "./globals.css";
 
 const shadowFont = Shadows_Into_Light_Two( {
@@ -46,7 +47,9 @@ export default function RootLayout( {
       lang="en"
       className={`${shadowFont.variable} ${geistMono.variable} ${poppins.variable} ${inter.variable} ${jakarta.variable} h-full w-screen overflow-hidden antialiased`}
     >
-      <body className="h-full flex flex-col overflow-y-auto">{children}</body>
+      <body className="h-full flex flex-col overflow-y-auto">
+        <Providers>{children}</Providers>
+      </body>
     </html>
   );
 }

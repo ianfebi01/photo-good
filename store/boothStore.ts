@@ -6,6 +6,7 @@ import {
   DEFAULT_FRAME_KEY,
   FALLBACK_FRAMES,
 } from "@/lib/photobooth/frames.client";
+import { captureShot, composeStrip } from "@/lib/photobooth/frames.query";
 
 export type Shot = { file: string; url: string };
 export type Phase =
@@ -165,14 +166,7 @@ export const useBoothStore = create<BoothState>()(
           if ( !sessionId ) set( { sessionId : activeSession } );
           const index = replaceIndex ?? photos.length;
 
-          const res = await fetch( "/api/camera/capture", {
-            method  : "POST",
-            headers : { "Content-Type" : "application/json" },
-            body    : JSON.stringify( { sessionId : activeSession, index } ),
-            signal  : controller.signal,
-          } );
-          const data = await res.json();
-          if ( !res.ok ) throw new Error( data.error ?? "Capture failed" );
+          const data = await captureShot( { sessionId : activeSession, index } );
 
           set( {
             pending : { file : data.file, url : `${data.url}?v=${newId()}` },
@@ -234,18 +228,12 @@ export const useBoothStore = create<BoothState>()(
         set( { phase : "composing", error : null } );
         try {
           const activeSession = sessionId || newId();
-          const res = await fetch( "/api/camera/compose", {
-            method  : "POST",
-            headers : { "Content-Type" : "application/json" },
-            body    : JSON.stringify( {
-              sessionId : activeSession,
-              frame     : frameKey,
-              files     : photos.map( ( s ) => s.file ),
-              adjustments,
-            } ),
+          const composed = await composeStrip( {
+            sessionId : activeSession,
+            frame     : frameKey,
+            files     : photos.map( ( s ) => s.file ),
+            adjustments,
           } );
-          const composed = await res.json();
-          if ( !res.ok ) throw new Error( composed.error ?? "Compose failed" );
           set( { strip : composed.url, phase : "done", step : 2 } );
         } catch ( err ) {
           set( {

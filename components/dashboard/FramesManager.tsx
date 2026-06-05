@@ -1,6 +1,6 @@
-'use client'
-
+'use client';
 import { useEffect, useState } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Trash2,
   Loader2,
@@ -11,16 +11,36 @@ import {
 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
-import { type ClientFrame } from '@/lib/photobooth/frames.client'
+import {
+  FRAMES_QUERY_KEY,
+  deleteFrame,
+  getFrames,
+} from '@/lib/photobooth/frames.query'
 import { AddFrameDialog } from '@/components/booth/AddFrameDialog'
 import { DashboardPageHeader } from './DashboardPageHeader'
 
 export function FramesManager() {
-  const [frames, setFrames] = useState<ClientFrame[]>( [] )
-  const [loading, setLoading] = useState( true )
-  const [error, setError] = useState<string | null>( null )
+  const queryClient = useQueryClient()
   const [deletingKey, setDeletingKey] = useState<string | null>( null )
   const [cacheBuster, setCacheBuster] = useState( '' )
+
+  const framesQuery = useQuery( {
+    queryKey : FRAMES_QUERY_KEY,
+    queryFn  : getFrames,
+  } )
+
+  const deleteMutation = useMutation( {
+    mutationFn : deleteFrame,
+    onMutate   : ( key ) => {
+      setDeletingKey( key )
+    },
+    onSuccess : () => {
+      queryClient.invalidateQueries( { queryKey : FRAMES_QUERY_KEY } )
+    },
+    onSettled : () => {
+      setDeletingKey( null )
+    },
+  } )
 
   useEffect( () => {
     const timer = setTimeout( () => {
@@ -30,36 +50,7 @@ export function FramesManager() {
     return () => clearTimeout( timer )
   }, [] )
 
-  useEffect( () => {
-    let active = true
-
-    const loadFrames = async () => {
-      try {
-        const res = await fetch( '/api/frames' )
-        const data = await res.json()
-        if ( !active ) return
-        if ( !res.ok ) throw new Error( data.error ?? 'Failed to load frames' )
-        if ( Array.isArray( data.frames ) ) {
-          setFrames( data.frames )
-        } else {
-          throw new Error( 'Invalid format returned from server' )
-        }
-      } catch ( e ) {
-        if ( !active ) return
-        setError( e instanceof Error ? e.message : 'Failed to fetch frames' )
-      } finally {
-        if ( active ) setLoading( false )
-      }
-    }
-
-    loadFrames()
-
-    return () => {
-      active = false
-    }
-  }, [] )
-
-  const handleDelete = async ( key: string ) => {
+  const handleDelete = ( key: string ) => {
     if (
       !confirm(
         'Are you sure you want to delete this custom frame? This cannot be undone.',
@@ -68,24 +59,19 @@ export function FramesManager() {
       return
     }
 
-    setDeletingKey( key )
-    try {
-      const res = await fetch( `/api/frames?key=${encodeURIComponent( key )}`, {
-        method : 'DELETE',
-      } )
-      const data = await res.json()
-      if ( !res.ok ) throw new Error( data.error ?? 'Failed to delete frame' )
-      setFrames( ( prev ) => prev.filter( ( f ) => f.key !== key ) )
-    } catch ( e ) {
-      alert( e instanceof Error ? e.message : 'Error deleting frame' )
-    } finally {
-      setDeletingKey( null )
-    }
+    deleteMutation.mutate( key, {
+      onError : ( error ) => {
+        alert( error instanceof Error ? error.message : 'Error deleting frame' )
+      },
+    } )
   }
 
+  const frames = framesQuery.data ?? []
   const totalCount = frames.length
   const builtInCount = frames.filter( ( f ) => f.builtIn ).length
   const customCount = totalCount - builtInCount
+  const isLoading = framesQuery.isLoading
+  const error = framesQuery.error instanceof Error ? framesQuery.error.message : null
 
   return (
     <div className="space-y-6">
@@ -96,7 +82,7 @@ export function FramesManager() {
           description="Manage photobooth templates and upload custom frames."
           action={
             <AddFrameDialog
-              onUploaded={( newFrame ) => setFrames( ( prev ) => [...prev, newFrame] )}
+              onUploaded={() => queryClient.invalidateQueries( { queryKey : FRAMES_QUERY_KEY } )}
             />
           }
         />
@@ -145,7 +131,7 @@ export function FramesManager() {
         )}
 
         {/* Loading state */}
-        {loading ? (
+        {isLoading ? (
           <div className="flex flex-col items-center justify-center gap-3 py-20">
             <Loader2 className="size-7 animate-spin text-neutral-400" />
             <p className="text-xs text-neutral-400">Fetching templates…</p>
@@ -160,7 +146,7 @@ export function FramesManager() {
             Create your first custom frame with green slots where captured photos should go.
             </p>
             <AddFrameDialog
-              onUploaded={( newFrame ) => setFrames( ( prev ) => [...prev, newFrame] )}
+              onUploaded={() => queryClient.invalidateQueries( { queryKey : FRAMES_QUERY_KEY } )}
               trigger={
                 <Button
                   className="mt-4"

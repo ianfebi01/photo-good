@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { type ClientFrame } from '@/lib/photobooth/frames.client'
+import { FRAMES_QUERY_KEY, uploadFrame } from '@/lib/photobooth/frames.query'
 
 export function FrameUploadForm( {
   onCancel,
@@ -13,8 +15,20 @@ export function FrameUploadForm( {
 } ) {
   const [label, setLabel] = useState( '' )
   const [file, setFile] = useState<File | null>( null )
-  const [uploading, setUploading] = useState( false )
   const [err, setErr] = useState<string | null>( null )
+
+  const queryClient = useQueryClient()
+  const uploadMutation = useMutation( {
+    mutationFn : ( { file, label }: { file: File; label: string } ) =>
+      uploadFrame( { file, label } ),
+    onSuccess : ( data ) => {
+      queryClient.invalidateQueries( { queryKey : FRAMES_QUERY_KEY } )
+      onUploaded( data.frame )
+    },
+    onError : ( error ) => {
+      setErr( error instanceof Error ? error.message : 'Upload failed' )
+    },
+  } )
 
   const previewUrl = useMemo(
     () => ( file ? URL.createObjectURL( file ) : null ),
@@ -27,23 +41,10 @@ export function FrameUploadForm( {
     }
   }, [previewUrl] )
 
-  const submit = async () => {
+  const submit = () => {
     if ( !file || !label.trim() ) return
-    setUploading( true )
     setErr( null )
-    try {
-      const form = new FormData()
-      form.append( 'file', file )
-      form.append( 'label', label.trim() )
-      const res = await fetch( '/api/frames', { method : 'POST', body : form } )
-      const data = await res.json()
-      if ( !res.ok ) throw new Error( data.error ?? 'Upload failed' )
-      onUploaded( data.frame as ClientFrame )
-    } catch ( e ) {
-      setErr( e instanceof Error ? e.message : 'Upload failed' )
-    } finally {
-      setUploading( false )
-    }
+    uploadMutation.mutate( { file, label : label.trim() } )
   }
 
   return (
@@ -63,7 +64,7 @@ export function FrameUploadForm( {
             size="sm"
             variant="ghost"
             onClick={onCancel}
-            disabled={uploading}
+            disabled={uploadMutation.isPending}
           >
             Cancel
           </Button>
@@ -80,7 +81,7 @@ export function FrameUploadForm( {
                 placeholder="e.g. Birthday Strip"
                 maxLength={60}
                 className="rounded-md border bg-background px-3 py-2 text-sm"
-                disabled={uploading}
+                disabled={uploadMutation.isPending}
               />
             </label>
             <label className="flex flex-col gap-1 text-sm">
@@ -90,7 +91,7 @@ export function FrameUploadForm( {
                 accept="image/png,image/jpeg,image/webp"
                 onChange={( e ) => setFile( e.target.files?.[0] ?? null )}
                 className="text-sm"
-                disabled={uploading}
+                disabled={uploadMutation.isPending}
               />
             </label>
             {err && (
@@ -101,9 +102,9 @@ export function FrameUploadForm( {
             <div>
               <Button
                 onClick={submit}
-                disabled={!file || !label.trim() || uploading}
+                disabled={!file || !label.trim() || uploadMutation.isPending}
               >
-                {uploading ? 'Uploading…' : 'Upload frame'}
+                {uploadMutation.isPending ? 'Uploading…' : 'Upload frame'}
               </Button>
             </div>
           </div>
