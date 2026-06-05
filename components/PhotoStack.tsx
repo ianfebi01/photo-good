@@ -55,6 +55,8 @@ export default function PhotoStack( { className }: { className?: string } ) {
   const busy          = useRef( false )
   const skeletonRef   = useRef<HTMLDivElement>( null )
 
+  const [imageLoaded, setImageLoaded] = useState( [false, false, false] )
+
   const { data } = useQuery( {
     queryKey : [...FRAMES_QUERY_KEY, { page : 1, limit : PAGE_SIZE }],
     queryFn  : () => getFrames( { page : 1, limit : PAGE_SIZE } ),
@@ -129,6 +131,14 @@ export default function PhotoStack( { className }: { className?: string } ) {
           const idx = nextFrame.current % previewUrls.length
           imgRefs.current[frontIdx]!.src = `${previewUrls[idx]}${cacheBuster ? `&t=${cacheBuster}` : ''}`
           nextFrame.current = ( nextFrame.current + 1 ) % previewUrls.length
+
+          // Reset loading state for this card
+          setImageLoaded( ( prev ) => {
+            const next = [...prev]
+            next[frontIdx] = false
+            
+            return next
+          } )
 
           // New order: old front → back, old back → middle, old middle → front
           orderRef.current = [frontIdx, backIdx, midIdx]
@@ -215,6 +225,12 @@ export default function PhotoStack( { className }: { className?: string } ) {
             style={ { transformOrigin : 'center bottom', opacity : 0, transition : 'opacity 0.4s ease' } }
           >
             <div className="w-fit h-full overflow-hidden rounded-sm relative">
+              {/* Loading spinner overlay */}
+              {!imageLoaded[cardIdx] && (
+                <div className="absolute inset-0 z-10 flex items-center justify-center bg-neutral-200/60 rounded-sm">
+                  <div className="size-6 rounded-full border-2 border-neutral-400 border-t-transparent animate-spin" />
+                </div>
+              )}
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 ref={( el ) => {
@@ -223,6 +239,12 @@ export default function PhotoStack( { className }: { className?: string } ) {
                 src={`${initUrls[cardIdx]}${cacheBuster ? `&t=${cacheBuster}` : ''}`}
                 alt="photo frame"
                 className="w-full h-full object-contain"
+                onLoad={() => setImageLoaded( ( prev ) => {
+                  const next = [...prev]
+                  next[cardIdx] = true
+                  
+                  return next
+                } )}
               />
             </div>
           </div>
