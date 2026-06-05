@@ -131,12 +131,30 @@ export function FramesManager() {
         )}
 
         {/* Loading state */}
-        {isLoading ? (
-          <div className="flex flex-col items-center justify-center gap-3 py-20">
-            <Loader2 className="size-7 animate-spin text-neutral-400" />
-            <p className="text-xs text-neutral-400">Fetching templates…</p>
+        {isLoading && (
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+            {Array.from( { length : 8 } ).map( ( _, i ) => (
+              <div key={i}
+                className="flex flex-col justify-between animate-pulse"
+              >
+                <div>
+                  <div className="aspect-3/4 rounded-2xl bg-neutral-200" />
+                  <div className="pt-3 flex flex-col gap-2">
+                    <div className="h-3 w-2/3 rounded bg-neutral-200" />
+                    <div className="flex gap-3">
+                      <div className="h-2.5 w-12 rounded bg-neutral-100" />
+                      <div className="h-2.5 w-24 rounded bg-neutral-100" />
+                    </div>
+                  </div>
+                </div>
+                <div className="pt-3">
+                  <div className="h-9 w-full rounded-md bg-neutral-100" />
+                </div>
+              </div>
+            ) )}
           </div>
-        ) : frames.length === 0 ? (
+        )}
+        {!isLoading && frames.length === 0 && (
           <div className="flex flex-col items-center justify-center rounded-2xl border border-neutral-100 bg-white p-16 text-center transition-all duration-300 ease-in-out hover:shadow-xl">
             <div className="mb-4 flex size-12 items-center justify-center rounded-full bg-neutral-100">
               <ImageIcon className="size-5 text-neutral-400" />
@@ -157,7 +175,8 @@ export function FramesManager() {
               }
             />
           </div>
-        ) : (
+        )}
+        {!isLoading && frames.length > 0 && (
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
             {frames.map( ( frame ) => (
               <div
@@ -165,7 +184,7 @@ export function FramesManager() {
                 className="flex flex-col justify-between"
               >
                 <div>
-                  <div className="group relative aspect-3/4 overflow-hidden rounded-2xl bg-secondary p-4 flex items-center justify-center">
+                  <div className="group relative aspect-3/4 overflow-hidden rounded-2xl bg-neutral-100 p-4 flex items-center justify-center">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={`/api/frames/preview?key=${frame.key}${cacheBuster ? `&t=${cacheBuster}` : ''}`}
