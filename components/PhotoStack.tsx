@@ -26,26 +26,23 @@ function StackSkeleton() {
       ].map( ( layer, i ) => (
         <div
           key={i}
-          className="absolute rounded-sm shadow-lg"
+          className="absolute rounded-sm shadow-lg bg-neutral-100 animate-pulse"
           style={ {
             width       : '75%',
             aspectRatio : '1 / 2.8',
             transform   : `rotate(${layer.rotation}deg) scale(${layer.scale})`,
             top         : `${layer.y}px`,
             zIndex      : layer.zIndex,
-            background  : i === 2
-              ? 'linear-gradient(135deg, #f5f5f5 0%, #e5e5e5 50%, #f5f5f5 100%)'
-              : '#f0f0f0',
           } }
         >
         </div>
       ) )}
 
-      <div
+      {/* <div
         className="absolute z-10"
       >
         <div className="size-5 rounded-full border-2 border-neutral-300 border-t-transparent animate-spin" />
-      </div>
+      </div> */}
     </>
   )
 }
@@ -56,7 +53,6 @@ export default function PhotoStack( { className }: { className?: string } ) {
   const orderRef      = useRef( [0, 1, 2] )
   const nextFrame     = useRef( 0 )
   const busy          = useRef( false )
-  const gsapReadyRef  = useRef( false )
   const skeletonRef   = useRef<HTMLDivElement>( null )
 
   const { data } = useQuery( {
@@ -107,7 +103,6 @@ export default function PhotoStack( { className }: { className?: string } ) {
       } )
     } )
 
-    gsapReadyRef.current = true
     skeletonRef.current?.classList.add( 'hidden' )
 
     // Assign initial images
