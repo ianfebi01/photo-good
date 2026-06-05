@@ -158,7 +158,7 @@ export function FramesManager() {
 
         {/* Empty state */}
         {!isLoading && allFrames.length === 0 && (
-          <div className="flex flex-col items-center justify-center rounded-2xl border border-neutral-100 bg-white p-16 text-center transition-all duration-300 ease-in-out hover:shadow-xl">
+          <div className="flex flex-col items-center justify-center p-16 text-center">
             <div className="mb-4 flex size-12 items-center justify-center rounded-full bg-neutral-100">
               <ImageIcon className="size-5 text-neutral-400" />
             </div>

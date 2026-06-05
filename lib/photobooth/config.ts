@@ -1,6 +1,8 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 
+import { getFrameFromDb } from "./frames.db";
+
 /** Absolute directory where captures and composed strips are written. */
 export const CAPTURES_DIR = path.join( process.cwd(), "captures" );
 
@@ -217,8 +219,23 @@ export async function loadAllFrames(): Promise<FrameDef[]> {
 }
 
 export async function getFrame( key: string ): Promise<FrameDef | null> {
-  const all = await loadAllFrames();
+  // 1. DB takes precedence — seeded built-ins + user uploads live here
+  const dbFrame = await getFrameFromDb( key );
+  if ( dbFrame ) {
+    return {
+      key       : dbFrame.key,
+      label     : dbFrame.label,
+      image     : "", // no local file — compose fetches from R2
+      publicUrl : dbFrame.image_url,
+      width     : dbFrame.width,
+      height    : dbFrame.height,
+      slots     : dbFrame.slots as FrameSlot[],
+      builtIn   : BUILT_IN_KEYS.has( dbFrame.key ),
+    };
+  }
 
+  // 2. Fall back to filesystem (built-in + legacy user-manifest frames)
+  const all = await loadAllFrames();
   return all.find( ( f ) => f.key === key ) ?? null;
 }
 

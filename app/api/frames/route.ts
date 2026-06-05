@@ -94,7 +94,8 @@ export async function GET( request: Request ) {
 
   const dbFrameKeys = new Set( dbFrames.map( ( f ) => f.key ) );
   const all = [
-    ...fsFrames.filter( ( f ) => !dbFrameKeys.has( f.key ) ), // filesystem frames not overwritten by DB
+    // Only legacy user-manifest frames from filesystem — built-in frames come from DB
+    ...fsFrames.filter( ( f ) => !f.builtIn && !dbFrameKeys.has( f.key ) ),
     ...dbFrames.map( ( f ) => ( {
       key       : f.key,
       label     : f.label,
@@ -103,7 +104,7 @@ export async function GET( request: Request ) {
       width     : f.width,
       height    : f.height,
       slots     : f.slots,
-      builtIn   : false,
+      builtIn   : BUILT_IN_KEYS.has( f.key ),
     } ) ),
   ];
 

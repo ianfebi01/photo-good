@@ -87,22 +87,26 @@ export async function GET( request: Request ) {
     return Response.json( { error : 'Missing key parameter' }, { status : 400 } )
   }
 
-  // Try filesystem first (built-in + legacy user frames), then DB (R2-backed)
+  // Resolve frame — getFrame() now checks both filesystem and DB
   const frame = await getFrame( key )
-  const dbFrame = frame ? null : await getFrameFromDb( key )
 
-  if ( !frame && !dbFrame ) {
+  if ( !frame ) {
     return Response.json( { error : 'Frame not found' }, { status : 404 } )
   }
 
   try {
     let buffer: Buffer
 
-    if ( frame ) {
+    if ( frame.image ) {
+      // Local filesystem frame (built-in or legacy user-manifest)
       buffer = await fs.readFile( frame.image )
     } else {
-      // Fetch from R2 via S3 API
-      buffer = await getR2ObjectBuffer( dbFrame!.image_key )
+      // R2-backed frame — look up the DB record for the object key
+      const dbFrame = await getFrameFromDb( key )
+      if ( !dbFrame ) {
+        return Response.json( { error : 'Frame DB record not found' }, { status : 404 } )
+      }
+      buffer = await getR2ObjectBuffer( dbFrame.image_key )
     }
 
     if ( raw ) {

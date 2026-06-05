@@ -1,6 +1,6 @@
 import 'server-only'
 
-import { loadAllFrames } from './config'
+import { loadAllFrames, BUILT_IN_KEYS } from './config'
 import { getAllFramesFromDb } from './frames.db'
 import { ensureAuthSchema } from '@/lib/auth/schema'
 import type { ClientFrame } from './frames.client'
@@ -14,8 +14,9 @@ export async function getFramesForSsr( { page, limit }: PageArg ): Promise<Frame
   const dbFrameKeys = new Set( dbFrames.map( ( f ) => f.key ) )
 
   const all: ClientFrame[] = [
+    // Only legacy user-manifest frames from filesystem — built-in frames come from DB
     ...fsFrames
-      .filter( ( f ) => !dbFrameKeys.has( f.key ) )
+      .filter( ( f ) => !f.builtIn && !dbFrameKeys.has( f.key ) )
       .map( ( f ) => ( {
         key        : f.key,
         label      : f.label,
@@ -34,7 +35,7 @@ export async function getFramesForSsr( { page, limit }: PageArg ): Promise<Frame
       height     : f.height,
       photoCount : f.slots.length,
       slots      : f.slots as ClientFrame['slots'],
-      builtIn    : false,
+      builtIn    : BUILT_IN_KEYS.has( f.key ),
     } ) ),
   ]
 

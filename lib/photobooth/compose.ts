@@ -1,8 +1,12 @@
 import "server-only";
 
+import { readFile } from "node:fs/promises";
+
 import sharp from "sharp";
 
 import { type FrameDef, getFrame } from "./config";
+import { getFrameFromDb } from "./frames.db";
+import { getR2ObjectBuffer } from "@/lib/r2";
 import { clearGreenPixels } from "./slots";
 
 /**
@@ -13,11 +17,27 @@ import { clearGreenPixels } from "./slots";
  */
 const overlayCache = new Map<string, Buffer>();
 
+/** Resolve the frame image bytes — from disk for local frames, from R2 for DB-backed ones. */
+async function getFrameImageBuffer( frame: FrameDef ): Promise<Buffer> {
+  if ( frame.image ) {
+    // Local filesystem frame (built-in or legacy user-manifest frame)
+    return readFile( frame.image );
+  }
+
+  // R2-backed frame — look up the DB record to get the object key
+  const dbFrame = await getFrameFromDb( frame.key );
+  if ( !dbFrame ) throw new Error( `Frame ${frame.key} not found in DB` );
+
+  return getR2ObjectBuffer( dbFrame.image_key );
+}
+
 async function buildFrameOverlay( frame: FrameDef ): Promise<Buffer> {
   const cached = overlayCache.get( frame.key );
   if ( cached ) return cached;
 
-  const { data, info } = await sharp( frame.image )
+  const imageBuffer = await getFrameImageBuffer( frame );
+
+  const { data, info } = await sharp( imageBuffer )
     .ensureAlpha()
     .raw()
     .toBuffer( { resolveWithObject : true } );

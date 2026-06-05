@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "camera:setup": "bash camera-service/setup.sh",
-    "camera": "camera-service/.venv/bin/python3 camera-service/server.py"
+    "camera": "camera-service/.venv/bin/python3 camera-service/server.py",
+    "seed:frames": "tsx scripts/seed-frames.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1062.0",
@@ -40,6 +41,7 @@
     "eslint-config-next": "16.2.6",
     "eslint-plugin-react": "^7.37.5",
     "tailwindcss": "^4",
+    "tsx": "^4.22.4",
     "typescript": "^5",
     "typescript-eslint": "^8.60.0"
   },
