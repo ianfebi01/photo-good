@@ -5,7 +5,7 @@ import gsap from 'gsap'
 import { cn } from '@/lib/utils'
 import AppCard from '@/components/AppCard'
 
-const CHARS = 'Photo Good'.split( '' )
+const CHARS = 'photo good.'.split( '' )
 const COLORS = [ '#eb4c4c', '#f07070', '#ffa6a6' ]
 
 export default function LogoCard( { className }: { className?: string } ) {
