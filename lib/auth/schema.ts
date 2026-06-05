@@ -35,6 +35,18 @@ export function ensureAuthSchema() {
 
     CREATE INDEX IF NOT EXISTS app_sessions_user_id_idx ON app_sessions(user_id);
     CREATE INDEX IF NOT EXISTS app_sessions_expires_at_idx ON app_sessions(expires_at);
+
+    CREATE TABLE IF NOT EXISTS app_frames (
+      key TEXT PRIMARY KEY,
+      label TEXT NOT NULL,
+      image_key TEXT NOT NULL,
+      image_url TEXT NOT NULL,
+      width INTEGER NOT NULL,
+      height INTEGER NOT NULL,
+      slots JSONB NOT NULL,
+      created_by UUID REFERENCES app_users(id),
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
   ` ).then( () => undefined )
 
   return schemaReady

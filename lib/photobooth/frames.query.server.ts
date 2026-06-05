@@ -1,25 +1,45 @@
 import 'server-only'
 
 import { loadAllFrames } from './config'
+import { getAllFramesFromDb } from './frames.db'
+import { ensureAuthSchema } from '@/lib/auth/schema'
 import type { ClientFrame } from './frames.client'
 import type { FramesResponse, PageArg } from './frames.query'
 
 export async function getFramesForSsr( { page, limit }: PageArg ): Promise<FramesResponse> {
-  const all = await loadAllFrames()
+  const fsFrames = await loadAllFrames()
+  await ensureAuthSchema()
+  const dbFrames = await getAllFramesFromDb()
+
+  const dbFrameKeys = new Set( dbFrames.map( ( f ) => f.key ) )
+
+  const all: ClientFrame[] = [
+    ...fsFrames
+      .filter( ( f ) => !dbFrameKeys.has( f.key ) )
+      .map( ( f ) => ( {
+        key        : f.key,
+        label      : f.label,
+        publicUrl  : f.publicUrl,
+        width      : f.width,
+        height     : f.height,
+        photoCount : f.slots.length,
+        slots      : f.slots,
+        builtIn    : f.builtIn,
+      } ) ),
+    ...dbFrames.map( ( f ) => ( {
+      key        : f.key,
+      label      : f.label,
+      publicUrl  : f.image_url,
+      width      : f.width,
+      height     : f.height,
+      photoCount : f.slots.length,
+      slots      : f.slots as ClientFrame['slots'],
+      builtIn    : false,
+    } ) ),
+  ]
+
   const total = all.length
   const start = ( page - 1 ) * limit
-  const pageFrames = all.slice( start, start + limit )
 
-  const frames: ClientFrame[] = pageFrames.map( ( f ) => ( {
-    key        : f.key,
-    label      : f.label,
-    publicUrl  : f.publicUrl,
-    width      : f.width,
-    height     : f.height,
-    photoCount : f.slots.length,
-    slots      : f.slots,
-    builtIn    : f.builtIn,
-  } ) )
-
-  return { frames, total }
+  return { frames : all.slice( start, start + limit ), total }
 }

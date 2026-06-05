@@ -11,6 +11,7 @@
     "camera": "camera-service/.venv/bin/python3 camera-service/server.py"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1062.0",
     "@base-ui/react": "^1.5.0",
     "@tanstack/react-query": "^5.5.0",
     "class-variance-authority": "^0.7.1",

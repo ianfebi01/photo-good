@@ -10,9 +10,12 @@ import {
   USER_FRAMES_MANIFEST,
   loadAllFrames,
 } from "@/lib/photobooth/config";
+import { getAllFramesFromDb, deleteFrameFromDb } from "@/lib/photobooth/frames.db";
+import { deleteR2Object } from "@/lib/r2";
 import { detectGreenSlots } from "@/lib/photobooth/slots";
 import { getCurrentUser } from "@/lib/auth/session";
 import { hasRole } from "@/lib/auth/types";
+import { ensureAuthSchema } from "@/lib/auth/schema";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -84,7 +87,26 @@ export async function GET( request: Request ) {
   const page = Math.max( 1, Number( searchParams.get( "page" ) ) || 1 );
   const limit = Math.min( 50, Math.max( 1, Number( searchParams.get( "limit" ) ) || 8 ) );
 
-  const all = await loadAllFrames();
+  // Merge built-in + filesystem user frames + DB frames
+  const fsFrames = await loadAllFrames();
+  await ensureAuthSchema();
+  const dbFrames = await getAllFramesFromDb();
+
+  const dbFrameKeys = new Set( dbFrames.map( ( f ) => f.key ) );
+  const all = [
+    ...fsFrames.filter( ( f ) => !dbFrameKeys.has( f.key ) ), // filesystem frames not overwritten by DB
+    ...dbFrames.map( ( f ) => ( {
+      key       : f.key,
+      label     : f.label,
+      image     : "",
+      publicUrl : f.image_url,
+      width     : f.width,
+      height    : f.height,
+      slots     : f.slots,
+      builtIn   : false,
+    } ) ),
+  ];
+
   const total = all.length;
   const start = ( page - 1 ) * limit;
   const pageFrames = all.slice( start, start + limit );
@@ -226,6 +248,19 @@ export async function DELETE( request: Request ) {
     return Response.json( { error : "Cannot delete built-in frames" }, { status : 400 } );
   }
 
+  // Try DB first (R2-backed frames)
+  const deletedDb = await deleteFrameFromDb( key );
+
+  if ( deletedDb ) {
+    // Clean up R2
+    await deleteR2Object( deletedDb.image_key ).catch( () => {
+      // Ignore R2 errors — the object may already be gone
+    } );
+
+    return Response.json( { success : true } );
+  }
+
+  // Fall back to filesystem manifest
   const manifest = await readManifest();
   const entryIndex = manifest.frames.findIndex( ( f ) => f.key === key );
 

@@ -19,7 +19,7 @@ import {
   type FrameSlot,
   FRAMES_QUERY_KEY,
   previewFrame,
-  uploadFrame,
+  uploadFrameWithSlots,
 } from '@/lib/photobooth/frames.query'
 import { cn } from '@/lib/utils'
 
@@ -71,11 +71,14 @@ export function AddFrameDialog( { onUploaded, trigger }: AddFrameDialogProps ) {
   } )
 
   const uploadMutation = useMutation( {
-    mutationFn : ( { file, label }: { file: File; label: string } ) =>
-      uploadFrame( { file, label } ),
-    onSuccess : ( data ) => {
+    mutationFn : async ( { file, label }: { file: File; label: string } ) => {
+      const result = await uploadFrameWithSlots( { file, label, slots : detectedSlots } )
+      
+      return result.frame
+    },
+    onSuccess : ( frame ) => {
       queryClient.invalidateQueries( { queryKey : FRAMES_QUERY_KEY } )
-      onUploaded( data.frame )
+      onUploaded( frame )
       resetForm()
       actionsRef.current?.close()
     },

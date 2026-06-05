@@ -1,6 +1,8 @@
 import sharp from 'sharp'
 import fs from 'node:fs/promises'
 import { getFrame } from '@/lib/photobooth/config'
+import { getFrameFromDb } from '@/lib/photobooth/frames.db'
+import { getR2ObjectBuffer } from '@/lib/r2'
 import { detectGreenSlots, clearGreenPixels } from '@/lib/photobooth/slots'
 import { getCurrentUser } from '@/lib/auth/session'
 import { hasRole } from '@/lib/auth/types'
@@ -85,43 +87,30 @@ export async function GET( request: Request ) {
     return Response.json( { error : 'Missing key parameter' }, { status : 400 } )
   }
 
+  // Try filesystem first (built-in + legacy user frames), then DB (R2-backed)
   const frame = await getFrame( key )
-  if ( !frame ) {
+  const dbFrame = frame ? null : await getFrameFromDb( key )
+
+  if ( !frame && !dbFrame ) {
     return Response.json( { error : 'Frame not found' }, { status : 404 } )
   }
 
   try {
-    const buffer = await fs.readFile( frame.image )
+    let buffer: Buffer
+
+    if ( frame ) {
+      buffer = await fs.readFile( frame.image )
+    } else {
+      // Fetch from R2 via S3 API
+      buffer = await getR2ObjectBuffer( dbFrame!.image_key )
+    }
 
     if ( raw ) {
-      const detected = await detectGreenSlots( buffer )
-      if ( !detected || detected.slots.length === 0 ) {
-        return new Response( new Uint8Array( buffer ), {
-          headers : {
-            'Content-Type'  : frame.publicUrl.endsWith( '.png' ) ? 'image/png' : 'image/jpeg',
-            'Cache-Control' : 'no-store, no-cache, must-revalidate, proxy-revalidate',
-          },
-        } )
-      }
+      const contentType = key.endsWith( '.png' ) ? 'image/png' : 'image/jpeg'
 
-      const overlayInfo = await sharp( buffer )
-        .ensureAlpha()
-        .raw()
-        .toBuffer( { resolveWithObject : true } )
-
-      const channels = overlayInfo.info.channels
-      const pixels = Buffer.from( overlayInfo.data )
-      clearGreenPixels( pixels, overlayInfo.info.width, overlayInfo.info.height, channels )
-
-      const overlayBuffer = await sharp( pixels, {
-        raw : { width : overlayInfo.info.width, height : overlayInfo.info.height, channels },
-      } )
-        .png()
-        .toBuffer()
-
-      return new Response( new Uint8Array( overlayBuffer ), {
+      return new Response( new Uint8Array( buffer ), {
         headers : {
-          'Content-Type'  : 'image/png',
+          'Content-Type'  : contentType,
           'Cache-Control' : 'no-store, no-cache, must-revalidate, proxy-revalidate',
         },
       } )
@@ -130,9 +119,11 @@ export async function GET( request: Request ) {
     const composed = await generatePreviewBuffer( buffer )
 
     if ( !composed ) {
+      const contentType = key.endsWith( '.png' ) ? 'image/png' : 'image/jpeg'
+
       return new Response( new Uint8Array( buffer ), {
         headers : {
-          'Content-Type'  : frame.publicUrl.endsWith( '.png' ) ? 'image/png' : 'image/jpeg',
+          'Content-Type'  : contentType,
           'Cache-Control' : 'no-store, no-cache, must-revalidate, proxy-revalidate',
         },
       } )

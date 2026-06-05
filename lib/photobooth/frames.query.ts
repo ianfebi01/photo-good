@@ -104,3 +104,22 @@ export async function composeStrip( {
 
   return parseJson( response, 'Compose failed' )
 }
+
+/* ── Frame upload helper (proxied through server) ───────────────── */
+
+export async function uploadFrameWithSlots( {
+  file,
+  label,
+  slots,
+}: {
+  file: File
+  label: string
+  slots: FrameSlot[]
+} ): Promise<{ frame: ClientFrame }> {
+  const form = new FormData()
+  form.append( 'file', file )
+  form.append( 'label', label )
+  form.append( 'slots', JSON.stringify( slots ) )
+
+  return parseJson( await fetch( '/api/frames/upload', { method : 'POST', body : form } ), 'Upload failed' )
+}
