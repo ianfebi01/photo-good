@@ -29,6 +29,7 @@ export function FramePhotoStack( {
   const busy = useRef( false )
   const cardFramesRef = useRef<( ClientFrame | null )[]>( [null, null, null] )
   const [cacheBuster, setCacheBuster] = useState( '' )
+  const [imageLoaded, setImageLoaded] = useState( [false, false, false] )
 
   useEffect( () => {
     const timer = setTimeout( () => {
@@ -49,6 +50,12 @@ export function FramePhotoStack( {
         imgRefs.current[cardIdx].style.display = 'none'
       }
     }
+    // Reset loading state for this card
+    setImageLoaded( ( prev ) => {
+      const next = [...prev]
+      next[cardIdx] = false
+      return next
+    } )
   }, [cacheBuster] )
 
   // Handle external selection sync
@@ -296,7 +303,13 @@ export function FramePhotoStack( {
               className="absolute inset-0 bg-transparent w-fit mx-auto shadow-2xl transition-shadow duration-300 hover:shadow-black/20"
               style={{ transformOrigin : 'center bottom' }}
             >
-              <div className="w-fit h-full overflow-hidden">
+              <div className="w-fit h-full overflow-hidden relative">
+                {/* Loading spinner overlay */}
+                {!imageLoaded[cardIdx] && (
+                  <div className="absolute inset-0 z-10 flex items-center justify-center bg-neutral-200/60 rounded-sm">
+                    <div className="size-6 rounded-full border-2 border-neutral-400 border-t-transparent animate-spin" />
+                  </div>
+                )}
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   ref={( el ) => {
@@ -304,6 +317,11 @@ export function FramePhotoStack( {
                   }}
                   alt="photo frame"
                   className="h-full w-auto max-h-[280px] sm:max-h-[360px] md:max-h-[400px] lg:max-h-[420px] object-contain"
+                  onLoad={() => setImageLoaded( ( prev ) => {
+                    const next = [...prev]
+                    next[cardIdx] = true
+                    return next
+                  } )}
                 />
               </div>
             </div>
