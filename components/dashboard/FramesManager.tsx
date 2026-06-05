@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Trash2,
@@ -32,11 +32,10 @@ const ITEMS_PER_PAGE = 8
 export function FramesManager() {
   const queryClient = useQueryClient()
   const [deletingKey, setDeletingKey] = useState<string | null>( null )
-  const [cacheBuster, setCacheBuster] = useState( '' )
   const [page, setPage] = useState( 1 )
 
   const framesQuery = useQuery( {
-    queryKey        : [FRAMES_QUERY_KEY, { page, limit : ITEMS_PER_PAGE }],
+    queryKey        : [...FRAMES_QUERY_KEY, { page, limit : ITEMS_PER_PAGE }],
     queryFn         : () => getFrames( { page, limit : ITEMS_PER_PAGE } ),
     placeholderData : ( prev ) => prev,
   } )
@@ -48,23 +47,12 @@ export function FramesManager() {
     },
     onSuccess : () => {
       queryClient.invalidateQueries( { queryKey : FRAMES_QUERY_KEY } )
+      setPage( 1 )
     },
     onSettled : () => {
       setDeletingKey( null )
     },
   } )
-
-  useEffect( () => {
-    const timer = setTimeout( () => {
-      setCacheBuster( String( Date.now() ) )
-    }, 0 )
-    
-    return () => clearTimeout( timer )
-  }, [] )
-
-  useEffect( () => {
-    setPage( 1 )
-  }, [framesQuery.data?.total] )
 
   const allFrames = framesQuery.data?.frames ?? []
   const totalPages = Math.max( 1, Math.ceil( ( framesQuery.data?.total ?? 0 ) / ITEMS_PER_PAGE ) )
@@ -202,7 +190,7 @@ export function FramesManager() {
                   <div className="group relative aspect-3/4 overflow-hidden rounded-2xl bg-neutral-100 p-4 flex items-center justify-center">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
-                      src={`/api/frames/preview?key=${frame.key}${cacheBuster ? `&t=${cacheBuster}` : ''}`}
+                      src={`/api/frames/preview?key=${frame.key}`}
                       alt={frame.label}
                       className="h-full w-full object-contain drop-shadow transition-transform duration-300 group-hover:scale-105"
                     />
