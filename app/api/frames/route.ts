@@ -78,10 +78,18 @@ async function requireFrameAdmin() {
   return null;
 }
 
-/** Return the full frame catalog (built-in + user-uploaded) for the client. */
-export async function GET() {
-  const frames = await loadAllFrames();
-  const payload = frames.map( ( f ) => ( {
+/** Return a paginated frame catalog (built-in + user-uploaded) for the client. */
+export async function GET( request: Request ) {
+  const { searchParams } = new URL( request.url );
+  const page = Math.max( 1, Number( searchParams.get( "page" ) ) || 1 );
+  const limit = Math.min( 50, Math.max( 1, Number( searchParams.get( "limit" ) ) || 8 ) );
+
+  const all = await loadAllFrames();
+  const total = all.length;
+  const start = ( page - 1 ) * limit;
+  const pageFrames = all.slice( start, start + limit );
+
+  const payload = pageFrames.map( ( f ) => ( {
     key        : f.key,
     label      : f.label,
     publicUrl  : f.publicUrl,
@@ -92,7 +100,7 @@ export async function GET() {
     builtIn    : f.builtIn,
   } ) );
 
-  return Response.json( { frames : payload } );
+  return Response.json( { frames : payload, total } );
 }
 
 /**

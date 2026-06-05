@@ -4,6 +4,13 @@ import type { Status } from '@/store/boothStore'
 export const FRAMES_QUERY_KEY = ['frames'] as const
 export const CAMERA_STATUS_QUERY_KEY = ['camera-status'] as const
 
+export type PageArg = { page: number; limit: number }
+
+export type FramesResponse = {
+  frames: ClientFrame[]
+  total: number
+}
+
 export type FrameSlot = {
   left: number
   top: number
@@ -21,11 +28,18 @@ async function parseJson<T>( response: Response, fallbackMessage: string ): Prom
   return data as T
 }
 
-export async function getFrames(): Promise<ClientFrame[]> {
-  const response = await fetch( '/api/frames', { cache : 'no-store' } )
-  const data = await parseJson<{ frames: ClientFrame[] }>( response, 'Failed to load frames' )
+export async function getFrames( { page, limit }: PageArg ): Promise<FramesResponse> {
+  const response = await fetch( `/api/frames?page=${page}&limit=${limit}`, { cache : 'no-store' } )
   
-  return Array.isArray( data.frames ) ? data.frames : []
+  return parseJson<FramesResponse>( response, 'Failed to load frames' )
+}
+
+/** Fetch all frames (unpaginated — for frame selector). */
+export async function getAllFrames(): Promise<ClientFrame[]> {
+  const response = await fetch( '/api/frames?page=1&limit=200', { cache : 'no-store' } )
+  const data = await parseJson<FramesResponse>( response, 'Failed to load frames' )
+  
+  return data.frames
 }
 
 export async function deleteFrame( key: string ): Promise<void> {

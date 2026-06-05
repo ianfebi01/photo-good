@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Trash2,
@@ -36,8 +36,9 @@ export function FramesManager() {
   const [page, setPage] = useState( 1 )
 
   const framesQuery = useQuery( {
-    queryKey : FRAMES_QUERY_KEY,
-    queryFn  : getFrames,
+    queryKey        : [FRAMES_QUERY_KEY, { page, limit : ITEMS_PER_PAGE }],
+    queryFn         : () => getFrames( { page, limit : ITEMS_PER_PAGE } ),
+    placeholderData : ( prev ) => prev,
   } )
 
   const deleteMutation = useMutation( {
@@ -63,17 +64,11 @@ export function FramesManager() {
 
   useEffect( () => {
     setPage( 1 )
-  }, [framesQuery.data?.length] )
+  }, [framesQuery.data?.total] )
 
-  const allFrames = framesQuery.data ?? []
-  const totalPages = Math.max( 1, Math.ceil( allFrames.length / ITEMS_PER_PAGE ) )
+  const allFrames = framesQuery.data?.frames ?? []
+  const totalPages = Math.max( 1, Math.ceil( ( framesQuery.data?.total ?? 0 ) / ITEMS_PER_PAGE ) )
   const safePage = Math.min( page, totalPages )
-
-  const pageFrames = useMemo( () => {
-    const start = ( safePage - 1 ) * ITEMS_PER_PAGE
-    
-    return allFrames.slice( start, start + ITEMS_PER_PAGE )
-  }, [allFrames, safePage] )
 
   const handleDelete = ( key: string ) => {
     if (
@@ -199,7 +194,7 @@ export function FramesManager() {
         {/* Frames grid */}
         {!isLoading && allFrames.length > 0 && (
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-            {pageFrames.map( ( frame ) => (
+            {allFrames.map( ( frame ) => (
               <div key={frame.key}
                 className="flex flex-col justify-between"
               >

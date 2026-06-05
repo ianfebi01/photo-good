@@ -8,7 +8,7 @@ import {
   FRAMES_QUERY_KEY,
   CAMERA_STATUS_QUERY_KEY,
   getCameraStatus,
-  getFrames,
+  getAllFrames,
 } from '@/lib/photobooth/frames.query'
 
 import { StepCapture } from '@/components/booth/StepCapture'
@@ -21,7 +21,7 @@ export function BoothClient() {
 
   const framesQuery = useQuery( {
     queryKey  : FRAMES_QUERY_KEY,
-    queryFn   : getFrames,
+    queryFn   : getAllFrames,
     staleTime : 1000 * 60,
   } )
 

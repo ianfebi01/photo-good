@@ -8,7 +8,7 @@ export default async function BoothPage() {
   const queryClient = new QueryClient()
   await queryClient.prefetchQuery( {
     queryKey : FRAMES_QUERY_KEY,
-    queryFn  : getFramesForSsr,
+    queryFn  : () => getFramesForSsr( { page : 1, limit : 200 } ),
   } )
 
   return (

@@ -10,8 +10,8 @@ export default async function DashboardFramesPage() {
 
   const queryClient = new QueryClient()
   await queryClient.prefetchQuery( {
-    queryKey : FRAMES_QUERY_KEY,
-    queryFn  : getFramesForSsr,
+    queryKey : [...FRAMES_QUERY_KEY, { page : 1, limit : 8 }],
+    queryFn  : () => getFramesForSsr( { page : 1, limit : 8 } ),
   } )
 
   return (
