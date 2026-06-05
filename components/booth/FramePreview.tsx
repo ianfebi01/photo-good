@@ -61,7 +61,7 @@ export function FramePreview( {
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src={`/api/frames/preview?key=${frame.key}&raw=true&t=${cacheBuster}`}
+            src={`/api/frames/preview?key=${frame.key}&overlay=true&t=${cacheBuster}`}
             alt="Frame template"
             className="absolute inset-0 w-full h-full object-contain z-10 pointer-events-none"
           />

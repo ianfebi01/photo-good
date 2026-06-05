@@ -153,7 +153,7 @@ export default function PalleteStack( {
               width     : `${STACK_WIDTH}%`,
               right     : 0,
               transform : `translateX(${
-                -( length - 1 - index ) * OVERLAP
+                -( 3 - 1 - index ) * OVERLAP
               }%)`,
               zIndex : index + 1,
             }}

@@ -12,14 +12,18 @@ export const runtime = 'nodejs'
 const ALLOWED_TYPES = new Set( ['image/png'] )
 const MAX_BYTES = 8 * 1024 * 1024 // 8 MB
 
-async function generatePreviewBuffer( buffer: Buffer ) {
-  // Detect slots
+/**
+ * The frame image with its green slot panels turned transparent, so photos
+ * placed underneath show through while the surrounding artwork stays on top.
+ * This is the same transform compose uses; the booth's live FramePreview
+ * overlays it on top of the captured photos.
+ */
+async function buildTransparentOverlay( buffer: Buffer ): Promise<Buffer | null> {
   const detected = await detectGreenSlots( buffer )
   if ( detected.slots.length === 0 ) {
     return null
   }
 
-  // Generate transparent-green overlay
   const overlayInfo = await sharp( buffer )
     .ensureAlpha()
     .raw()
@@ -29,11 +33,25 @@ async function generatePreviewBuffer( buffer: Buffer ) {
   const pixels = Buffer.from( overlayInfo.data )
   clearGreenPixels( pixels, overlayInfo.info.width, overlayInfo.info.height, channels )
 
-  const overlayBuffer = await sharp( pixels, {
+  return sharp( pixels, {
     raw : { width : overlayInfo.info.width, height : overlayInfo.info.height, channels },
   } )
     .png()
     .toBuffer()
+}
+
+async function generatePreviewBuffer( buffer: Buffer ) {
+  // Detect slots
+  const detected = await detectGreenSlots( buffer )
+  if ( detected.slots.length === 0 ) {
+    return null
+  }
+
+  // Generate transparent-green overlay
+  const overlayBuffer = await buildTransparentOverlay( buffer )
+  if ( !overlayBuffer ) {
+    return null
+  }
 
   // Create solid color blocks for each slot with text
   const colors = [
@@ -82,6 +100,7 @@ export async function GET( request: Request ) {
   const { searchParams } = new URL( request.url )
   const key = searchParams.get( 'key' )
   const raw = searchParams.get( 'raw' ) === 'true'
+  const overlay = searchParams.get( 'overlay' ) === 'true'
 
   if ( !key ) {
     return Response.json( { error : 'Missing key parameter' }, { status : 400 } )
@@ -115,6 +134,20 @@ export async function GET( request: Request ) {
       return new Response( new Uint8Array( buffer ), {
         headers : {
           'Content-Type'  : contentType,
+          'Cache-Control' : 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        },
+      } )
+    }
+
+    // Transparent-slot overlay — used by the booth's live FramePreview, which
+    // renders captured photos beneath the frame artwork.
+    if ( overlay ) {
+      const transparent = await buildTransparentOverlay( buffer )
+      const body = transparent ?? buffer
+
+      return new Response( new Uint8Array( body ), {
+        headers : {
+          'Content-Type'  : transparent ? 'image/png' : ( key.endsWith( '.png' ) ? 'image/png' : 'image/jpeg' ),
           'Cache-Control' : 'no-store, no-cache, must-revalidate, proxy-revalidate',
         },
       } )

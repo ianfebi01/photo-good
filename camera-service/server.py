@@ -127,6 +127,15 @@ class Handler(BaseHTTPRequestHandler):
     def log_message(self, *args):  # quiet by default
         pass
 
+    def handle_one_request(self):
+        # The app aborts /status on a short timeout and closes preview/capture
+        # connections when the user navigates away. Treat the resulting client
+        # disconnect as a normal end-of-request instead of an unhandled crash.
+        try:
+            super().handle_one_request()
+        except (BrokenPipeError, ConnectionResetError):
+            self.close_connection = True
+
     def _send_json(self, payload, status=200):
         body = json.dumps(payload).encode("utf-8")
         self.send_response(status)
