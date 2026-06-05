@@ -1,5 +1,5 @@
-'use client';
-import { useEffect, useState } from 'react'
+'use client'
+import { useEffect, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Trash2,
@@ -12,6 +12,14 @@ import {
 
 import { Button } from '@/components/ui/button'
 import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from '@/components/ui/pagination'
+import {
   FRAMES_QUERY_KEY,
   deleteFrame,
   getFrames,
@@ -19,10 +27,13 @@ import {
 import { AddFrameDialog } from '@/components/booth/AddFrameDialog'
 import { DashboardPageHeader } from './DashboardPageHeader'
 
+const ITEMS_PER_PAGE = 8
+
 export function FramesManager() {
   const queryClient = useQueryClient()
   const [deletingKey, setDeletingKey] = useState<string | null>( null )
   const [cacheBuster, setCacheBuster] = useState( '' )
+  const [page, setPage] = useState( 1 )
 
   const framesQuery = useQuery( {
     queryKey : FRAMES_QUERY_KEY,
@@ -46,29 +57,39 @@ export function FramesManager() {
     const timer = setTimeout( () => {
       setCacheBuster( String( Date.now() ) )
     }, 0 )
-
+    
     return () => clearTimeout( timer )
   }, [] )
 
+  useEffect( () => {
+    setPage( 1 )
+  }, [framesQuery.data?.length] )
+
+  const allFrames = framesQuery.data ?? []
+  const totalPages = Math.max( 1, Math.ceil( allFrames.length / ITEMS_PER_PAGE ) )
+  const safePage = Math.min( page, totalPages )
+
+  const pageFrames = useMemo( () => {
+    const start = ( safePage - 1 ) * ITEMS_PER_PAGE
+    
+    return allFrames.slice( start, start + ITEMS_PER_PAGE )
+  }, [allFrames, safePage] )
+
   const handleDelete = ( key: string ) => {
     if (
-      !confirm(
-        'Are you sure you want to delete this custom frame? This cannot be undone.',
-      )
+      !confirm( 'Are you sure you want to delete this custom frame? This cannot be undone.' )
     ) {
       return
     }
-
     deleteMutation.mutate( key, {
       onError : ( error ) => {
         alert( error instanceof Error ? error.message : 'Error deleting frame' )
       },
     } )
   }
-
-  const frames = framesQuery.data ?? []
-  const totalCount = frames.length
-  const builtInCount = frames.filter( ( f ) => f.builtIn ).length
+    
+  const totalCount = allFrames.length
+  const builtInCount = allFrames.filter( ( f ) => f.builtIn ).length
   const customCount = totalCount - builtInCount
   const isLoading = framesQuery.isLoading
   const error = framesQuery.error instanceof Error ? framesQuery.error.message : null
@@ -99,7 +120,6 @@ export function FramesManager() {
           <p className="font-sans text-lg font-bold text-neutral-900">{totalCount}</p>
           <p className="mt-0.5 text-xs text-neutral-400">Total templates</p>
         </div>
-
         <div className="rounded-2xl border border-neutral-100 bg-white p-5 transition-all duration-300 ease-in-out hover:shadow-xl">
           <div className="mb-4">
             <div className="flex size-9 items-center justify-center rounded-xl bg-neutral-100">
@@ -109,7 +129,6 @@ export function FramesManager() {
           <p className="font-sans text-lg font-bold text-neutral-900">{builtInCount}</p>
           <p className="mt-0.5 text-xs text-neutral-400">Built-in</p>
         </div>
-
         <div className="rounded-2xl border border-neutral-100 bg-white p-5 transition-all duration-300 ease-in-out hover:shadow-xl">
           <div className="mb-4">
             <div className="flex size-9 items-center justify-center rounded-xl bg-accent/40">
@@ -121,8 +140,7 @@ export function FramesManager() {
         </div>
       </div>
 
-      <div className="overflow-x-auto rounded-2xl border border-neutral-100 bg-white p-5 transition-all duration-300 ease-in-out hover:shadow-xl">
-
+      <div className="overflow-hidden rounded-2xl border border-neutral-100 bg-white p-5 transition-all duration-300 ease-in-out hover:shadow-xl">
         {/* Error state */}
         {error && (
           <div className="rounded-xl border border-destructive/20 bg-destructive/10 p-4 text-sm font-medium text-destructive">
@@ -133,7 +151,7 @@ export function FramesManager() {
         {/* Loading state */}
         {isLoading && (
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-            {Array.from( { length : 8 } ).map( ( _, i ) => (
+            {Array.from( { length : ITEMS_PER_PAGE } ).map( ( _, i ) => (
               <div key={i}
                 className="flex flex-col justify-between animate-pulse"
               >
@@ -154,33 +172,35 @@ export function FramesManager() {
             ) )}
           </div>
         )}
-        {!isLoading && frames.length === 0 && (
+
+        {/* Empty state */}
+        {!isLoading && allFrames.length === 0 && (
           <div className="flex flex-col items-center justify-center rounded-2xl border border-neutral-100 bg-white p-16 text-center transition-all duration-300 ease-in-out hover:shadow-xl">
             <div className="mb-4 flex size-12 items-center justify-center rounded-full bg-neutral-100">
               <ImageIcon className="size-5 text-neutral-400" />
             </div>
             <h3 className="text-sm font-semibold text-neutral-900">No frames available</h3>
             <p className="mt-1 max-w-sm text-xs text-neutral-400">
-            Create your first custom frame with green slots where captured photos should go.
+              Create your first custom frame with green slots where captured photos should go.
             </p>
             <AddFrameDialog
               onUploaded={() => queryClient.invalidateQueries( { queryKey : FRAMES_QUERY_KEY } )}
               trigger={
-                <Button
-                  className="mt-4"
+                <Button className="mt-4"
                   size="sm"
                 >
-                Add first frame
+                  Add first frame
                 </Button>
               }
             />
           </div>
         )}
-        {!isLoading && frames.length > 0 && (
+
+        {/* Frames grid */}
+        {!isLoading && allFrames.length > 0 && (
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-            {frames.map( ( frame ) => (
-              <div
-                key={frame.key}
+            {pageFrames.map( ( frame ) => (
+              <div key={frame.key}
                 className="flex flex-col justify-between"
               >
                 <div>
@@ -200,11 +220,11 @@ export function FramesManager() {
                       </h3>
                       {frame.builtIn ? (
                         <span className="shrink-0 rounded-full border border-neutral-200 bg-neutral-100 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-neutral-500">
-                        Built-in
+                          Built-in
                         </span>
                       ) : (
                         <span className="shrink-0 rounded-full border border-neutral-200 bg-neutral-100 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-neutral-500">
-                        Custom
+                          Custom
                         </span>
                       )}
                     </div>
@@ -231,7 +251,7 @@ export function FramesManager() {
                       ) : (
                         <Trash2 className="size-3.5" />
                       )}
-                    Delete
+                      Delete
                     </Button>
                   </div>
                 )}
@@ -239,8 +259,49 @@ export function FramesManager() {
             ) )}
           </div>
         )}
-
       </div>
+
+      {/* Pagination */}
+      {!isLoading && totalPages > 1 && (
+        <Pagination>
+          <PaginationContent>
+            <PaginationItem>
+              <PaginationPrevious
+                href="#"
+                onClick={( e ) => {
+                  e.preventDefault()
+                  setPage( ( p ) => Math.max( 1, p - 1 ) )
+                }}
+                className={safePage <= 1 ? 'pointer-events-none opacity-50' : ''}
+              />
+            </PaginationItem>
+            {Array.from( { length : totalPages }, ( _, i ) => i + 1 ).map( ( p ) => (
+              <PaginationItem key={p}>
+                <PaginationLink
+                  href="#"
+                  isActive={p === safePage}
+                  onClick={( e ) => {
+                    e.preventDefault()
+                    setPage( p )
+                  }}
+                >
+                  {p}
+                </PaginationLink>
+              </PaginationItem>
+            ) )}
+            <PaginationItem>
+              <PaginationNext
+                href="#"
+                onClick={( e ) => {
+                  e.preventDefault()
+                  setPage( ( p ) => Math.min( totalPages, p + 1 ) )
+                }}
+                className={safePage >= totalPages ? 'pointer-events-none opacity-50' : ''}
+              />
+            </PaginationItem>
+          </PaginationContent>
+        </Pagination>
+      )}
     </div>
   )
 }
