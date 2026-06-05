@@ -217,7 +217,7 @@ export default function PhotoStack( { className }: { className?: string } ) {
               if ( el ) cardsRef.current[cardIdx] = el
             }}
             className="absolute inset-0 bg-transparent rounded-sm w-fit mx-auto shadow-2xl"
-            style={ { transformOrigin : 'center bottom', opacity : 0 } }
+            style={ { transformOrigin : 'center bottom', opacity : 0, transition : 'opacity 0.4s ease' } }
           >
             <div className="w-fit h-full overflow-hidden rounded-sm relative">
               {/* eslint-disable-next-line @next/next/no-img-element */}
