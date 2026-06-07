@@ -1,7 +1,7 @@
 #!/bin/bash
 
-REPO="githubusername/reponame"  # 🔁 Replace with your target repo
-ENV_FILE=".env.prod"
+REPO="ianfebi01/photo-good"  # 🔁 Replace with your target repo
+ENV_FILE=".env.production"
 
 while IFS='=' read -r key value
 do
