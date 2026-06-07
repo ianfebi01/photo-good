@@ -5,16 +5,17 @@
 ARG VERSION=alpine3.17
 ARG DIR=usr/app
 
-FROM node:${VERSION} as builder
+FROM node:${VERSION} AS builder
 # redeclare ARG because ARG not in build environment
 ARG DIR
 WORKDIR /${DIR}
+RUN apk add --no-cache python3 make g++
 COPY . .
-RUN npm install -g pnpm
+RUN corepack enable && corepack prepare pnpm@latest --activate
 RUN pnpm install
 RUN pnpm build
 
-FROM node:${VERSION} as runner
+FROM node:${VERSION} AS runner
 # redeclare ARG because ARG not in build environment
 ARG DIR
 WORKDIR /${DIR}
