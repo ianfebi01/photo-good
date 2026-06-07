@@ -1,5 +1,5 @@
 services:
-  money-manager:
+  photo-good:
     restart: always
     build: .
     image: ghcr.io/ianfebi01/photo-good:latest
