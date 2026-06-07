@@ -68,7 +68,6 @@ jobs:
   deploy:
     needs: build
     runs-on: ubuntu-latest
-    environment: NEXT_PUBLIC_GOOGLE_ANALYTICS
 
     steps:
       - name: SSH into VPS and deploy
@@ -84,6 +83,6 @@ jobs:
             cp docker-compose.yml ~/app/photo-good/docker-compose.yml
             cd ~/app/photo-good
             docker compose --env-file .env.production pull
-            docker compose --env-file .env.production down
-            docker compose --env-file .env.production up -d
+            docker compose --env-file .env.production down --remove-orphans
+            docker compose --env-file .env.production up -d --remove-orphans --force-recreate
             rm -rf /tmp/photo-good
