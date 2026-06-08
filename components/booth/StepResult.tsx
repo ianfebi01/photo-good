@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { Download, Film, Images, Loader2, RefreshCw, Repeat } from 'lucide-react'
+import { Download, Film, Images, Loader2, RefreshCw, Repeat, Clapperboard } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -90,7 +90,7 @@ export function StepResult() {
   if ( !strip ) return null
 
   return (
-    <div className="container mx-auto px-4 py-8 lg:py-12 grow overflow-auto">
+    <div className="container mx-auto px-4 py-8 lg:py-12 grow overflow-auto scrollbar-none">
       {/* ── Header ─────────────────────────────────────────────── */}
       <div className="text-center mb-10 space-y-2">
         <h2 className="text-3xl lg:text-4xl font-bold text-foreground tracking-tight">
@@ -102,7 +102,7 @@ export function StepResult() {
       </div>
 
       {/* ── Grid: Strip (hero) + Media cards ───────────────────── */}
-      <div className="flex gap-8">
+      <div className="flex gap-4">
         {/* Photo Strip */}
         <Card className='flex-1'>
           <CardHeader className="pb-3">
@@ -233,137 +233,148 @@ export function StepResult() {
           </CardContent>
         </Card>
 
-        {/* ── Loop Video ────────────────────────────────────────── */}
-        <Card className=" h-fit">
-          <CardHeader className="pb-3">
-            <div className="flex items-center gap-2">
-              <div className="flex size-8 items-center justify-center rounded-lg bg-indigo-100 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400">
-                <Repeat className="size-4" />
-              </div>
-              <div>
-                <CardTitle className="text-base">Loop Video</CardTitle>
-                <CardDescription>
+        <div className='flex flex-col basis-1/2'>
+          {/* ── Loop Video ────────────────────────────────────────── */}
+          <Card className="h-fit w-full">
+            <CardHeader className="pb-3">
+              <div className="flex items-center gap-2">
+                <div className="flex size-8 items-center justify-center rounded-lg bg-indigo-100 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400">
+                  <Repeat className="size-4" />
+                </div>
+                <div>
+                  <CardTitle className="text-base">Loop Video</CardTitle>
+                  <CardDescription>
                   All {photos.length} photos &bull; 0.7s each
-                </CardDescription>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {loopStatus === 'loading' && (
-              <div className="flex aspect-3/2 items-center justify-center rounded-lg bg-muted/50">
-                <div className="flex flex-col items-center gap-3 text-muted-foreground">
-                  <Loader2 className="size-8 animate-spin" />
-                  <span className="text-xs font-medium">
-                    Rendering loop video&hellip;
-                  </span>
+                  </CardDescription>
                 </div>
               </div>
-            )}
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {loopStatus === 'loading' && (
+                <div className="flex aspect-3/2 items-center justify-center rounded-lg bg-muted/50">
+                  <div className="flex flex-col items-center gap-3 text-muted-foreground">
+                    <Loader2 className="size-8 animate-spin" />
+                    <span className="text-xs font-medium">
+                    Rendering loop video&hellip;
+                    </span>
+                  </div>
+                </div>
+              )}
 
-            {( loopStatus === 'ready' && loopVideoUrl ) && (
-              <>
-                <video
-                  src={loopVideoUrl}
-                  controls
-                  loop
-                  autoPlay
-                  muted
-                  playsInline
-                  className="w-full rounded-lg border shadow-sm aspect-3/2"
-                />
-                <a
-                  href={loopVideoUrl}
-                  download={`photobooth-${frameKey}-loop.mp4`}
-                  className="block"
-                >
-                  <Button variant="outline"
-                    size="sm"
-                    className="w-full"
-                  >
-                    <Download className="size-4 mr-2" />
-                    Download Loop
-                  </Button>
-                </a>
-              </>
-            )}
-
-            {loopStatus === 'unavailable' && (
-              <div className="flex flex-col items-center gap-2 py-6 text-center">
-                <Repeat className="size-8 text-muted-foreground/40" />
-                <p className="text-sm text-muted-foreground">
-                  ffmpeg is not installed.
-                  <br />
-                  Install it to enable video generation.
-                </p>
-              </div>
-            )}
-
-            {loopStatus === 'error' && (
-              <div className="flex flex-col items-center gap-2 py-4 text-center">
-                <p className="text-sm text-destructive">
-                  Failed to generate loop video
-                </p>
-                <Button variant="outline"
-                  size="sm"
-                  onClick={retryLoop}
-                >
-                  <RefreshCw className="size-3 mr-2" />
-                  Retry
-                </Button>
-              </div>
-            )}
-
-            {loopStatus === 'idle' && (
-              <div className="flex aspect-3/2 items-center justify-center rounded-lg bg-muted/30 border border-dashed">
-                <span className="text-xs text-muted-foreground">
-                  Waiting for strip&hellip;
-                </span>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* ── Countdown clips (if any) ────────────────────────────── */}
-      {countdownClips.length > 0 && (
-        <div className="mt-8">
-          <h3 className="text-sm font-semibold text-muted-foreground mb-4">
-            Raw countdown clips
-          </h3>
-          <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
-            {countdownClips.map( ( clip, i ) => (
-              <Card key={clip.file}
-                size="sm"
-              >
-                <CardContent className="p-0">
+              {( loopStatus === 'ready' && loopVideoUrl ) && (
+                <>
                   <video
-                    src={clip.url}
+                    src={loopVideoUrl}
                     controls
-                    className="w-full rounded-t-xl"
+                    loop
+                    autoPlay
+                    muted
+                    playsInline
+                    className="w-full rounded-lg border shadow-sm aspect-3/2"
                   />
-                </CardContent>
-                <CardHeader>
-                  <CardTitle className="text-xs">
-                    Shot {i + 1} countdown
-                  </CardTitle>
                   <a
-                    href={clip.url}
-                    download={`countdown-${i + 1}.webm`}
+                    href={loopVideoUrl}
+                    download={`photobooth-${frameKey}-loop.mp4`}
+                    className="block"
                   >
-                    <Button variant="ghost"
+                    <Button variant="outline"
                       size="sm"
-                      className="h-7 text-xs"
+                      className="w-full"
                     >
-                      <Download className="size-3 mr-1" />
-                      Download
+                      <Download className="size-4 mr-2" />
+                    Download Loop
                     </Button>
                   </a>
-                </CardHeader>
-              </Card>
-            ) )}
-          </div>
+                </>
+              )}
+
+              {loopStatus === 'unavailable' && (
+                <div className="flex flex-col items-center gap-2 py-6 text-center">
+                  <Repeat className="size-8 text-muted-foreground/40" />
+                  <p className="text-sm text-muted-foreground">
+                  ffmpeg is not installed.
+                    <br />
+                  Install it to enable video generation.
+                  </p>
+                </div>
+              )}
+
+              {loopStatus === 'error' && (
+                <div className="flex flex-col items-center gap-2 py-4 text-center">
+                  <p className="text-sm text-destructive">
+                  Failed to generate loop video
+                  </p>
+                  <Button variant="outline"
+                    size="sm"
+                    onClick={retryLoop}
+                  >
+                    <RefreshCw className="size-3 mr-2" />
+                  Retry
+                  </Button>
+                </div>
+              )}
+
+              {loopStatus === 'idle' && (
+                <div className="flex aspect-3/2 items-center justify-center rounded-lg bg-muted/30 border border-dashed">
+                  <span className="text-xs text-muted-foreground">
+                  Waiting for strip&hellip;
+                  </span>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+          {/* ── Countdown clips ──────────────────────────────────── */}
+          {countdownClips.length > 0 && (
+            <Card className="mt-8 w-full grow">
+              <CardHeader className="pb-3">
+                <div className="flex items-center gap-2">
+                  <div className="flex size-8 items-center justify-center rounded-lg bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400">
+                    <Clapperboard className="size-4" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-base">Raw Countdown Clips</CardTitle>
+                    <CardDescription>
+                      {countdownClips.length} clip{countdownClips.length > 1 ? 's' : ''} &bull; scroll to view
+                    </CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className='grow'>
+                <div className="flex gap-3 overflow-x-auto pb-3 scrollbar-thin scrollbar-thumb-neutral-300 h-full">
+                  {countdownClips.map( ( clip, i ) => (
+                    <div
+                      key={clip.file}
+                      className="shrink-0 h-full flex flex-col gap-2"
+                    >
+                      <video
+                        src={clip.url}
+                        controls
+                        className="w-full rounded-lg border"
+                      />
+                      <span className="text-xs font-medium text-foreground">
+                        Shot {i + 1}
+                      </span>
+                      <a
+                        href={clip.url}
+                        download={`countdown-${i + 1}.webm`}
+                      >
+                        <Button variant="outline"
+                          size="sm"
+                          className="w-full h-7 text-xs"
+                        >
+                          <Download className="size-3 mr-1" />
+                          Download
+                        </Button>
+                      </a>
+                    </div>
+                  ) )}
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
-      )}
+       
+      </div>
 
       {/* ── Bottom actions ──────────────────────────────────────── */}
       <div className="mt-10 flex justify-center">

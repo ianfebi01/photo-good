@@ -76,24 +76,24 @@ export const useBoothStore = create<BoothState>()(
   persist(
     ( set, get ) => ( {
       // ── Initial state ──────────────────────────────
-      started         : false,
-      frameKey        : DEFAULT_FRAME_KEY,
-      sessionId       : "",
-      photos          : [],
-      strip           : null,
-      gifUrl          : null,
-      videoUrl        : null,
-      loopVideoUrl    : null,
-      countdownClips  : [],
-      phase           : "idle",
-      pending         : null,
-      flash           : false,
-      streamKey       : "live",
-      error           : null,
-      uploadOpen      : false,
-      frames          : FALLBACK_FRAMES,
-      status          : null,
-      step            : 0,
+      started        : false,
+      frameKey       : DEFAULT_FRAME_KEY,
+      sessionId      : "",
+      photos         : [],
+      strip          : null,
+      gifUrl         : null,
+      videoUrl       : null,
+      loopVideoUrl   : null,
+      countdownClips : [],
+      phase          : "idle",
+      pending        : null,
+      flash          : false,
+      streamKey      : "live",
+      error          : null,
+      uploadOpen     : false,
+      frames         : FALLBACK_FRAMES,
+      status         : null,
+      step           : 0,
 
       // ── Setters ────────────────────────────────────
       setStatus     : ( status ) => set( { status } ),
@@ -264,8 +264,8 @@ export const useBoothStore = create<BoothState>()(
       },
 
       // ── Store generated GIF / video URLs ──────────
-      setGifUrl : ( url ) => set( { gifUrl : url } ),
-      setVideoUrl : ( url ) => set( { videoUrl : url } ),
+      setGifUrl       : ( url ) => set( { gifUrl : url } ),
+      setVideoUrl     : ( url ) => set( { videoUrl : url } ),
       setLoopVideoUrl : ( url ) => set( { loopVideoUrl : url } ),
 
       // ── Store a countdown video clip ───────────────
@@ -284,6 +284,7 @@ export const useBoothStore = create<BoothState>()(
         sessionId      : state.sessionId,
         photos         : state.photos,
         strip          : state.strip,
+        step           : state.step,
         gifUrl         : state.gifUrl,
         videoUrl       : state.videoUrl,
         loopVideoUrl   : state.loopVideoUrl,
