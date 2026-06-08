@@ -17,7 +17,47 @@ import { FilterPicker } from './FilterPicker'
 import { FramePreview } from './FramePreview'
 import { ShutterControls } from './ShutterControls'
 import { getCameraPreviewUrl } from '@/lib/photobooth/frames.query'
+import { uploadCountdownClip } from '@/lib/photobooth/frames.query'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
+
+/** Draw the live MJPEG img onto a canvas every frame so we can record it. */
+function useRecordingCanvas(
+  active: boolean,
+): React.RefObject<HTMLCanvasElement | null> {
+  const canvasRef = useRef<HTMLCanvasElement | null>( null )
+  const rafRef = useRef<number | null>( null )
+
+  useEffect( () => {
+    if ( !active ) {
+      if ( rafRef.current !== null ) {
+        cancelAnimationFrame( rafRef.current )
+        rafRef.current = null
+      }
+
+      return
+    }
+
+    const tick = () => {
+      const canvas = canvasRef.current
+      const img = document.querySelector<HTMLImageElement>(
+        'img[data-photobooth-live]',
+      )
+      if ( canvas && img && img.naturalWidth > 0 ) {
+        canvas.width = img.naturalWidth
+        canvas.height = img.naturalHeight
+        canvas.getContext( '2d' )?.drawImage( img, 0, 0 )
+      }
+      rafRef.current = requestAnimationFrame( tick )
+    }
+    rafRef.current = requestAnimationFrame( tick )
+
+    return () => {
+      if ( rafRef.current !== null ) cancelAnimationFrame( rafRef.current )
+    }
+  }, [active] )
+
+  return canvasRef
+}
 
 export function StepCapture() {
   const {
@@ -48,6 +88,94 @@ export function StepCapture() {
   const busy = phase === 'running' || phase === 'composing'
 
   const [countdown, setCountdown] = useState<number | null>( null )
+
+  // ── Countdown video recording ──────────────────────────────────────
+  const mediaRecorderRef = useRef<MediaRecorder | null>( null )
+  const recordedChunksRef = useRef<Blob[]>( [] )
+  const recordingIndexRef = useRef<number>( 0 )
+  const recordingCanvasRef = useRecordingCanvas( countdown !== null )
+
+  const startRecording = useCallback( () => {
+    const canvas = recordingCanvasRef.current
+    if ( !canvas ) return
+    // Canvas may be tainted if CORS headers are missing from the MJPEG stream —
+    // captureStream would throw. Gracefully skip recording in that case.
+    let stream: MediaStream
+    try {
+      stream = canvas.captureStream( 15 )
+    } catch {
+      return
+    }
+    recordedChunksRef.current = []
+    try {
+      const recorder = new MediaRecorder( stream, {
+        mimeType : MediaRecorder.isTypeSupported( 'video/webm;codecs=vp9' )
+          ? 'video/webm;codecs=vp9'
+          : 'video/webm',
+      } )
+      recorder.ondataavailable = ( e ) => {
+        if ( e.data.size > 0 ) recordedChunksRef.current.push( e.data )
+      }
+      recorder.start( 250 ) // collect chunks every 250ms
+      mediaRecorderRef.current = recorder
+    } catch {
+      // MediaRecorder not supported — silently skip recording
+    }
+  }, [recordingCanvasRef] )
+
+  const stopAndUploadRecording = useCallback(
+    async ( sessionId: string, index: number ) => {
+      const recorder = mediaRecorderRef.current
+      if ( !recorder || recorder.state === 'inactive' ) return
+      mediaRecorderRef.current = null
+
+      return new Promise<void>( ( resolve ) => {
+        recorder.onstop = async () => {
+          const blob = new Blob( recordedChunksRef.current, {
+            type : 'video/webm',
+          } )
+          recordedChunksRef.current = []
+          if ( blob.size < 1000 ) {
+            resolve()
+
+            return
+          }
+          try {
+            const result = await uploadCountdownClip( {
+              sessionId,
+              index,
+              blob,
+            } )
+            useBoothStore.getState().addCountdownClip( {
+              file : result.file,
+              url  : result.url,
+            } )
+          } catch {
+            // Upload failed silently — strip still works
+          }
+          resolve()
+        }
+        recorder.stop()
+      } )
+    },
+    [],
+  )
+
+  // Start recording when countdown begins
+  useEffect( () => {
+    if ( countdown === 3 ) {
+      recordingIndexRef.current = photos.length
+      startRecording()
+    }
+  }, [countdown, photos.length, startRecording] )
+
+  // Stop recording and upload when capture completes (pending is set)
+  useEffect( () => {
+    if ( pending && mediaRecorderRef.current ) {
+      const sessionId = useBoothStore.getState().sessionId
+      stopAndUploadRecording( sessionId, recordingIndexRef.current )
+    }
+  }, [pending, stopAndUploadRecording] )
 
   const canCapture =
     !busy &&
@@ -222,7 +350,7 @@ export function StepCapture() {
         return next
       } )
     },
-    [frame],
+    [frame, getScale],
   )
 
   const handleMouseMove = useCallback(
@@ -598,8 +726,24 @@ export function StepCapture() {
     </div>
   )
 
+  // Clean up MediaRecorder on unmount
+  useEffect( () => {
+    return () => {
+      const recorder = mediaRecorderRef.current
+      if ( recorder && recorder.state !== 'inactive' ) {
+        recorder.stop()
+      }
+    }
+  }, [] )
+
   return (
     <div className="flex flex-col gap-6 grow">
+      {/* Hidden canvas for countdown video recording */}
+      <canvas
+        ref={recordingCanvasRef}
+        className="hidden"
+        aria-hidden="true"
+      />
       {!isXl && stepperNav}
       {isXl ? desktopLayout : stepperLayout}
       {errorBanner}

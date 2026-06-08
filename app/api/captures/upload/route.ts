@@ -2,21 +2,24 @@ import { writeFile, mkdir } from "node:fs/promises";
 import path from "node:path";
 
 import { CAPTURES_DIR } from "@/lib/photobooth/config";
+import { saveRawCopy } from "@/lib/photobooth/media";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const ID_RE = /^[a-z0-9]+$/i;
-const MAX_BYTES = 50 * 1024 * 1024; // 50 MB cap
+const MAX_IMAGE_BYTES = 50 * 1024 * 1024; // 50 MB cap for images
+const MAX_VIDEO_BYTES = 200 * 1024 * 1024; // 200 MB cap for videos
 
 /**
- * Accept a captured JPEG uploaded from the browser when the client connects
- * directly to the local camera service (NEXT_PUBLIC_CAMERA_SERVICE_URL).
+ * Accept a captured JPEG or countdown video (webm) uploaded from the browser
+ * when the client connects directly to the local camera service.
  *
  * Body: multipart/form-data with fields:
- *   - file:      the JPEG blob
+ *   - file:      the JPEG blob or webm video
  *   - sessionId: the active booth session
  *   - index:     shot index (0-based)
+ *   - kind:      "photo" (default) or "countdown" for the 3s video clip
  */
 export async function POST( request: Request ) {
   let form: FormData;
@@ -30,14 +33,18 @@ export async function POST( request: Request ) {
   const sessionId = String( form.get( "sessionId" ) ?? "" ).trim();
   const indexRaw = String( form.get( "index" ) ?? "" ).trim();
   const index = Number( indexRaw );
+  const kind = String( form.get( "kind" ) ?? "photo" ).trim();
 
   if ( !( file instanceof File ) ) {
     return Response.json( { error : "Missing file" }, { status : 400 } );
   }
-  if ( !file.type.startsWith( "image/" ) ) {
+  const isVideo = file.type.startsWith( "video/" ) || kind === "countdown";
+  const isImage = file.type.startsWith( "image/" );
+  if ( !isImage && !isVideo ) {
     return Response.json( { error : "Unsupported file type" }, { status : 400 } );
   }
-  if ( file.size > MAX_BYTES ) {
+  const maxBytes = isVideo ? MAX_VIDEO_BYTES : MAX_IMAGE_BYTES;
+  if ( file.size > maxBytes ) {
     return Response.json( { error : "File too large" }, { status : 400 } );
   }
   if ( !ID_RE.test( sessionId ) ) {
@@ -50,8 +57,19 @@ export async function POST( request: Request ) {
   try {
     await mkdir( CAPTURES_DIR, { recursive : true } );
     const buffer = Buffer.from( await file.arrayBuffer() );
+
+    if ( isVideo ) {
+      // Countdown video clip
+      const name = `countdown-${sessionId}-${index}.webm`;
+      await writeFile( path.join( CAPTURES_DIR, name ), buffer );
+
+      return Response.json( { file : name, url : `/api/captures/${name}` } );
+    }
+
+    // Photo — save the main shot and an immutable raw copy
     const name = `shot-${sessionId}-${index}.jpg`;
     await writeFile( path.join( CAPTURES_DIR, name ), buffer );
+    await saveRawCopy( sessionId, index, buffer );
 
     return Response.json( { file : name, url : `/api/captures/${name}` } );
   } catch ( err ) {

@@ -34,6 +34,8 @@ export const LiveStream = forwardRef<
         else if ( ref ) ref.current = node
       }}
       alt="Live camera preview"
+      crossOrigin="anonymous"
+      data-photobooth-live=""
       onLoad={() => setLoaded( true )}
       className={cn(
         'transition-opacity duration-500',

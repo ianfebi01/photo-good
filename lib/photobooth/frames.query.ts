@@ -243,6 +243,88 @@ export async function composeStrip( {
   return parseJson( response, 'Compose failed' )
 }
 
+/** Generate an animated GIF from session captures. */
+export async function generateSessionGif( {
+  sessionId,
+  files,
+}: {
+  sessionId: string
+  files: string[]
+} ): Promise<{ file: string; url: string }> {
+  const response = await fetch( '/api/captures/gif', {
+    method  : 'POST',
+    headers : { 'Content-Type' : 'application/json' },
+    body    : JSON.stringify( { sessionId, files } ),
+  } )
+
+  return parseJson( response, 'GIF generation failed' )
+}
+
+/** Generate a video — countdown mashup if clips available, image slideshow otherwise. */
+export async function generateSessionVideo( {
+  sessionId,
+  files,
+  countdownFiles,
+  frameKey,
+}: {
+  sessionId: string
+  files: string[]
+  countdownFiles?: string[]
+  frameKey?: string
+} ): Promise<{ file: string; url: string } | null> {
+  const response = await fetch( '/api/captures/video', {
+    method  : 'POST',
+    headers : { 'Content-Type' : 'application/json' },
+    body    : JSON.stringify( { sessionId, files, countdownFiles, frameKey } ),
+  } )
+  // 501 means ffmpeg not available — return null gracefully
+  if ( response.status === 501 ) return null
+
+  return parseJson( response, 'Video generation failed' )
+}
+
+/** Generate a 15-second loop MP4 cycling through all captured images. */
+export async function generateSessionLoopVideo( {
+  sessionId,
+  files,
+}: {
+  sessionId: string
+  files: string[]
+} ): Promise<{ file: string; url: string } | null> {
+  const response = await fetch( '/api/captures/loop-video', {
+    method  : 'POST',
+    headers : { 'Content-Type' : 'application/json' },
+    body    : JSON.stringify( { sessionId, files } ),
+  } )
+  if ( response.status === 501 ) return null
+
+  return parseJson( response, 'Loop video generation failed' )
+}
+
+/** Upload a countdown video clip (webm) recorded during the 3s countdown. */
+export async function uploadCountdownClip( {
+  sessionId,
+  index,
+  blob,
+}: {
+  sessionId: string
+  index: number
+  blob: Blob
+} ): Promise<{ file: string; url: string }> {
+  const form = new FormData()
+  form.append( 'file', blob, `countdown-${sessionId}-${index}.webm` )
+  form.append( 'sessionId', sessionId )
+  form.append( 'index', String( index ) )
+  form.append( 'kind', 'countdown' )
+
+  const response = await fetch( '/api/captures/upload', {
+    method : 'POST',
+    body   : form,
+  } )
+
+  return parseJson( response, 'Countdown video upload failed' )
+}
+
 /* ── Frame upload helper (proxied through server) ───────────────── */
 
 export async function uploadFrameWithSlots( {

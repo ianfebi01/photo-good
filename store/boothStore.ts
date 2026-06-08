@@ -36,6 +36,10 @@ export interface BoothState {
   sessionId: string;
   photos: Shot[];
   strip: string | null;
+  gifUrl: string | null;
+  videoUrl: string | null;
+  loopVideoUrl: string | null;
+  countdownClips: Shot[];
 
   // ── Transient ──────────────────────────────────────
   phase: Phase;
@@ -62,26 +66,34 @@ export interface BoothState {
   takeShot: ( replaceIndex?: number ) => Promise<void>;
   acceptPending: ( replaceIndex?: number ) => Promise<void>;
   composeStripWithAdjustments: ( adjustments: { x: number; y: number; zoom: number; filter: string }[] ) => Promise<void>;
+  setGifUrl: ( url: string | null ) => void;
+  setVideoUrl: ( url: string | null ) => void;
+  setLoopVideoUrl: ( url: string | null ) => void;
+  addCountdownClip: ( clip: Shot ) => void;
 }
 
 export const useBoothStore = create<BoothState>()(
   persist(
     ( set, get ) => ( {
       // ── Initial state ──────────────────────────────
-      started    : false,
-      frameKey   : DEFAULT_FRAME_KEY,
-      sessionId  : "",
-      photos     : [],
-      strip      : null,
-      phase      : "idle",
-      pending    : null,
-      flash      : false,
-      streamKey  : "live",
-      error      : null,
-      uploadOpen : false,
-      frames     : FALLBACK_FRAMES,
-      status     : null,
-      step       : 0,
+      started         : false,
+      frameKey        : DEFAULT_FRAME_KEY,
+      sessionId       : "",
+      photos          : [],
+      strip           : null,
+      gifUrl          : null,
+      videoUrl        : null,
+      loopVideoUrl    : null,
+      countdownClips  : [],
+      phase           : "idle",
+      pending         : null,
+      flash           : false,
+      streamKey       : "live",
+      error           : null,
+      uploadOpen      : false,
+      frames          : FALLBACK_FRAMES,
+      status          : null,
+      step            : 0,
 
       // ── Setters ────────────────────────────────────
       setStatus     : ( status ) => set( { status } ),
@@ -98,15 +110,19 @@ export const useBoothStore = create<BoothState>()(
         if ( key === get().frameKey ) return;
         _capturing = false;
         set( {
-          frameKey  : key,
-          started   : false,
-          sessionId : "",
-          phase     : "idle",
-          photos    : [],
-          pending   : null,
-          strip     : null,
-          error     : null,
-          step      : 0,
+          frameKey       : key,
+          started        : false,
+          sessionId      : "",
+          phase          : "idle",
+          photos         : [],
+          pending        : null,
+          strip          : null,
+          gifUrl         : null,
+          videoUrl       : null,
+          loopVideoUrl   : null,
+          countdownClips : [],
+          error          : null,
+          step           : 0,
         } );
         get().restartPreview();
       },
@@ -115,15 +131,19 @@ export const useBoothStore = create<BoothState>()(
       reset : () => {
         _capturing = false;
         set( {
-          started   : false,
-          sessionId : "",
-          phase     : "idle",
-          photos    : [],
-          pending   : null,
-          strip     : null,
-          error     : null,
-          flash     : false,
-          step      : 0,
+          started        : false,
+          sessionId      : "",
+          phase          : "idle",
+          photos         : [],
+          pending        : null,
+          strip          : null,
+          gifUrl         : null,
+          videoUrl       : null,
+          loopVideoUrl   : null,
+          countdownClips : [],
+          error          : null,
+          flash          : false,
+          step           : 0,
         } );
         get().restartPreview();
       },
@@ -242,16 +262,32 @@ export const useBoothStore = create<BoothState>()(
           } );
         }
       },
+
+      // ── Store generated GIF / video URLs ──────────
+      setGifUrl : ( url ) => set( { gifUrl : url } ),
+      setVideoUrl : ( url ) => set( { videoUrl : url } ),
+      setLoopVideoUrl : ( url ) => set( { loopVideoUrl : url } ),
+
+      // ── Store a countdown video clip ───────────────
+      addCountdownClip : ( clip ) => {
+        set( ( s ) => ( {
+          countdownClips : [...s.countdownClips, clip],
+        } ) );
+      },
     } ),
     {
       name       : "booth-store",
       storage    : createJSONStorage( () => localStorage ),
       partialize : ( state ) => ( {
-        started   : state.started,
-        frameKey  : state.frameKey,
-        sessionId : state.sessionId,
-        photos    : state.photos,
-        strip     : state.strip,
+        started        : state.started,
+        frameKey       : state.frameKey,
+        sessionId      : state.sessionId,
+        photos         : state.photos,
+        strip          : state.strip,
+        gifUrl         : state.gifUrl,
+        videoUrl       : state.videoUrl,
+        loopVideoUrl   : state.loopVideoUrl,
+        countdownClips : state.countdownClips,
       } ),
     },
   ),

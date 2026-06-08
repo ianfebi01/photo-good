@@ -18,9 +18,10 @@ function wrap( jpeg: Buffer ) {
 }
 
 const STREAM_HEADERS = {
-  "Cache-Control" : "no-store, no-cache, must-revalidate",
-  "Pragma"        : "no-cache",
-  "Connection"    : "close",
+  "Access-Control-Allow-Origin" : "*",
+  "Cache-Control"               : "no-store, no-cache, must-revalidate",
+  "Pragma"                      : "no-cache",
+  "Connection"                  : "close",
 };
 
 /**

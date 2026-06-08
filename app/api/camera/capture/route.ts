@@ -3,6 +3,7 @@ import path from "node:path";
 
 import { captureStill, ensureCapturesDir } from "@/lib/photobooth/camera";
 import { CAPTURES_DIR } from "@/lib/photobooth/config";
+import { saveRawCopy } from "@/lib/photobooth/media";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -35,7 +36,9 @@ export async function POST( request: Request ) {
     }
     const name = `shot-${sessionId}-${index}.jpg`;
     await writeFile( path.join( CAPTURES_DIR, name ), jpeg );
-    
+    // Preserve an immutable raw copy
+    await saveRawCopy( sessionId, index, jpeg );
+
     return Response.json( { file : name, url : `/api/captures/${name}` } );
   } catch ( err ) {
     return Response.json(
