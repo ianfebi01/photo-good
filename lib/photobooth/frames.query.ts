@@ -83,18 +83,16 @@ export async function uploadFrame( { file, label }: { file: File; label: string 
  * Or bake it into the Docker build via GitHub Actions build-args.
  */
 function getCameraServiceUrl(): string | null {
-  if ( typeof window !== "undefined" ) {
-    const win = window as Record<string, unknown>;
-    if ( typeof win.__CAMERA_SERVICE_URL === "string" ) {
-      return win.__CAMERA_SERVICE_URL;
+  // Runtime override via browser console (avoids `window` for SSR compat).
+  try {
+    if ( typeof __CAMERA_SERVICE_URL === "string" ) {
+      return __CAMERA_SERVICE_URL as string;
     }
+  } catch {
+    // Not in a browser environment.
   }
-  
-  return (
-    ( typeof process !== "undefined" &&
-      process.env.NEXT_PUBLIC_CAMERA_SERVICE_URL ) ??
-    null
-  );
+
+  return process.env.NEXT_PUBLIC_CAMERA_SERVICE_URL ?? null;
 }
 
 /** URL for the MJPEG live preview stream (local service or server proxy). */
