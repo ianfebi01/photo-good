@@ -98,6 +98,19 @@ export function StepCapture() {
   const startRecording = useCallback( () => {
     const canvas = recordingCanvasRef.current
     if ( !canvas ) return
+    // Size + draw the canvas from the live frame *before* captureStream so the
+    // recording locks onto the camera's real dimensions. Without this, the
+    // first shot captures at the canvas's default 300x150 (the rAF sizing tick
+    // hasn't run yet), giving shot 1 a different aspect ratio/resolution than
+    // later shots which reuse the already-sized canvas.
+    const img = document.querySelector<HTMLImageElement>(
+      'img[data-photobooth-live]',
+    )
+    if ( img && img.naturalWidth > 0 ) {
+      canvas.width = img.naturalWidth
+      canvas.height = img.naturalHeight
+      canvas.getContext( '2d' )?.drawImage( img, 0, 0 )
+    }
     // Canvas may be tainted if CORS headers are missing from the MJPEG stream —
     // captureStream would throw. Gracefully skip recording in that case.
     let stream: MediaStream

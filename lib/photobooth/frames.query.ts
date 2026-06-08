@@ -325,6 +325,23 @@ export async function uploadCountdownClip( {
   return parseJson( response, 'Countdown video upload failed' )
 }
 
+/** Convert a recorded countdown clip (webm) to a downloadable MP4. */
+export async function convertCountdownClip( {
+  file,
+}: {
+  file: string
+} ): Promise<{ file: string; url: string } | null> {
+  const response = await fetch( '/api/captures/countdown-mp4', {
+    method  : 'POST',
+    headers : { 'Content-Type' : 'application/json' },
+    body    : JSON.stringify( { file } ),
+  } )
+  // 501 means ffmpeg not available — return null gracefully
+  if ( response.status === 501 ) return null
+
+  return parseJson( response, 'MP4 conversion failed' )
+}
+
 /* ── Frame upload helper (proxied through server) ───────────────── */
 
 export async function uploadFrameWithSlots( {

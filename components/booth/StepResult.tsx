@@ -9,6 +9,7 @@ import { useBoothStore } from '@/store/boothStore'
 import {
   generateSessionVideo,
   generateSessionLoopVideo,
+  convertCountdownClip,
 } from '@/lib/photobooth/frames.query'
 
 type GenStatus = 'idle' | 'loading' | 'ready' | 'error' | 'unavailable'
@@ -35,6 +36,30 @@ export function StepResult() {
   )
 
   const startedRef = useRef( { video : false, loop : false } )
+
+  // Index of the clip currently being converted to MP4 for download (or null).
+  const [downloadingClip, setDownloadingClip] = useState<number | null>( null )
+
+  const handleDownloadClip = async ( file: string, index: number ) => {
+    if ( downloadingClip !== null ) return
+    setDownloadingClip( index )
+    try {
+      const result = await convertCountdownClip( { file } )
+      // Fall back to the raw webm if ffmpeg isn't available server-side.
+      const url = result?.url ?? `/api/captures/${file}`
+      const ext = result ? 'mp4' : 'webm'
+      const a = document.createElement( 'a' )
+      a.href = url
+      a.download = `countdown-${index + 1}.${ext}`
+      document.body.appendChild( a )
+      a.click()
+      a.remove()
+    } catch {
+      // Conversion failed — leave the UI untouched so the user can retry.
+    } finally {
+      setDownloadingClip( null )
+    }
+  }
 
   // Kick off video generation after the strip is ready
   useEffect( () => {
@@ -389,17 +414,19 @@ export function StepResult() {
                           <span className="text-lg font-medium">
                         Shot {i + 1}
                           </span>
-                          <a
-                            href={clip.url}
-                            download={`countdown-${i + 1}.webm`}
+                          <Button variant="ghost"
+                            size="sm"
+                            className="size-8"
+                            disabled={downloadingClip !== null}
+                            onClick={() => handleDownloadClip( clip.file, i )}
+                            title="Download as MP4"
                           >
-                            <Button variant="ghost"
-                              size="sm"
-                              className="size-8"
-                            >
+                            {downloadingClip === i ? (
+                              <Loader2 className="size-6 animate-spin" />
+                            ) : (
                               <Download className="size-6" />
-                            </Button>
-                          </a>
+                            )}
+                          </Button>
                         </div>
                       </div>
                     </div>

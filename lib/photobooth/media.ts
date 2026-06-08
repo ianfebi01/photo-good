@@ -420,6 +420,75 @@ export async function generateLoopVideo(
   return { file : vidName, url : `/api/captures/${vidName}` }
 }
 
+// ── Countdown clip → MP4 conversion ───────────────────────────────
+
+/**
+ * Convert a single recorded countdown `.webm` clip into an MP4 with H.264 so
+ * it downloads/plays everywhere (Safari, iOS, QuickTime won't open VP9 webm).
+ * The result is cached on disk and reused on subsequent requests.
+ */
+export async function convertCountdownToMp4(
+  webmFile: string,
+): Promise<{ file: string; url: string } | null> {
+  const base = path.basename( webmFile )
+  if ( !base.toLowerCase().endsWith( ".webm" ) ) return null
+
+  const hasFfmpeg = await ffmpegAvailable()
+  if ( !hasFfmpeg ) return null
+
+  await mkdir( CAPTURES_DIR, { recursive : true } )
+
+  const srcPath = path.join( CAPTURES_DIR, base )
+  // Fail fast if the source clip doesn't exist.
+  try {
+    await readFile( srcPath )
+  } catch {
+    return null
+  }
+
+  const mp4Name = base.replace( /\.webm$/i, ".mp4" )
+  const outPath = path.join( CAPTURES_DIR, mp4Name )
+
+  // Reuse a previously converted MP4 if present.
+  try {
+    await readFile( outPath )
+
+    return { file : mp4Name, url : `/api/captures/${mp4Name}` }
+  } catch {
+    // not converted yet
+  }
+
+  await new Promise<void>( ( resolve, reject ) => {
+    const proc = spawn( "ffmpeg", [
+      "-y",
+      "-i", srcPath,
+      "-vf",
+      [
+        // libx264 requires even dimensions; round down to the nearest even px.
+        "scale=trunc(iw/2)*2:trunc(ih/2)*2",
+        "fps=24",
+        "format=yuv420p",
+      ].join( "," ),
+      "-c:v", "libx264",
+      "-preset", "fast",
+      "-crf", "23",
+      "-pix_fmt", "yuv420p",
+      "-profile:v", "main",
+      "-level", "4.0",
+      "-tag:v", "avc1",
+      "-movflags", "+faststart",
+      "-an",
+      outPath,
+    ], { stdio : "inherit" } )
+    proc.on( "close", ( code ) => {
+      if ( code === 0 ) resolve()
+      else reject( new Error( `ffmpeg countdown mp4 conversion exited with ${code}` ) )
+    } )
+  } )
+
+  return { file : mp4Name, url : `/api/captures/${mp4Name}` }
+}
+
 // ── Save raw (unprocessed copy) ────────────────────────────────────
 
 /** Write a second immutable copy of the raw capture so the original is always
