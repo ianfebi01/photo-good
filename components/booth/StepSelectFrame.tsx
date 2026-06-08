@@ -2,6 +2,7 @@ import { Button } from '@/components/ui/button'
 import { type ClientFrame } from '@/lib/photobooth/frames.client'
 import { useBoothStore } from '@/store/boothStore'
 import { FrameSelector } from './FrameSelector'
+import { BoothQR } from './BoothQR'
 import { ChevronRight } from 'lucide-react'
 
 export function StepSelectFrame() {
@@ -34,13 +35,20 @@ export function StepSelectFrame() {
           Start session <ChevronRight/>
         </Button>
       </div>
-      <FrameSelector
-        frames={frames}
-        active={frameKey}
-        disabled={false}
-        onSelect={selectFrame}
-        onAdd={( f: ClientFrame ) => addFrame( f )}
-      />
+      <div className="flex gap-6 grow min-h-0">
+        <div className="flex-1 min-w-0 h-full flex flex-col">
+          <FrameSelector
+            frames={frames}
+            active={frameKey}
+            disabled={false}
+            onSelect={selectFrame}
+            onAdd={( f: ClientFrame ) => addFrame( f )}
+          />
+        </div>
+        <div className="hidden lg:flex shrink-0 items-center justify-center">
+          <BoothQR page="/booth" />
+        </div>
+      </div>
     </div>
   )
 }
