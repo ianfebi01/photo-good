@@ -362,44 +362,46 @@ export function StepResult() {
                 </div>
               </CardHeader>
               <CardContent className='overflow-hidden grow'>
-                <div className="flex h-full gap-3 pb-3 overflow-x-auto scrollbar-thin scrollbar-thumb-neutral-300">
+                <div className="flex h-full gap-3 overflow-x-auto scrollbar-thin scrollbar-thumb-neutral-300">
                   {countdownClips.map( ( clip, i ) => (
                     <div
                       key={clip.file}
-                      className="flex flex-col gap-2 max-xl:w-full xl:h-full"
+                      className="h-full rounded-lg shadow-sm relative"
+                      style={{ aspectRatio : 3 / 2, width : 'auto' }}
                     >
-                      <div className='h-auto overflow-hidden border rounded-lg w-full xl:h-full xl:w-fit'
-                        style={{ aspectRatio : '3/2' }}
+                      <video
+                        autoPlay
+                        loop
+                        muted
+                        playsInline
+                        webkit-playsinline="true"
+                        preload="auto"
+                        className="w-full h-full object-cover rounded-lg"
                       >
-                        <video
-                          autoPlay
-                          loop
-                          muted
-                          playsInline
-                          webkit-playsinline="true"
-                          preload="auto"
-                          className="object-cover w-full h-full"
-                        >
-                          <source src={clip.url}
-                            type="video/webm"
-                          />
-                        </video>
-                      </div>
-                      <span className="text-xs font-medium text-foreground">
+                        <source src={clip.url}
+                          type="video/webm"
+                        />
+                      </video>
+
+                      <div className='absolute bottom-0 inset-x-0 flex items-center justify-between gap-4 text-white rounded-b-lg overflow-hidden'>
+                        <div className='absolute w-full bottom-0 bg-linear-to-t from-black/50 to-transparent h-full z-0'></div>
+                        <div className='flex items-center justify-between relative z-1 w-full pb-2 pt-8 px-4'>
+                          <span className="text-lg font-medium">
                         Shot {i + 1}
-                      </span>
-                      <a
-                        href={clip.url}
-                        download={`countdown-${i + 1}.webm`}
-                      >
-                        <Button variant="outline"
-                          size="sm"
-                          className="w-full text-xs h-7"
-                        >
-                          <Download className="mr-1 size-3" />
-                          Download
-                        </Button>
-                      </a>
+                          </span>
+                          <a
+                            href={clip.url}
+                            download={`countdown-${i + 1}.webm`}
+                          >
+                            <Button variant="ghost"
+                              size="sm"
+                              className="size-8"
+                            >
+                              <Download className="size-6" />
+                            </Button>
+                          </a>
+                        </div>
+                      </div>
                     </div>
                   ) )}
                 </div>
