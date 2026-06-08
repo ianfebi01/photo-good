@@ -90,13 +90,13 @@ export function StepResult() {
   if ( !strip ) return null
 
   return (
-    <div className="container mx-auto px-4 py-8 lg:py-12 grow overflow-auto scrollbar-none">
+    <div className="container px-4 py-8 mx-auto overflow-auto lg:py-12 grow scrollbar-none">
       {/* ── Header ─────────────────────────────────────────────── */}
-      <div className="text-center mb-10 space-y-2">
-        <h2 className="text-3xl lg:text-4xl font-bold text-foreground tracking-tight">
+      <div className="mb-10 space-y-2 text-center">
+        <h2 className="text-3xl font-bold tracking-tight lg:text-4xl text-foreground">
           Your photos are ready!
         </h2>
-        <p className="text-muted-foreground text-sm lg:text-base max-w-md mx-auto">
+        <p className="max-w-md mx-auto text-sm text-muted-foreground lg:text-base">
           Download your photo strip, countdown mashup, or 15-second loop video below.
         </p>
       </div>
@@ -104,10 +104,10 @@ export function StepResult() {
       {/* ── Grid: Strip (hero) + Media cards ───────────────────── */}
       <div className="flex flex-wrap gap-4">
         {/* Photo Strip */}
-        <Card className='flex-1 flex flex-col justify-between'>
+        <Card className='flex flex-col justify-between flex-1'>
           <CardHeader className="pb-3">
             <div className="flex items-center gap-2">
-              <div className="flex size-8 items-center justify-center rounded-lg bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400">
+              <div className="flex items-center justify-center rounded-lg size-8 bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400">
                 <Images className="size-4" />
               </div>
               <div>
@@ -123,7 +123,7 @@ export function StepResult() {
             <img
               src={strip}
               alt="Composed photo strip"
-              className="w-full rounded-lg border shadow-sm"
+              className="w-full border rounded-lg shadow-sm"
             />
             <a
               href={strip}
@@ -134,7 +134,7 @@ export function StepResult() {
                 size="sm"
                 className="w-full"
               >
-                <Download className="size-4 mr-2" />
+                <Download className="mr-2 size-4" />
                 Download Strip
               </Button>
             </a>
@@ -142,10 +142,10 @@ export function StepResult() {
         </Card>
 
         {/* ── Countdown Mashup Video ───────────────────────────── */}
-        <Card className='flex-1 flex flex-col justify-between'>
+        <Card className='flex flex-col justify-between flex-1'>
           <CardHeader className="pb-3">
             <div className="flex items-center gap-2">
-              <div className="flex size-8 items-center justify-center rounded-lg bg-rose-100 text-rose-600 dark:bg-rose-900/30 dark:text-rose-400">
+              <div className="flex items-center justify-center rounded-lg size-8 bg-rose-100 text-rose-600 dark:bg-rose-900/30 dark:text-rose-400">
                 <Film className="size-4" />
               </div>
               <div>
@@ -185,7 +185,7 @@ export function StepResult() {
                   playsInline
                   webkit-playsinline="true"
                   preload="auto"
-                  className="w-full rounded-lg border shadow-sm"
+                  className="w-full border rounded-lg shadow-sm"
                 >
                   <source src={videoUrl}
                     type="video/mp4"
@@ -200,7 +200,7 @@ export function StepResult() {
                     size="sm"
                     className="w-full"
                   >
-                    <Download className="size-4 mr-2" />
+                    <Download className="mr-2 size-4" />
                     Download Video
                   </Button>
                 </a>
@@ -227,14 +227,14 @@ export function StepResult() {
                   size="sm"
                   onClick={retryVideo}
                 >
-                  <RefreshCw className="size-3 mr-2" />
+                  <RefreshCw className="mr-2 size-3" />
                   Retry
                 </Button>
               </div>
             )}
 
             {videoStatus === 'idle' && (
-              <div className="flex items-center justify-center rounded-lg bg-muted/30 border border-dashed"
+              <div className="flex items-center justify-center border border-dashed rounded-lg bg-muted/30"
                 style={{ aspectRatio : '16/9', height : 'auto' }}
               >
                 <span className="text-xs text-muted-foreground">
@@ -247,10 +247,10 @@ export function StepResult() {
 
         <div className='flex flex-col xl:basis-1/2'>
           {/* ── Loop Video ────────────────────────────────────────── */}
-          <Card className="h-fit w-full">
+          <Card className="w-full h-fit">
             <CardHeader className="pb-3">
               <div className="flex items-center gap-2">
-                <div className="flex size-8 items-center justify-center rounded-lg bg-indigo-100 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400">
+                <div className="flex items-center justify-center text-indigo-600 bg-indigo-100 rounded-lg size-8 dark:bg-indigo-900/30 dark:text-indigo-400">
                   <Repeat className="size-4" />
                 </div>
                 <div>
@@ -285,7 +285,7 @@ export function StepResult() {
                     playsInline
                     webkit-playsinline="true"
                     preload="auto"
-                    className="w-full rounded-lg border shadow-sm"
+                    className="w-full border rounded-lg shadow-sm"
                     style={{ aspectRatio : '3/2', height : 'auto' }}
                   >
                     <source src={loopVideoUrl}
@@ -301,7 +301,7 @@ export function StepResult() {
                       size="sm"
                       className="w-full"
                     >
-                      <Download className="size-4 mr-2" />
+                      <Download className="mr-2 size-4" />
                     Download Loop
                     </Button>
                   </a>
@@ -328,14 +328,14 @@ export function StepResult() {
                     size="sm"
                     onClick={retryLoop}
                   >
-                    <RefreshCw className="size-3 mr-2" />
+                    <RefreshCw className="mr-2 size-3" />
                   Retry
                   </Button>
                 </div>
               )}
 
               {loopStatus === 'idle' && (
-                <div className="flex items-center justify-center rounded-lg bg-muted/30 border border-dashed"
+                <div className="flex items-center justify-center border border-dashed rounded-lg bg-muted/30"
                   style={{ aspectRatio : '3/2', height : 'auto' }}
                 >
                   <span className="text-xs text-muted-foreground">
@@ -347,10 +347,10 @@ export function StepResult() {
           </Card>
           {/* ── Countdown clips ──────────────────────────────────── */}
           {countdownClips.length > 0 && (
-            <Card className="mt-8 w-full grow">
+            <Card className="w-full mt-8 overflow-hidden grow">
               <CardHeader className="pb-3">
                 <div className="flex items-center gap-2">
-                  <div className="flex size-8 items-center justify-center rounded-lg bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400">
+                  <div className="flex items-center justify-center rounded-lg size-8 bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400">
                     <Clapperboard className="size-4" />
                   </div>
                   <div>
@@ -361,15 +361,15 @@ export function StepResult() {
                   </div>
                 </div>
               </CardHeader>
-              <CardContent className='grow'>
-                <div className="flex gap-3 overflow-x-auto pb-3 scrollbar-thin scrollbar-thumb-neutral-300 h-full">
+              <CardContent className='overflow-hidden grow'>
+                <div className="flex h-full gap-3 pb-3 overflow-x-auto scrollbar-thin scrollbar-thumb-neutral-300">
                   {countdownClips.map( ( clip, i ) => (
                     <div
                       key={clip.file}
-                      className="shrink-0 max-xl:w-full xl:h-full flex flex-col gap-2"
+                      className="flex flex-col gap-2 max-xl:w-full xl:h-full"
                     >
-                      <div className='rounded-lg border max-xl:w-full xl:h-full overflow-hidden'
-                        style={{ aspectRatio : '3/2', height : 'auto' }}
+                      <div className='h-auto overflow-hidden border rounded-lg w-full xl:h-full xl:w-fit'
+                        style={{ aspectRatio : '3/2' }}
                       >
                         <video
                           autoPlay
@@ -378,7 +378,7 @@ export function StepResult() {
                           playsInline
                           webkit-playsinline="true"
                           preload="auto"
-                          className="w-full h-full object-cover"
+                          className="object-cover w-full h-full"
                         >
                           <source src={clip.url}
                             type="video/webm"
@@ -394,9 +394,9 @@ export function StepResult() {
                       >
                         <Button variant="outline"
                           size="sm"
-                          className="w-full h-7 text-xs"
+                          className="w-full text-xs h-7"
                         >
-                          <Download className="size-3 mr-1" />
+                          <Download className="mr-1 size-3" />
                           Download
                         </Button>
                       </a>
@@ -411,7 +411,7 @@ export function StepResult() {
       </div>
 
       {/* ── Bottom actions ──────────────────────────────────────── */}
-      <div className="mt-10 flex justify-center">
+      <div className="flex justify-center mt-10">
         <Button size="lg"
           variant="outline"
           onClick={reset}
