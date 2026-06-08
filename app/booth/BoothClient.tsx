@@ -9,6 +9,7 @@ import {
   CAMERA_STATUS_QUERY_KEY,
   getCameraStatus,
   getAllFrames,
+  ensureCameraDiscovered,
 } from '@/lib/photobooth/frames.query'
 
 import { StepCapture } from '@/components/booth/StepCapture'
@@ -18,6 +19,13 @@ import { StepSelectFrame } from '@/components/booth/StepSelectFrame'
 export function BoothClient() {
   const { step, setStatus, setFrames, restartPreview } = useBoothStore()
   const statusRef = useRef<boolean | null>( null )
+  const initialLoadRef = useRef( true )
+
+  // Kick off camera service discovery as early as possible so the stream URL
+  // gets updated to the local service once detection completes.
+  useEffect( () => {
+    ensureCameraDiscovered().then( () => restartPreview() );
+  }, [restartPreview] );
 
   const framesQuery = useQuery( {
     queryKey  : FRAMES_QUERY_KEY,
@@ -49,7 +57,9 @@ export function BoothClient() {
     }
 
     const status = statusQuery.data
-    if ( statusRef.current !== null && statusRef.current !== status.connected ) {
+    const isFirst = initialLoadRef.current
+    initialLoadRef.current = false
+    if ( isFirst || ( statusRef.current !== null && statusRef.current !== status.connected ) ) {
       restartPreview()
     }
     statusRef.current = status.connected

@@ -69,30 +69,74 @@ export async function uploadFrame( { file, label }: { file: File; label: string 
   return parseJson( await fetch( '/api/frames', { method : 'POST', body : form } ), 'Upload failed' )
 }
 
-/**
- * Camera service URL resolution (runtime, no rebuild needed).
- *
- * Priority:
- *   1. `window.__CAMERA_SERVICE_URL` — set via browser console or bookmarklet
- *   2. `process.env.NEXT_PUBLIC_CAMERA_SERVICE_URL` — baked in at build time
- *   3. `null` — fall back to server API routes
- *
- * Set it from the browser console to point at your local camera service:
- *   __CAMERA_SERVICE_URL = "http://192.168.1.100:8088"
- *
- * Or bake it into the Docker build via GitHub Actions build-args.
- */
-function getCameraServiceUrl(): string | null {
-  // Runtime override via browser console (avoids `window` for SSR compat).
+// ── Camera service URL resolution ────────────────────────────────────
+//
+// Priority:
+//   1. `__CAMERA_SERVICE_URL` — runtime override via browser console
+//   2. `NEXT_PUBLIC_CAMERA_SERVICE_URL` — baked in at build time
+//   3. `http://127.0.0.1:8088` — auto-detected if the Python sidecar is running
+//   4. `null` — fall back to server API routes
+//
+// Auto-detection is lazy: the first status poll probes the local service and
+// caches the result so subsequent calls don't re-check.
+
+let _cameraBase: string | null | undefined = undefined;
+let _discovering: Promise<string | null> | null = null;
+
+function _explicitUrl(): string | null {
   try {
     if ( typeof __CAMERA_SERVICE_URL === "string" ) {
       return __CAMERA_SERVICE_URL as string;
     }
   } catch {
-    // Not in a browser environment.
+    /* not in browser */
   }
-
+  
   return process.env.NEXT_PUBLIC_CAMERA_SERVICE_URL ?? null;
+}
+
+async function _discoverUrl(): Promise<string | null> {
+  const explicit = _explicitUrl();
+  if ( explicit ) return explicit;
+
+  // Probe the default local sidecar port
+  try {
+    const res = await fetch( "http://127.0.0.1:8088/status", {
+      signal : AbortSignal.timeout( 800 ),
+      cache  : "no-store",
+    } );
+    if ( res.ok ) {
+      const data = await res.json();
+      // Only use it if a real camera is connected, not when it's just the
+      // sidecar running with no camera — otherwise mock mode on the server
+      // is actually better (gives mock photos instead of errors).
+      if ( data.connected ) return "http://127.0.0.1:8088";
+    }
+  } catch {
+    /* unreachable */
+  }
+  
+  return null;
+}
+
+function getCameraServiceUrl(): string | null {
+  if ( _cameraBase !== undefined ) return _cameraBase;
+  // If no discovery is in-flight, return the explicit URL (or null) synchronously
+  return _explicitUrl();
+}
+
+/** Kicks off auto-detection on first call; idempotent. */
+export function ensureCameraDiscovered(): Promise<string | null> {
+  if ( _cameraBase !== undefined ) return Promise.resolve( _cameraBase );
+  if ( _discovering ) return _discovering;
+  _discovering = _discoverUrl().then( ( url ) => {
+    _cameraBase = url;
+    _discovering = null;
+    
+    return url;
+  } );
+  
+  return _discovering;
 }
 
 /** URL for the MJPEG live preview stream (local service or server proxy). */
@@ -104,23 +148,30 @@ export function getCameraPreviewUrl( streamKey: string ): string {
 }
 
 export async function getCameraStatus(): Promise<Status> {
-  const base = getCameraServiceUrl();
-  const url = base ? `${base}/status` : "/api/camera/status";
-  const response = await fetch( url, { cache : "no-store" } );
+  // Ensure discovery runs before fetching status
+  const base = await ensureCameraDiscovered();
 
-  const data = await parseJson<any>( response, "Failed to load camera status" );
-
-  // Local service returns { connected, model } — wrap into the app's Status type
   if ( base ) {
-    return {
-      connected : data.connected,
-      mock      : !data.connected,
-      model     : data.model ?? undefined,
-      gphoto2   : true,
-    };
+    try {
+      const res = await fetch( `${base}/status`, { cache : "no-store" } );
+      const data = await parseJson<any>( res, "Failed to load camera status" );
+      
+      return {
+        connected : data.connected,
+        mock      : !data.connected,
+        model     : data.model ?? undefined,
+        gphoto2   : true,
+      };
+    } catch {
+      // Sidecar became unreachable — fall through to server fallback
+      _cameraBase = null;
+    }
   }
 
-  return data as Status;
+  // Fall back to server API
+  const response = await fetch( "/api/camera/status", { cache : "no-store" } );
+  
+  return parseJson<Status>( response, "Failed to load camera status" );
 }
 
 export async function captureShot( {
@@ -130,7 +181,7 @@ export async function captureShot( {
   sessionId: string;
   index: number;
 } ): Promise<{ file: string; url: string }> {
-  const base = getCameraServiceUrl();
+  const base = await ensureCameraDiscovered();
 
   if ( base ) {
     // Capture directly from the local camera service, then upload to server
