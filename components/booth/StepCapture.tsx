@@ -530,8 +530,8 @@ export function StepCapture() {
 
   // ── Desktop (xl+): filters, capture, and the strip share one 12-col grid ──
   const desktopLayout = (
-    <div className="container px-4 mx-auto grow min-h-0 py-8 lg:py-16">
-      <div className="grid gap-12 h-full grid-cols-12 auto-rows-fr">
+    <div className="container px-4 mx-auto grow min-h-0">
+      <div className="grid gap-12 h-full py-8 lg:py-16 grid-cols-12 auto-rows-fr">
         {/* Filters */}
         <div className="col-span-8 row-span-4 flex flex-col h-full">
           <div className="grid w-full max-w-5xl grow overflow-hidden rounded-3xl bg-secondary shadow-xl grid-cols-[1fr_1.1fr]">
@@ -737,7 +737,7 @@ export function StepCapture() {
   }, [] )
 
   return (
-    <div className="flex flex-col gap-6 grow">
+    <div className="flex flex-col gap-6 grow xl:overflow-hidden">
       {/* Hidden canvas for countdown video recording */}
       <canvas
         ref={recordingCanvasRef}
