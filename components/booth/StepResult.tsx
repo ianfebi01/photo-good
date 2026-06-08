@@ -102,9 +102,9 @@ export function StepResult() {
       </div>
 
       {/* ── Grid: Strip (hero) + Media cards ───────────────────── */}
-      <div className="flex gap-4">
+      <div className="flex flex-wrap gap-4">
         {/* Photo Strip */}
-        <Card className='flex-1'>
+        <Card className='flex-1 flex flex-col justify-between'>
           <CardHeader className="pb-3">
             <div className="flex items-center gap-2">
               <div className="flex size-8 items-center justify-center rounded-lg bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400">
@@ -142,7 +142,7 @@ export function StepResult() {
         </Card>
 
         {/* ── Countdown Mashup Video ───────────────────────────── */}
-        <Card className='flex-1'>
+        <Card className='flex-1 flex flex-col justify-between'>
           <CardHeader className="pb-3">
             <div className="flex items-center gap-2">
               <div className="flex size-8 items-center justify-center rounded-lg bg-rose-100 text-rose-600 dark:bg-rose-900/30 dark:text-rose-400">
@@ -178,7 +178,9 @@ export function StepResult() {
               <>
                 <video
                   src={videoUrl}
-                  controls
+                  controls={false}
+                  autoPlay
+                  loop
                   className="w-full rounded-lg border shadow-sm"
                 />
                 <a
@@ -233,7 +235,7 @@ export function StepResult() {
           </CardContent>
         </Card>
 
-        <div className='flex flex-col basis-1/2'>
+        <div className='flex flex-col xl:basis-1/2'>
           {/* ── Loop Video ────────────────────────────────────────── */}
           <Card className="h-fit w-full">
             <CardHeader className="pb-3">
@@ -344,11 +346,13 @@ export function StepResult() {
                   {countdownClips.map( ( clip, i ) => (
                     <div
                       key={clip.file}
-                      className="shrink-0 h-full flex flex-col gap-2"
+                      className="shrink-0 max-xl:w-full xl:h-full flex flex-col gap-2"
                     >
                       <video
                         src={clip.url}
-                        controls
+                        controls={false}
+                        autoPlay
+                        loop
                         className="w-full rounded-lg border"
                       />
                       <span className="text-xs font-medium text-foreground">
