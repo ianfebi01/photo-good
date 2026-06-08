@@ -54,7 +54,7 @@ export function CameraPreview( {
           key="stream"
           ref={liveImgRef}
           src={liveSrc}
-          className="absolute inset-0 h-full w-full object-cover"
+          className="absolute inset-0 h-full w-full object-cover scale-x-[-1]"
         />
       ) : pending ? (
         // eslint-disable-next-line @next/next/no-img-element
