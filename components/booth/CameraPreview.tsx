@@ -48,7 +48,9 @@ export function CameraPreview( {
   }, [running] )
 
   return (
-    <div className={cn( 'relative aspect-3/2 overflow-hidden rounded-3xl hover:shadow-xl transition-all duration-300 ease-in-out', className )}>
+    <div className={cn( 'relative overflow-hidden w-full rounded-3xl hover:shadow-xl transition-all duration-300 ease-in-out', className )}
+      style={{ aspectRatio : '3/2', height : 'auto' }}
+    >
       {showStream ? (
         <LiveStream
           key="stream"

@@ -198,8 +198,7 @@ export async function generateSlideshowVideo(
       "-i", listPath,
       "-vf",
       [
-        `scale=${VID_W}:-1:force_original_aspect_ratio=decrease`,
-        `pad=${VID_W}:1920:(ow-iw)/2:(oh-ih)/2`,
+        `scale=${VID_W}:-2:force_original_aspect_ratio=decrease`,
         "fps=24",
         "format=yuv420p",
       ].join( "," ),
@@ -207,6 +206,9 @@ export async function generateSlideshowVideo(
       "-preset", "fast",
       "-crf", "23",
       "-pix_fmt", "yuv420p",
+      "-profile:v", "main",
+      "-level", "4.0",
+      "-tag:v", "avc1",
       "-movflags", "+faststart",
       outPath,
     ], { stdio : "inherit" } );
@@ -291,7 +293,7 @@ export async function generateCountdownMashup(
   filters.push(
     `[${frameIdx}:v]colorkey=0x00BF63:similarity=0.3:blend=0.2,format=rgba[fk]`,
   )
-  filters.push( `[${lastOut}][fk]overlay=0:0[out]` )
+  filters.push( `[${lastOut}][fk]overlay=0:0,scale=720:-2,format=yuv420p[out]` )
 
   const filterComplex = filters.join( ";" )
 
@@ -305,6 +307,9 @@ export async function generateCountdownMashup(
       "-preset", "fast",
       "-crf", "23",
       "-pix_fmt", "yuv420p",
+      "-profile:v", "main",
+      "-level", "4.0",
+      "-tag:v", "avc1",
       "-movflags", "+faststart",
       outPath,
     ]
@@ -385,7 +390,7 @@ export async function generateLoopVideo(
   const streamTags = files.map( ( _, i ) => `[${i}:v]` ).join( "" )
   const filterComplex = [
     `${streamTags}concat=n=${files.length}:v=1:a=0`,
-    `scale=${LOOP_W}:-1:force_original_aspect_ratio=decrease`,
+    `scale=${LOOP_W}:-2:force_original_aspect_ratio=decrease`,
     `pad=${LOOP_W}:480:(ow-iw)/2:(oh-ih)/2`,
     "fps=24",
     "format=yuv420p",
@@ -400,6 +405,9 @@ export async function generateLoopVideo(
       "-preset", "fast",
       "-crf", "23",
       "-pix_fmt", "yuv420p",
+      "-profile:v", "main",
+      "-level", "4.0",
+      "-tag:v", "avc1",
       "-movflags", "+faststart",
       outPath,
     ], { stdio : "inherit" } )

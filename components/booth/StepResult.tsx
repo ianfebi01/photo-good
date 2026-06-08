@@ -164,7 +164,9 @@ export function StepResult() {
           </CardHeader>
           <CardContent className="space-y-4">
             {videoStatus === 'loading' && (
-              <div className="flex aspect-video items-center justify-center rounded-lg bg-muted/50">
+              <div className="flex items-center justify-center rounded-lg bg-muted/50"
+                style={{ aspectRatio : '16/9', height : 'auto' }}
+              >
                 <div className="flex flex-col items-center gap-3 text-muted-foreground">
                   <Loader2 className="size-8 animate-spin" />
                   <span className="text-xs font-medium">
@@ -177,12 +179,18 @@ export function StepResult() {
             {( videoStatus === 'ready' && videoUrl ) && (
               <>
                 <video
-                  src={videoUrl}
-                  controls={false}
                   autoPlay
                   loop
+                  muted
+                  playsInline
+                  webkit-playsinline="true"
+                  preload="auto"
                   className="w-full rounded-lg border shadow-sm"
-                />
+                >
+                  <source src={videoUrl}
+                    type="video/mp4"
+                  />
+                </video>
                 <a
                   href={videoUrl}
                   download={`photobooth-${frameKey}.mp4`}
@@ -226,7 +234,9 @@ export function StepResult() {
             )}
 
             {videoStatus === 'idle' && (
-              <div className="flex aspect-video items-center justify-center rounded-lg bg-muted/30 border border-dashed">
+              <div className="flex items-center justify-center rounded-lg bg-muted/30 border border-dashed"
+                style={{ aspectRatio : '16/9', height : 'auto' }}
+              >
                 <span className="text-xs text-muted-foreground">
                   Waiting for strip&hellip;
                 </span>
@@ -253,7 +263,9 @@ export function StepResult() {
             </CardHeader>
             <CardContent className="space-y-4">
               {loopStatus === 'loading' && (
-                <div className="flex aspect-3/2 items-center justify-center rounded-lg bg-muted/50">
+                <div className="flex items-center justify-center rounded-lg bg-muted/50"
+                  style={{ aspectRatio : '3/2', height : 'auto' }}
+                >
                   <div className="flex flex-col items-center gap-3 text-muted-foreground">
                     <Loader2 className="size-8 animate-spin" />
                     <span className="text-xs font-medium">
@@ -266,14 +278,20 @@ export function StepResult() {
               {( loopStatus === 'ready' && loopVideoUrl ) && (
                 <>
                   <video
-                    src={loopVideoUrl}
-                    controls
+                    controls={false}
                     loop
                     autoPlay
                     muted
                     playsInline
-                    className="w-full rounded-lg border shadow-sm aspect-3/2"
-                  />
+                    webkit-playsinline="true"
+                    preload="auto"
+                    className="w-full rounded-lg border shadow-sm"
+                    style={{ aspectRatio : '3/2', height : 'auto' }}
+                  >
+                    <source src={loopVideoUrl}
+                      type="video/mp4"
+                    />
+                  </video>
                   <a
                     href={loopVideoUrl}
                     download={`photobooth-${frameKey}-loop.mp4`}
@@ -317,7 +335,9 @@ export function StepResult() {
               )}
 
               {loopStatus === 'idle' && (
-                <div className="flex aspect-3/2 items-center justify-center rounded-lg bg-muted/30 border border-dashed">
+                <div className="flex items-center justify-center rounded-lg bg-muted/30 border border-dashed"
+                  style={{ aspectRatio : '3/2', height : 'auto' }}
+                >
                   <span className="text-xs text-muted-foreground">
                   Waiting for strip&hellip;
                   </span>
@@ -348,13 +368,23 @@ export function StepResult() {
                       key={clip.file}
                       className="shrink-0 max-xl:w-full xl:h-full flex flex-col gap-2"
                     >
-                      <video
-                        src={clip.url}
-                        controls={false}
-                        autoPlay
-                        loop
-                        className="w-full rounded-lg border"
-                      />
+                      <div className='rounded-lg border max-xl:w-full xl:h-full overflow-hidden'
+                        style={{ aspectRatio : '3/2', height : 'auto' }}
+                      >
+                        <video
+                          autoPlay
+                          loop
+                          muted
+                          playsInline
+                          webkit-playsinline="true"
+                          preload="auto"
+                          className="w-full h-full object-cover"
+                        >
+                          <source src={clip.url}
+                            type="video/webm"
+                          />
+                        </video>
+                      </div>
                       <span className="text-xs font-medium text-foreground">
                         Shot {i + 1}
                       </span>
