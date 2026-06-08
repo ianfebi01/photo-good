@@ -121,11 +121,42 @@ class CameraManager:
 manager = CameraManager()
 
 
+# Allowed origins for CORS (browser direct-connect). Comma-separated list, or
+# "*" to allow any origin (easier for local dev). Defaults to the production
+# domain so browsers on any device can reach the local camera service.
+ALLOWED_ORIGINS = os.environ.get(
+    "CAMERA_CORS_ORIGINS",
+    "https://photo-good.ianfebisastrataruna.my.id,http://localhost:3000",
+)
+
+
 class Handler(BaseHTTPRequestHandler):
     protocol_version = "HTTP/1.1"
 
     def log_message(self, *args):  # quiet by default
         pass
+
+    def _cors_header(self, origin: str | None) -> str | None:
+        """Return the Access-Control-Allow-Origin value, or None to skip."""
+        if not origin:
+            return None
+        if ALLOWED_ORIGINS == "*":
+            return "*"
+        for allowed in ALLOWED_ORIGINS.split(","):
+            if origin == allowed.strip():
+                return origin
+        return None
+
+    def _send_cors(self):
+        origin = self.headers.get("Origin")
+        value = self._cors_header(origin)
+        if value:
+            self.send_header("Access-Control-Allow-Origin", value)
+            self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+            self.send_header(
+                "Access-Control-Allow-Headers", "Content-Type, Authorization"
+            )
+            self.send_header("Access-Control-Max-Age", "86400")
 
     def handle_one_request(self):
         # The app aborts /status on a short timeout and closes preview/capture
@@ -139,11 +170,17 @@ class Handler(BaseHTTPRequestHandler):
     def _send_json(self, payload, status=200):
         body = json.dumps(payload).encode("utf-8")
         self.send_response(status)
+        self._send_cors()
         self.send_header("Content-Type", "application/json")
         self.send_header("Content-Length", str(len(body)))
         self.send_header("Cache-Control", "no-store")
         self.end_headers()
         self.wfile.write(body)
+
+    def do_OPTIONS(self):
+        self.send_response(204)
+        self._send_cors()
+        self.end_headers()
 
     def do_GET(self):
         if self.path.startswith("/status"):
@@ -169,6 +206,7 @@ class Handler(BaseHTTPRequestHandler):
             self._send_json({"error": f"capture failed: {err}"}, status=500)
             return
         self.send_response(200)
+        self._send_cors()
         self.send_header("Content-Type", "image/jpeg")
         self.send_header("Content-Length", str(len(jpeg)))
         self.send_header("Cache-Control", "no-store")
@@ -177,6 +215,7 @@ class Handler(BaseHTTPRequestHandler):
 
     def _stream_preview(self):
         self.send_response(200)
+        self._send_cors()
         self.send_header(
             "Content-Type", f"multipart/x-mixed-replace; boundary={BOUNDARY}"
         )

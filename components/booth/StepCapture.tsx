@@ -16,6 +16,7 @@ import { CameraPreview } from './CameraPreview'
 import { FilterPicker } from './FilterPicker'
 import { FramePreview } from './FramePreview'
 import { ShutterControls } from './ShutterControls'
+import { getCameraPreviewUrl } from '@/lib/photobooth/frames.query'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 
 export function StepCapture() {
@@ -38,7 +39,7 @@ export function StepCapture() {
   const frame = frames.find( ( f ) => f.key === frameKey ) ?? frames[0]
   const photoCount = frame?.photoCount ?? 0
   const liveSrc = useMemo(
-    () => `/api/camera/stream?key=${streamKey}`,
+    () => getCameraPreviewUrl( streamKey ),
     [streamKey],
   )
 

@@ -69,20 +69,109 @@ export async function uploadFrame( { file, label }: { file: File; label: string 
   return parseJson( await fetch( '/api/frames', { method : 'POST', body : form } ), 'Upload failed' )
 }
 
-export async function getCameraStatus(): Promise<Status> {
-  const response = await fetch( '/api/camera/status', { cache : 'no-store' } )
+/**
+ * Camera service URL resolution (runtime, no rebuild needed).
+ *
+ * Priority:
+ *   1. `window.__CAMERA_SERVICE_URL` — set via browser console or bookmarklet
+ *   2. `process.env.NEXT_PUBLIC_CAMERA_SERVICE_URL` — baked in at build time
+ *   3. `null` — fall back to server API routes
+ *
+ * Set it from the browser console to point at your local camera service:
+ *   __CAMERA_SERVICE_URL = "http://192.168.1.100:8088"
+ *
+ * Or bake it into the Docker build via GitHub Actions build-args.
+ */
+function getCameraServiceUrl(): string | null {
+  if ( typeof window !== "undefined" ) {
+    const win = window as Record<string, unknown>;
+    if ( typeof win.__CAMERA_SERVICE_URL === "string" ) {
+      return win.__CAMERA_SERVICE_URL;
+    }
+  }
   
-  return parseJson( response, 'Failed to load camera status' )
+  return (
+    ( typeof process !== "undefined" &&
+      process.env.NEXT_PUBLIC_CAMERA_SERVICE_URL ) ??
+    null
+  );
 }
 
-export async function captureShot( { sessionId, index }: { sessionId: string; index: number } ): Promise<{ file: string; url: string }> {
-  const response = await fetch( '/api/camera/capture', {
-    method  : 'POST',
-    headers : { 'Content-Type' : 'application/json' },
-    body    : JSON.stringify( { sessionId, index } ),
-  } )
+/** URL for the MJPEG live preview stream (local service or server proxy). */
+export function getCameraPreviewUrl( streamKey: string ): string {
+  const base = getCameraServiceUrl();
+  if ( base ) return `${base}/preview`;
 
-  return parseJson( response, 'Capture failed' )
+  return `/api/camera/stream?key=${streamKey}`;
+}
+
+export async function getCameraStatus(): Promise<Status> {
+  const base = getCameraServiceUrl();
+  const url = base ? `${base}/status` : "/api/camera/status";
+  const response = await fetch( url, { cache : "no-store" } );
+
+  const data = await parseJson<any>( response, "Failed to load camera status" );
+
+  // Local service returns { connected, model } — wrap into the app's Status type
+  if ( base ) {
+    return {
+      connected : data.connected,
+      mock      : !data.connected,
+      model     : data.model ?? undefined,
+      gphoto2   : true,
+    };
+  }
+
+  return data as Status;
+}
+
+export async function captureShot( {
+  sessionId,
+  index,
+}: {
+  sessionId: string;
+  index: number;
+} ): Promise<{ file: string; url: string }> {
+  const base = getCameraServiceUrl();
+
+  if ( base ) {
+    // Capture directly from the local camera service, then upload to server
+    const captureRes = await fetch( `${base}/capture`, {
+      method : "POST",
+      cache  : "no-store",
+    } );
+    if (
+      !captureRes.ok ||
+      !captureRes.headers.get( "content-type" )?.startsWith( "image/" )
+    ) {
+      throw new Error( "Local capture failed" );
+    }
+
+    const blob = await captureRes.blob();
+    const form = new FormData();
+    form.append( "file", blob, `shot-${sessionId}-${index}.jpg` );
+    form.append( "sessionId", sessionId );
+    form.append( "index", String( index ) );
+
+    const uploadRes = await fetch( "/api/captures/upload", {
+      method : "POST",
+      body   : form,
+    } );
+
+    return parseJson<{ file: string; url: string }>(
+      uploadRes,
+      "Capture upload failed",
+    );
+  }
+
+  // Fallback: capture through the server API routes
+  const response = await fetch( "/api/camera/capture", {
+    method  : "POST",
+    headers : { "Content-Type" : "application/json" },
+    body    : JSON.stringify( { sessionId, index } ),
+  } );
+
+  return parseJson( response, "Capture failed" );
 }
 
 export async function composeStrip( {

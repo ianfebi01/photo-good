@@ -236,6 +236,7 @@ export async function getFrame( key: string ): Promise<FrameDef | null> {
 
   // 2. Fall back to filesystem (built-in + legacy user-manifest frames)
   const all = await loadAllFrames();
+  
   return all.find( ( f ) => f.key === key ) ?? null;
 }
 
