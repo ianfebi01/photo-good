@@ -369,8 +369,9 @@ export function StepCapture() {
   const handleMouseMove = useCallback(
     ( e: MouseEvent ) => {
       if ( !dragStartRef.current || activeSlotIdx === null ) return
-      const dx = e.clientX - dragStartRef.current.x
-      const dy = e.clientY - dragStartRef.current.y
+      const { x: startX, y: startY, initX, initY } = dragStartRef.current
+      const dx = e.clientX - startX
+      const dy = e.clientY - startY
       const scale = getScale()
       const slot = frame.slots[activeSlotIdx]
       setAdjustments( ( prev ) => {
@@ -380,14 +381,8 @@ export function StepCapture() {
         const next = [...prev]
         next[activeSlotIdx] = {
           ...next[activeSlotIdx],
-          x : Math.max(
-            -maxDx,
-            Math.min( maxDx, dragStartRef.current!.initX + dx ),
-          ),
-          y : Math.max(
-            -maxDy,
-            Math.min( maxDy, dragStartRef.current!.initY + dy ),
-          ),
+          x : Math.max( -maxDx, Math.min( maxDx, initX + dx ) ),
+          y : Math.max( -maxDy, Math.min( maxDy, initY + dy ) ),
         }
 
         return next
@@ -415,8 +410,9 @@ export function StepCapture() {
     ( e: TouchEvent ) => {
       if ( !dragStartRef.current || activeSlotIdx === null ) return
       const touch = e.touches[0]
-      const dx = touch.clientX - dragStartRef.current.x
-      const dy = touch.clientY - dragStartRef.current.y
+      const { x: startX, y: startY, initX, initY } = dragStartRef.current
+      const dx = touch.clientX - startX
+      const dy = touch.clientY - startY
       const scale = getScale()
       const slot = frame.slots[activeSlotIdx]
       setAdjustments( ( prev ) => {
@@ -426,14 +422,8 @@ export function StepCapture() {
         const next = [...prev]
         next[activeSlotIdx] = {
           ...next[activeSlotIdx],
-          x : Math.max(
-            -maxDx,
-            Math.min( maxDx, dragStartRef.current!.initX + dx ),
-          ),
-          y : Math.max(
-            -maxDy,
-            Math.min( maxDy, dragStartRef.current!.initY + dy ),
-          ),
+          x : Math.max( -maxDx, Math.min( maxDx, initX + dx ) ),
+          y : Math.max( -maxDy, Math.min( maxDy, initY + dy ) ),
         }
 
         return next
