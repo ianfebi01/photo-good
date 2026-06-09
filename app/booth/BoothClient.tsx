@@ -15,11 +15,15 @@ import {
 import { StepCapture } from '@/components/booth/StepCapture'
 import { StepResult } from '@/components/booth/StepResult'
 import { StepSelectFrame } from '@/components/booth/StepSelectFrame'
+import { useBodyBackground } from '@/lib/hooks/useBodyBackground'
 
 export function BoothClient() {
   const { step, setStatus, setFrames, restartPreview } = useBoothStore()
   const statusRef = useRef<boolean | null>( null )
   const initialLoadRef = useRef( true )
+
+  // Override body bg + theme-color for iOS Safari bars.
+  useBodyBackground( '#f5f5f5' ) // Tailwind neutral-100
 
   // Kick off camera service discovery as early as possible so the stream URL
   // gets updated to the local service once detection completes.
@@ -67,8 +71,8 @@ export function BoothClient() {
   }, [statusQuery.data, statusQuery.isError, setStatus, restartPreview] )
 
   return (
-    <main className="">
-      <div className="h-screen bg-neutral-100 xl:min-h-[unset] xl:h-screen overflow-hidden flex flex-col">
+    <main className="bg-neutral-100">
+      <div className="h-screen xl:min-h-[unset] xl:h-screen overflow-hidden flex flex-col">
         {step === 0 && <StepSelectFrame />}
         {step === 1 && <StepCapture />}
         {step === 2 && <StepResult />}
