@@ -77,9 +77,11 @@ export function FramePhotoStack( {
           loop={false}
           initialSlide={initialIdx}
           modules={[EffectCards, Navigation]}
-          className="h-full w-auto max-w-[75%] mx-auto relative"
+          className="h-full w-auto max-w-[75%] mx-auto relative aspect-[1/2.8]"
           onSwiper={( swiper ) => {
             swiperRef.current = swiper
+            // Force recalculate after mount when dimensions are stable
+            requestAnimationFrame( () => swiper.update() )
           }}
           onSlideChange={handleSlideChange}
           allowTouchMove={!disabled}
