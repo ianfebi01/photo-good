@@ -1,9 +1,10 @@
 'use client'
 
-import { useMemo, useSyncExternalStore } from 'react'
+import { useMemo, useState, useEffect, useCallback } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Swiper, SwiperSlide } from 'swiper/react'
 import { EffectCards, Autoplay } from 'swiper/modules'
+import type { Swiper as SwiperClass } from 'swiper'
 import { cn } from '@/lib/utils'
 import { FRAMES_QUERY_KEY, getFrames } from '@/lib/photobooth/frames.query'
 
@@ -11,8 +12,6 @@ import 'swiper/css'
 import 'swiper/css/effect-cards'
 
 const PAGE_SIZE = 10
-
-const subscribe = () => () => {}
 
 /** Skeleton shown while the frames query is still loading. */
 function StackSkeleton() {
@@ -24,11 +23,14 @@ function StackSkeleton() {
 }
 
 export default function PhotoStack( { className }: { className?: string } ) {
-  const isClient = useSyncExternalStore(
-    subscribe,
-    () => true,
-    () => false,
-  )
+  const [mounted, setMounted] = useState( false )
+
+  useEffect( () => {
+    // Defer to avoid cascading render; this is the standard pattern for client-only detection
+    const raf = requestAnimationFrame( () => setMounted( true ) )
+
+    return () => cancelAnimationFrame( raf )
+  }, [] )
 
   const { data, isLoading } = useQuery( {
     queryKey : [...FRAMES_QUERY_KEY, { page : 1, limit : PAGE_SIZE }],
@@ -42,7 +44,15 @@ export default function PhotoStack( { className }: { className?: string } ) {
     return list.map( ( f ) => `/api/frames/preview?key=${f.key}` )
   }, [data] )
 
-  if ( isLoading || !isClient ) {
+  // Force Swiper to recalculate after mount when dimensions are stable
+  const handleSwiper = useCallback( ( swiper: SwiperClass ) => {
+    // Use requestAnimationFrame to ensure the browser has painted and dimensions are settled
+    requestAnimationFrame( () => {
+      swiper.update()
+    } )
+  }, [] )
+
+  if ( isLoading || !mounted ) {
     return (
       <div className={cn( 'p-6 relative flex items-center justify-center', className )}>
         <div className="relative w-full h-full flex items-center justify-center">
@@ -54,7 +64,6 @@ export default function PhotoStack( { className }: { className?: string } ) {
 
   return (
     <div className={cn( 'p-6 relative flex items-center justify-center overflow-hidden', className )}>
-      <pre>{previewUrls.length }</pre>
       {previewUrls.length > 0 && (
         <Swiper
           effect="cards"
@@ -67,7 +76,8 @@ export default function PhotoStack( { className }: { className?: string } ) {
           } }
           initialSlide={3}
           modules={[EffectCards, Autoplay]}
-          className="h-full w-auto max-w-[75%] mx-auto"
+          onSwiper={handleSwiper}
+          className="h-full w-auto max-w-[75%] mx-auto aspect-[1/2.8]"
           style={ {
             '--swiper-navigation-color' : '#fff',
             '--swiper-pagination-color' : '#fff',
@@ -76,7 +86,7 @@ export default function PhotoStack( { className }: { className?: string } ) {
             slideShadows : false,
           }}
         >
-          {[...previewUrls, ...previewUrls].map( ( url, idx ) => (
+          {previewUrls.map( ( url, idx ) => (
             <SwiperSlide
               key={idx}
               className="rounded-sm overflow-visible"
