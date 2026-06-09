@@ -137,8 +137,8 @@ export default function PalleteStack( {
                 : "text-white"
             )}
           >
-            <div className="font-semibold">{card.title}</div>
-            <div className="text-sm opacity-80">{card.subtitle}</div>
+            <div className="text-xs xl:text-md font-semibold">{card.title}</div>
+            <div className="text-[0.625rem] xl:text-sm opacity-80">{card.subtitle}</div>
           </div>
         </div>
       ) )}

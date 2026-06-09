@@ -19,22 +19,21 @@ export default async function Home() {
 
   return (
     <HydrationBoundary state={dehydrate( queryClient )}>
-      <main className="min-h-screen xl:min-h-[unset] xl:h-screen bg-white">
-        <div className="container px-4 py-8 mx-auto lg:py-16 xl:h-full">
+      <main className="min-h-screen lg:min-h-[unset] lg:h-screen bg-white">
+        <div className="container px-4 py-8 mx-auto lg:py-16 lg:h-full">
           <div
             className={cn(
               'grid gap-12 h-full',
               'grid-cols-1',
-              'md:grid-cols-6',
-              'xl:grid-cols-12',
-              'xl:auto-rows-fr',
+              'lg:grid-cols-12',
+              'lg:auto-rows-fr',
             )}
           >
             {/* Top Left */}
-            <PhotoStack className="xl:col-span-4 xl:row-span-9" />
+            <PhotoStack className="max-lg:h-125 lg:col-span-4 lg:row-span-9" />
 
             {/* Hero */}
-            <AppCard className="relative overflow-hidden bg-secondary p-8 xl:col-span-4 xl:row-span-5 text-secondary-foreground flex flex-col justify-between">
+            <AppCard className="relative overflow-hidden bg-secondary p-8 max-lg:order-last lg:col-span-4 lg:row-span-5 text-secondary-foreground flex flex-col justify-between">
               {/* Ambient glow */}
               <div className="pointer-events-none absolute -top-16 -right-16 h-56 w-56 rounded-full bg-secondary-foreground/10 blur-3xl" />
 
@@ -69,20 +68,20 @@ export default async function Home() {
             </AppCard>
 
             {/* Right Portrait */}
-            <AppCard className="xl:col-span-4 xl:row-span-5 p-0! overflow-hidden">
+            <AppCard className="max-lg:h-auto max-lg:aspect-square lg:col-span-4 lg:row-span-5 p-0! overflow-hidden">
               <PhotoboothCard />
             </AppCard>
 
             {/* Quote */}
-            <AppCard className="text-white bg-chart-2 xl:col-span-3 xl:row-span-4 flex flex-col">
+            <AppCard className="text-white bg-chart-2 lg:col-span-3 lg:row-span-4 flex flex-col">
               <QuoteCard />
             </AppCard>
 
             {/* Logo */}
-            <LogoCard className="xl:col-span-5 xl:row-span-2" />
+            <LogoCard className="lg:col-span-5 lg:row-span-2" />
 
             {/* Colors */}
-            <PalleteStack className="xl:col-span-5 xl:row-span-2" />
+            <PalleteStack className="max-lg:h-24 lg:col-span-5 lg:row-span-2" />
           </div>
 
           <div className="mt-8 flex justify-center">
