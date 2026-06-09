@@ -4,6 +4,7 @@ import { usePathname } from 'next/navigation'
 import { Images, LayoutDashboard, User, Users } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
+import { buttonVariants } from '@/components/ui/button'
 import { hasRole, type AuthUser } from '@/lib/auth/types'
 
 const navItems = [
@@ -28,10 +29,11 @@ export function DashboardNav( { user }: { user: AuthUser } ) {
             key={item.href}
             href={item.href}
             className={cn(
-              'flex items-center gap-3 rounded-xl px-3 py-2.5 text-xs font-semibold transition-colors duration-200',
-              isActive
-                ? 'bg-neutral-50 text-neutral-600 border-neutral-200 border'
-                : 'text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900 border border-transparent',
+              buttonVariants( {
+                variant : isActive ? 'secondary' : 'ghost',
+                size    : 'sm',
+              } ),
+              'w-full justify-start',
             )}
           >
             <Icon className="size-3 shrink-0" />
