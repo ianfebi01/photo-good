@@ -7,6 +7,7 @@ import { QrCode } from 'lucide-react'
 export function BoothQR( { page }: { page?: string } ) {
   const canvasRef = useRef<HTMLCanvasElement>( null )
   const [url, setUrl] = useState( '' )
+  const [ready, setReady] = useState( false )
 
   useEffect( () => {
     const buildQr = async () => {
@@ -46,6 +47,7 @@ export function BoothQR( { page }: { page?: string } ) {
           light : '#ffffff',
         },
       } )
+      setReady( true )
     }
 
     buildQr()
@@ -57,11 +59,18 @@ export function BoothQR( { page }: { page?: string } ) {
         <QrCode className="size-4" />
         Scan to open on phone
       </div>
-      <canvas
-        ref={canvasRef}
-        className="rounded-xl border bg-white p-2 shadow-sm"
-      />
-      <span className="text-xs text-muted-foreground truncate max-w-45">
+      <div className="relative size-50">
+        <canvas
+          ref={canvasRef}
+          width={200}
+          height={200}
+          className="size-50 rounded-xl border bg-white p-2 shadow-sm"
+        />
+        {!ready && (
+          <div className="absolute inset-0 animate-pulse rounded-xl border bg-secondary shadow-sm" />
+        )}
+      </div>
+      <span className="text-xs text-muted-foreground truncate max-w-45 h-8">
         {url}
       </span>
     </div>
