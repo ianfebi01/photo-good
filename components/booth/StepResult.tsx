@@ -127,7 +127,7 @@ export function StepResult() {
       </div>
 
       {/* ── Grid: Strip (hero) + Media cards ───────────────────── */}
-      <div className="flex flex-wrap gap-4">
+      <div className="flex flex-wrap gap-2 lg:gap-4">
         {/* Photo Strip */}
         <Card className='flex flex-col justify-between flex-1'>
           <CardHeader className="pb-3">
@@ -372,7 +372,7 @@ export function StepResult() {
           </Card>
           {/* ── Countdown clips ──────────────────────────────────── */}
           {countdownClips.length > 0 && (
-            <Card className="w-full mt-8 overflow-hidden grow">
+            <Card className="w-full mt-2 lg:mt-4 overflow-hidden grow">
               <CardHeader className="pb-3">
                 <div className="flex items-center gap-2">
                   <div className="flex items-center justify-center rounded-lg size-8 bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400">
