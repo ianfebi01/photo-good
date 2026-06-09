@@ -144,6 +144,7 @@ export const useBoothStore = create<BoothState>()(
           error          : null,
           flash          : false,
           step           : 0,
+          frameKey       : DEFAULT_FRAME_KEY
         } );
         get().restartPreview();
       },
