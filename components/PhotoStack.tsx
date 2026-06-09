@@ -84,7 +84,7 @@ export default function PhotoStack( { className }: { className?: string } ) {
               <img
                 src={url}
                 alt={`photo frame ${idx + 1}`}
-                className="w-full h-full object-contain"
+                className="w-full h-full object-contain drop-shadow-xl"
                 loading={idx === 0 ? 'eager' : 'lazy'}
               />
             </SwiperSlide>
