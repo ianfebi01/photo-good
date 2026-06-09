@@ -54,6 +54,7 @@ export default function PhotoStack( { className }: { className?: string } ) {
 
   return (
     <div className={cn( 'p-6 relative flex items-center justify-center overflow-hidden', className )}>
+      <pre>{previewUrls.length }</pre>
       {previewUrls.length > 0 && (
         <Swiper
           effect="cards"
@@ -75,7 +76,7 @@ export default function PhotoStack( { className }: { className?: string } ) {
             slideShadows : false,
           }}
         >
-          {previewUrls.map( ( url, idx ) => (
+          {[...previewUrls, ...previewUrls].map( ( url, idx ) => (
             <SwiperSlide
               key={idx}
               className="rounded-sm overflow-visible"
