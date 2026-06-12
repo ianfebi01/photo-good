@@ -23,7 +23,7 @@ export function BoothClient() {
   const initialLoadRef = useRef( true )
 
   // Override body bg + theme-color for iOS Safari bars.
-  useBodyBackground( '#f5f5f5' ) // Tailwind neutral-100
+  useBodyBackground( '#f5f5f5' )
 
   // Kick off camera service discovery as early as possible so the stream URL
   // gets updated to the local service once detection completes.
