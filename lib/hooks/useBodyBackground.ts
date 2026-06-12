@@ -7,7 +7,6 @@ import { useEffect } from 'react'
  * lifetime of the calling component.
  *
  * iOS Safari quirks this hook works around:
- * - Status bar  → reads `<meta name="theme-color">`
  * - Bottom bar  → reads `document.body.style.backgroundColor`, but only
  *   repaints on scroll **or** when theme-color *changes*.  We nudge
  *   theme-color by appending `fe` then restoring it to trigger the repaint.
