@@ -1,9 +1,13 @@
+import { writeFile, mkdir } from 'node:fs/promises'
+import path from 'node:path'
+
+import sharp from 'sharp'
+
 import { getCurrentUser } from '@/lib/auth/session'
 import { hasRole } from '@/lib/auth/types'
 import { ensureAuthSchema } from '@/lib/auth/schema'
-import { BUILT_IN_KEYS } from '@/lib/photobooth/config'
+import { BUILT_IN_KEYS, USER_FRAMES_DIR, validateFrameDimensions } from '@/lib/photobooth/config'
 import { insertFrame } from '@/lib/photobooth/frames.db'
-import { uploadToR2 } from '@/lib/r2'
 import { slugifyKey } from '@/lib/utils'
 
 export const runtime = 'nodejs'
@@ -57,21 +61,35 @@ export async function POST( request: Request ) {
 
   const buffer = Buffer.from( await file.arrayBuffer() )
 
-  // Compute dimensions from slots
-  const width = Math.max( ...slots.map( ( s ) => s.left + s.width ) )
-  const height = Math.max( ...slots.map( ( s ) => s.top + s.height ) )
+  // Validate actual image dimensions match 4×6 aspect ratio
+  let meta: sharp.Metadata
+  try {
+    meta = await sharp( buffer ).metadata()
+  } catch {
+    return Response.json( { error : 'Could not decode image' }, { status : 400 } )
+  }
+  if ( !meta.width || !meta.height ) {
+    return Response.json( { error : 'Image has no dimensions' }, { status : 400 } )
+  }
+
+  const dimError = validateFrameDimensions( meta.width, meta.height )
+  if ( dimError ) {
+    return Response.json( { error : dimError }, { status : 400 } )
+  }
+
+  const width = meta.width
+  const height = meta.height
 
   const baseSlug = slugifyKey( labelRaw )
   const ext = 'png'
-  const imageKey = `frames/user-${baseSlug}-${Date.now()}.${ext}`
+  const filename = `user-${baseSlug}-${Date.now()}.${ext}`
 
-  // Upload to R2
-  const { publicUrl } = await uploadToR2( {
-    key         : imageKey,
-    body        : buffer,
-    contentType : file.type,
-  } )
+  // Save to local filesystem instead of R2
+  await mkdir( USER_FRAMES_DIR, { recursive : true } )
+  const filePath = path.join( USER_FRAMES_DIR, filename )
+  await writeFile( filePath, buffer )
 
+  const publicUrl = `/frames/user/${filename}`
   const key = `user-${baseSlug}`
 
   if ( BUILT_IN_KEYS.has( key ) ) {
@@ -81,11 +99,11 @@ export async function POST( request: Request ) {
   // Ensure DB table exists
   await ensureAuthSchema()
 
-  // Save to DB
+  // Save to DB with local path as image_key
   const frame = await insertFrame( {
     key,
-    label     : labelRaw,
-    image_key : imageKey,
+    label      : labelRaw,
+    image_key  : filePath,
     image_url  : publicUrl,
     width,
     height,

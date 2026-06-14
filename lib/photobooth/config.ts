@@ -16,6 +16,31 @@ export const FORCE_MOCK = process.env.PHOTOBOOTH_MOCK === "1";
 export const PHOTO_WIDTH = 1200;
 export const PHOTO_HEIGHT = 800;
 
+/**
+ * DNP RX1 printer standard: 4×6 inch paper at 300 dpi.
+ * Printed strip is 2×6 (auto-cut), but the frame template must be the full 4×6.
+ */
+export const STRIP_WIDTH = 1200;
+export const STRIP_HEIGHT = 1800;
+export const STRIP_ASPECT_RATIO = 2 / 3; // width / height = 1200 / 1800
+
+/**
+ * Validate that an image matches the exact 4×6 aspect ratio (2:3).
+ * Returns null if valid, or an error message string if invalid.
+ */
+export function validateFrameDimensions(
+  width: number,
+  height: number,
+): string | null {
+  const ratio = width / height;
+  const expected = STRIP_ASPECT_RATIO;
+  if ( Math.abs( ratio - expected ) > 0.001 ) {
+    return `Frame must be exactly 4×6 aspect ratio (2:3, e.g. 1200×1800px). Got ${width}×${height} (ratio ${ratio.toFixed( 4 )})`;
+  }
+
+  return null;
+}
+
 export type FrameSlot = {
   left: number;
   top: number;
@@ -37,127 +62,11 @@ export type FrameDef = {
   builtIn: boolean;
 };
 
-function builtInImage( filename: string ): string {
-  return path.join( process.cwd(), "public", "frames", filename );
-}
-
-/** Bundled frames shipped with the app. Slots auto-detected from #00bf63 panels. */
-const BUILT_IN: FrameDef[] = [
-  {
-    key       : "summer-day",
-    label     : "Summer Day",
-    image     : builtInImage( "summer-day.png" ),
-    publicUrl : "/frames/summer-day.png",
-    width     : 1414,
-    height    : 4000,
-    builtIn   : true,
-    slots     : [
-      { left : 76, top : 142,  width : 1262, height : 720 },
-      { left : 76, top : 952,  width : 1262, height : 721 },
-      { left : 76, top : 1762, width : 1262, height : 721 },
-      { left : 76, top : 2573, width : 1262, height : 720 },
-    ],
-  },
-  {
-    key       : "memory-sender",
-    label     : "Memory Sender",
-    image     : builtInImage( "memory-sender.png" ),
-    publicUrl : "/frames/memory-sender.png",
-    width     : 1414,
-    height    : 4000,
-    builtIn   : true,
-    slots     : [
-      { left : 86, top : 142,  width : 1243, height : 747 },
-      { left : 86, top : 937,  width : 1243, height : 748 },
-      { left : 86, top : 1732, width : 1243, height : 748 },
-      { left : 86, top : 2528, width : 1243, height : 748 },
-    ],
-  },
-  {
-    key       : "multicolor-photography",
-    label     : "Multicolor Photography",
-    image     : builtInImage( "multicolor-photography.png" ),
-    publicUrl : "/frames/multicolor-photography.png",
-    width     : 1600,
-    height    : 4000,
-    builtIn   : true,
-    slots     : [
-      { left : 159, top : 392,  width : 1441, height : 716 },
-      { left : 173, top : 1114, width : 1427, height : 1243 },
-      { left : 188, top : 2364, width : 1412, height : 1242 },
-    ],
-  },
-  {
-    key       : "retro-portraits",
-    label     : "Retro Portraits",
-    image     : builtInImage( "retro-portraits.png" ),
-    publicUrl : "/frames/retro-portraits.png",
-    width     : 1200,
-    height    : 3600,
-    builtIn   : true,
-    slots     : [
-      { left : 359, top : 126,  width : 715, height : 1077 },
-      { left : 359, top : 1260, width : 715, height : 1077 },
-      { left : 359, top : 2397, width : 715, height : 1077 },
-    ],
-  },
-  {
-    key       : "family-polaroid",
-    label     : "Family Polaroid",
-    image     : builtInImage( "family-polaroid.png" ),
-    publicUrl : "/frames/family-polaroid.png",
-    width     : 1200,
-    height    : 3600,
-    builtIn   : true,
-    slots     : [
-      { left : 202, top : 206,  width : 776, height : 718 },
-      { left : 210, top : 942,  width : 786, height : 769 },
-      { left : 240, top : 1824, width : 707, height : 706 },
-      { left : 199, top : 2615, width : 776, height : 760 },
-    ],
-  },
-  {
-    key       : "red-friendship",
-    label     : "Red Friendship",
-    image     : builtInImage( "red-friendship.png" ),
-    publicUrl : "/frames/red-friendship.png",
-    width     : 1200,
-    height    : 3600,
-    builtIn   : true,
-    slots     : [
-      { left : 126, top : 102,  width : 948, height : 803 },
-      { left : 127, top : 1008, width : 946, height : 703 },
-      { left : 143, top : 1826, width : 914, height : 906 },
-    ],
-  },
-  {
-    key       : "red-white-friends",
-    label     : "Red & White Friends",
-    image     : builtInImage( "red-white-friends.png" ),
-    publicUrl : "/frames/red-white-friends.png",
-    width     : 1200,
-    height    : 3600,
-    builtIn   : true,
-    slots     : [
-      { left : 125, top : 436,  width : 948, height : 948 },
-      { left : 125, top : 1663, width : 948, height : 948 },
-    ],
-  },
-  {
-    key       : "white-pink",
-    label     : "White & Pink",
-    image     : builtInImage( "white-pink.png" ),
-    publicUrl : "/frames/white-pink.png",
-    width     : 1181,
-    height    : 3543,
-    builtIn   : true,
-    slots     : [
-      { left : 177, top : 192,  width : 827, height : 755 },
-      { left : 177, top : 1317, width : 827, height : 754 },
-      { left : 177, top : 2442, width : 827, height : 754 },
-    ],
-  },
-];
+/**
+ * No built-in frames — users upload their own 4×6 frames via the dashboard.
+ * The old built-in frames used non-standard dimensions and have been removed.
+ */
+const BUILT_IN: FrameDef[] = [];
 
 /** Keys reserved by built-in frames — user uploads must not collide with these. */
 export const BUILT_IN_KEYS = new Set( BUILT_IN.map( ( f ) => f.key ) );
@@ -225,7 +134,7 @@ export async function getFrame( key: string ): Promise<FrameDef | null> {
     return {
       key       : dbFrame.key,
       label     : dbFrame.label,
-      image     : "", // no local file — compose fetches from R2
+      image     : dbFrame.image_key, // local file path
       publicUrl : dbFrame.image_url,
       width     : dbFrame.width,
       height    : dbFrame.height,

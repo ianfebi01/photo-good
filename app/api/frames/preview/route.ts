@@ -1,6 +1,6 @@
 import sharp from 'sharp'
 import fs from 'node:fs/promises'
-import { getFrame } from '@/lib/photobooth/config'
+import { getFrame, validateFrameDimensions } from '@/lib/photobooth/config'
 import { getFrameFromDb } from '@/lib/photobooth/frames.db'
 import { getR2ObjectBuffer } from '@/lib/r2'
 import { detectGreenSlots, clearGreenPixels } from '@/lib/photobooth/slots'
@@ -217,6 +217,12 @@ export async function POST( request: Request ) {
   }
   if ( !meta.width || !meta.height ) {
     return Response.json( { error : 'Image has no dimensions' }, { status : 400 } )
+  }
+
+  // Validate 4×6 aspect ratio
+  const dimError = validateFrameDimensions( meta.width, meta.height )
+  if ( dimError ) {
+    return Response.json( { error : dimError }, { status : 400 } )
   }
 
   // Detect slots for return payload

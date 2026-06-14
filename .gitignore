@@ -26,6 +26,7 @@
 
 # photobooth captures
 /captures
+/public/frames/user
 
 # camera-service python virtualenv
 /camera-service/.venv

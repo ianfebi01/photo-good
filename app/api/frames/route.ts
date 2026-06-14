@@ -9,6 +9,7 @@ import {
   USER_FRAMES_DIR,
   USER_FRAMES_MANIFEST,
   loadAllFrames,
+  validateFrameDimensions,
 } from "@/lib/photobooth/config";
 import { getAllFramesFromDb, deleteFrameFromDb } from "@/lib/photobooth/frames.db";
 import { deleteR2Object } from "@/lib/r2";
@@ -175,6 +176,12 @@ export async function POST( request: Request ) {
   }
   if ( !meta.width || !meta.height ) {
     return Response.json( { error : "Image has no dimensions" }, { status : 400 } );
+  }
+
+  // Validate 4×6 aspect ratio for DNP RX1 printer compatibility
+  const dimError = validateFrameDimensions( meta.width, meta.height );
+  if ( dimError ) {
+    return Response.json( { error : dimError }, { status : 400 } );
   }
 
   const detected = await detectGreenSlots( buffer );
