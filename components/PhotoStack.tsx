@@ -17,7 +17,7 @@ const PAGE_SIZE = 10
 function StackSkeleton() {
   return (
     <div className="flex items-center justify-center w-full h-full">
-      <div className="h-full w-auto max-w-[75%] aspect-[1/2.8] rounded-sm bg-neutral-100 animate-pulse shadow-lg" />
+      <div className="h-full w-auto max-w-[75%] aspect-2/3 rounded-sm bg-neutral-100 animate-pulse shadow-lg" />
     </div>
   )
 }
@@ -77,7 +77,7 @@ export default function PhotoStack( { className }: { className?: string } ) {
           initialSlide={3}
           modules={[EffectCards, Autoplay]}
           onSwiper={handleSwiper}
-          className="h-full w-auto max-w-[75%] mx-auto aspect-[1/2.8]"
+          className="h-full w-auto max-w-[75%] mx-auto aspect-2/3"
           style={ {
             '--swiper-navigation-color' : '#fff',
             '--swiper-pagination-color' : '#fff',
