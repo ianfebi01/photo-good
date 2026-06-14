@@ -35,11 +35,11 @@ export async function getFrames( { page, limit }: PageArg ): Promise<FramesRespo
 }
 
 /** Fetch all frames (unpaginated — for frame selector). */
-export async function getAllFrames(): Promise<ClientFrame[]> {
+export async function getAllFrames(): Promise<FramesResponse> {
   const response = await fetch( '/api/frames?page=1&limit=200', { cache : 'no-store' } )
   const data = await parseJson<FramesResponse>( response, 'Failed to load frames' )
   
-  return data.frames
+  return data
 }
 
 export async function deleteFrame( key: string ): Promise<void> {
@@ -121,6 +121,7 @@ async function _discoverUrl(): Promise<string | null> {
 
 function getCameraServiceUrl(): string | null {
   if ( _cameraBase !== undefined ) return _cameraBase;
+  
   // If no discovery is in-flight, return the explicit URL (or null) synchronously
   return _explicitUrl();
 }

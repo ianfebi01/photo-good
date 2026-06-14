@@ -129,28 +129,44 @@ export async function detectGreenSlots(
   }
   if ( start !== -1 ) bands.push( [start, height - 1] );
 
-  const slots: FrameSlot[] = bands.map( ( [top, bottom] ) => {
-    let left = -1;
-    let right = -1;
+  const slots: FrameSlot[] = [];
+
+  for ( const [top, bottom] of bands ) {
+    const colCount = new Array<number>( width ).fill( 0 );
     for ( let x = 0; x < width; x++ ) {
       let count = 0;
       for ( let y = top; y <= bottom; y++ ) {
         const i = ( y * width + x ) * channels;
         if ( isGreen( data[i], data[i + 1], data[i + 2] ) ) count++;
       }
-      if ( count > colMin ) {
-        if ( left === -1 ) left = x;
-        right = x;
-      }
+      colCount[x] = count;
     }
 
-    return {
-      left,
-      top,
-      width  : right - left + 1,
-      height : bottom - top + 1,
-    };
-  } ).filter( ( s ) => s.left >= 0 && s.width > 10 && s.height > 10 );
+    let left = -1;
+    for ( let x = 0; x < width; x++ ) {
+      if ( colCount[x] > colMin ) {
+        if ( left === -1 ) left = x;
+      } else if ( left !== -1 ) {
+        slots.push( {
+          left,
+          top,
+          width  : x - left,
+          height : bottom - top + 1,
+        } );
+        left = -1;
+      }
+    }
+    if ( left !== -1 ) {
+      slots.push( {
+        left,
+        top,
+        width  : width - left,
+        height : bottom - top + 1,
+      } );
+    }
+  }
 
-  return { width, height, slots };
+  const validSlots = slots.filter( ( s ) => s.left >= 0 && s.width > 10 && s.height > 10 );
+
+  return { width, height, slots : validSlots };
 }
