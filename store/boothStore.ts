@@ -24,6 +24,17 @@ export type Status = {
   gphoto2: boolean;
 };
 
+/** Idle timeout per step (seconds). Based on photobooth industry standards. */
+export const STEP_TIMEOUTS: Record<number, number> = {
+  0 : 30,   // Select Frame — 30s idle
+  1 : 120,  // Capture — 2min idle
+  2 : 60,   // Filter — 60s idle
+  3 : 30,   // Result — 30s idle
+};
+
+/** Show "Are you still there?" warning this many seconds before auto-reset. */
+export const TIMEOUT_WARNING_SECONDS = 5;
+
 const newId = () => Math.random().toString( 36 ).slice( 2, 10 );
 
 // Module-level lock — avoids re-render on every capture tick
@@ -51,7 +62,13 @@ export interface BoothState {
   frames: ClientFrame[];
   status: Status | null;
 
-  step: 0 | 1 | 2;
+  step: 0 | 1 | 2 | 3;
+
+  // ── Timer ──────────────────────────────────────────
+  /** Whether the step idle timer is enabled (e.g., kiosk mode). */
+  timerEnabled: boolean;
+  /** Seconds remaining on the current step timer. */
+  timerSecondsLeft: number | null;
 
   // ── Actions ────────────────────────────────────────
   setStatus: ( status: Status | null ) => void;
@@ -60,6 +77,7 @@ export interface BoothState {
   setUploadOpen: ( open: boolean ) => void;
   restartPreview: () => void;
   start: () => void;
+  goToFilter: () => void;
   reset: () => void;
   retakePending: () => void;
   addFrame: ( frame: ClientFrame ) => void;
@@ -70,6 +88,9 @@ export interface BoothState {
   setVideoUrl: ( url: string | null ) => void;
   setLoopVideoUrl: ( url: string | null ) => void;
   addCountdownClip: ( clip: Shot ) => void;
+  setTimerEnabled: ( enabled: boolean ) => void;
+  setTimerSecondsLeft: ( seconds: number | null ) => void;
+  resetTimer: () => void;
 }
 
 export const useBoothStore = create<BoothState>()(
@@ -95,15 +116,29 @@ export const useBoothStore = create<BoothState>()(
       status         : null,
       step           : 0,
 
+      // Timer
+      timerEnabled     : true,
+      timerSecondsLeft : null,
+
       // ── Setters ────────────────────────────────────
-      setStatus     : ( status ) => set( { status } ),
-      setFrames     : ( frames ) => set( { frames } ),
+      setStatus : ( status ) => set( { status } ),
+      setFrames : ( frames ) => {
+        const currentKey = get().frameKey;
+        const keyExists = frames.some( f => f.key === currentKey );
+        set( { 
+          frames, 
+          frameKey : keyExists ? currentKey : ( frames[0]?.key ?? "" ) 
+        } );
+      },
       setUploadOpen : ( uploadOpen ) => set( { uploadOpen } ),
 
       restartPreview : () => set( { streamKey : newId() } ),
 
       // ── Begin capture session ──────────────────────
       start : () => set( { started : true, step : 1 } ),
+
+      // ── Move to filter step ────────────────────────
+      goToFilter : () => set( { step : 2 } ),
 
       // ── Frame selection ────────────────────────────
       selectFrame : ( key ) => {
@@ -131,20 +166,21 @@ export const useBoothStore = create<BoothState>()(
       reset : () => {
         _capturing = false;
         set( {
-          started        : false,
-          sessionId      : "",
-          phase          : "idle",
-          photos         : [],
-          pending        : null,
-          strip          : null,
-          gifUrl         : null,
-          videoUrl       : null,
-          loopVideoUrl   : null,
-          countdownClips : [],
-          error          : null,
-          flash          : false,
-          step           : 0,
-          frameKey       : DEFAULT_FRAME_KEY
+          started          : false,
+          sessionId        : "",
+          phase            : "idle",
+          photos           : [],
+          pending          : null,
+          strip            : null,
+          gifUrl           : null,
+          videoUrl         : null,
+          loopVideoUrl     : null,
+          countdownClips   : [],
+          error            : null,
+          flash            : false,
+          step             : 0,
+          frameKey         : DEFAULT_FRAME_KEY,
+          timerSecondsLeft : null,
         } );
         get().restartPreview();
       },
@@ -255,7 +291,7 @@ export const useBoothStore = create<BoothState>()(
             files     : photos.map( ( s ) => s.file ),
             adjustments,
           } );
-          set( { strip : composed.url, phase : "done", step : 2 } );
+          set( { strip : composed.url, phase : "done", step : 3 } );
         } catch ( err ) {
           set( {
             error : err instanceof Error ? err.message : "Compose failed",
@@ -274,6 +310,15 @@ export const useBoothStore = create<BoothState>()(
         set( ( s ) => ( {
           countdownClips : [...s.countdownClips, clip],
         } ) );
+      },
+
+      // ── Timer controls ─────────────────────────────
+      setTimerEnabled     : ( enabled ) => set( { timerEnabled : enabled } ),
+      setTimerSecondsLeft : ( seconds ) => set( { timerSecondsLeft : seconds } ),
+      resetTimer          : () => {
+        const step = get().step;
+        const timeout = STEP_TIMEOUTS[step] ?? 30;
+        set( { timerSecondsLeft : timeout } );
       },
     } ),
     {
