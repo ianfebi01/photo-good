@@ -7,13 +7,11 @@ import {
   useMemo,
   type CSSProperties,
 } from 'react'
-import gsap from 'gsap'
 
 import { Button } from '@/components/ui/button'
 import { useBoothStore } from '@/store/boothStore'
 
 import { CameraPreview } from './CameraPreview'
-import { FilterPicker } from './FilterPicker'
 import { FramePreview } from './FramePreview'
 import { ShutterControls } from './ShutterControls'
 import { getCameraPreviewUrl } from '@/lib/photobooth/frames.query'
@@ -73,7 +71,7 @@ export function StepCapture() {
     retakePending,
     takeShot,
     reset,
-    composeStripWithAdjustments,
+    goToFilter,
   } = useBoothStore()
 
   const frame = frames.find( ( f ) => f.key === frameKey ) ?? frames[0]
@@ -98,11 +96,6 @@ export function StepCapture() {
   const startRecording = useCallback( () => {
     const canvas = recordingCanvasRef.current
     if ( !canvas ) return
-    // Size + draw the canvas from the live frame *before* captureStream so the
-    // recording locks onto the camera's real dimensions. Without this, the
-    // first shot captures at the canvas's default 300x150 (the rAF sizing tick
-    // hasn't run yet), giving shot 1 a different aspect ratio/resolution than
-    // later shots which reuse the already-sized canvas.
     const img = document.querySelector<HTMLImageElement>(
       'img[data-photobooth-live]',
     )
@@ -111,8 +104,6 @@ export function StepCapture() {
       canvas.height = img.naturalHeight
       canvas.getContext( '2d' )?.drawImage( img, 0, 0 )
     }
-    // Canvas may be tainted if CORS headers are missing from the MJPEG stream —
-    // captureStream would throw. Gracefully skip recording in that case.
     let stream: MediaStream
     try {
       stream = canvas.captureStream( 15 )
@@ -129,7 +120,7 @@ export function StepCapture() {
       recorder.ondataavailable = ( e ) => {
         if ( e.data.size > 0 ) recordedChunksRef.current.push( e.data )
       }
-      recorder.start( 250 ) // collect chunks every 250ms
+      recorder.start( 250 )
       mediaRecorderRef.current = recorder
     } catch {
       // MediaRecorder not supported — silently skip recording
@@ -223,28 +214,7 @@ export function StepCapture() {
   )
   const [selectedSlotIdx, setSelectedSlotIdx] = useState<number | null>( null )
   const [targetSlotIdx, setTargetSlotIdx] = useState<number | null>( null )
-  const [globalFilter, setGlobalFilter] = useState<string>( 'none' )
   const [cacheBuster, setCacheBuster] = useState( '' )
-  // Below xl the layout becomes a 2-step stepper (tabs); ignored at xl+ where
-  // every section is shown at once.
-  const [activeTab, setActiveTab] = useState<'capture' | 'edit'>( 'capture' )
-
-  // Drives which layout renders. StepCapture only mounts client-side (step 1),
-  // so reading matchMedia in the initializer is safe and avoids a flash.
-  const [isXl, setIsXl] = useState(
-    () =>
-      typeof window !== 'undefined' &&
-      window.matchMedia( '(min-width: 1280px)' ).matches,
-  )
-
-  useEffect( () => {
-    const mql = window.matchMedia( '(min-width: 1280px)' )
-    const onChange = () => setIsXl( mql.matches )
-    onChange()
-    mql.addEventListener( 'change', onChange )
-
-    return () => mql.removeEventListener( 'change', onChange )
-  }, [] )
 
   useEffect( () => {
     const timer = setTimeout( () => setCacheBuster( String( Date.now() ) ), 0 )
@@ -303,6 +273,8 @@ export function StepCapture() {
     await acceptPending( idx ?? undefined )
   }
 
+  const frameContainerRef = useRef<HTMLDivElement>( null )
+
   const getScale = useCallback( () => {
     if ( !frameContainerRef.current ) return 1
     const el = frameContainerRef.current
@@ -313,18 +285,9 @@ export function StepCapture() {
     )
   }, [frame] )
 
-  const handleCompose = () => {
-    const scale = getScale()
-    const finalAdjustments = adjustments.slice( 0, photoCount ).map( ( adj ) => ( {
-      ...adj,
-      filter : globalFilter,
-      x      : adj.x / scale,
-      y      : adj.y / scale,
-    } ) )
-    composeStripWithAdjustments( finalAdjustments )
+  const handleGoToFilter = () => {
+    goToFilter()
   }
-
-  const frameContainerRef = useRef<HTMLDivElement>( null )
 
   const dragStartRef = useRef<{
     x: number
@@ -450,44 +413,22 @@ export function StepCapture() {
     }
   }, [handleMouseMove, handleMouseUp, handleTouchMove, handleTouchEnd] )
 
-  // GSAP-driven tab transition (below xl only — at xl every panel is shown at
-  // once). Refs point at the panel(s) that belong to each step.
-  const capturePanelRef = useRef<HTMLDivElement>( null )
-  const filterPanelRef = useRef<HTMLDivElement>( null )
-  const framePanelRef = useRef<HTMLDivElement>( null )
-
+  // Clean up MediaRecorder on unmount
   useEffect( () => {
-    if ( typeof window === 'undefined' ) return
-    // No tab swapping at xl — skip so panels keep their static layout.
-    if ( window.matchMedia( '(min-width: 1280px)' ).matches ) return
+    return () => {
+      const recorder = mediaRecorderRef.current
+      if ( recorder && recorder.state !== 'inactive' ) {
+        recorder.stop()
+      }
+    }
+  }, [] )
 
-    const targets = (
-      activeTab === 'capture'
-        ? [capturePanelRef.current]
-        : [filterPanelRef.current, framePanelRef.current]
-    ).filter( Boolean ) as HTMLDivElement[]
-    if ( !targets.length ) return
+  const errorBanner = error ? (
+    <div className="shrink-0 p-4 rounded-xl bg-destructive/10 text-destructive text-sm font-medium border border-destructive/20 font-sans">
+      {error}
+    </div>
+  ) : null
 
-    const ctx = gsap.context( () => {
-      gsap.fromTo(
-        targets,
-        { autoAlpha : 0, y : 28, scale : 0.985 },
-        {
-          autoAlpha  : 1,
-          y          : 0,
-          scale      : 1,
-          duration   : 0.45,
-          ease       : 'power3.out',
-          stagger    : 0.08,
-          clearProps : 'transform',
-        },
-      )
-    } )
-
-    return () => ctx.revert()
-  }, [activeTab] )
-
-  // ── Shared pieces (props are identical across both layouts) ───────────────
   const shutterControls = (
     <ShutterControls
       reviewing={reviewing}
@@ -498,18 +439,8 @@ export function StepCapture() {
       countdown={countdown}
       onRetake={handleRetake}
       onAccept={handleAcceptPending}
-      onCompose={handleCompose}
+      onCompose={handleGoToFilter}
       onSnap={handleSnap}
-    />
-  )
-
-  const filterPicker = (
-    <FilterPicker
-      photos={photos}
-      pending={pending}
-      activePhoto={activePhoto}
-      globalFilter={globalFilter}
-      onFilterChange={setGlobalFilter}
     />
   )
 
@@ -520,143 +451,60 @@ export function StepCapture() {
       liveSrc={liveSrc}
       pending={pending}
       activePhoto={activePhoto}
-      globalFilter={globalFilter}
+      globalFilter="none"
       flash={flash}
     />
   )
 
-  const errorBanner = error ? (
-    <div className="shrink-0 p-4 rounded-xl bg-destructive/10 text-destructive text-sm font-medium border border-destructive/20 font-sans">
-      {error}
-    </div>
-  ) : null
-
-  // ── Desktop (xl+): filters, capture, and the strip share one 12-col grid ──
-  const desktopLayout = (
-    <div className="container px-4 mx-auto grow min-h-0">
-      <div className="grid gap-12 h-full py-8 lg:py-16 grid-cols-12 auto-rows-fr">
-        {/* Filters */}
-        <div className="col-span-8 row-span-4 flex flex-col h-full">
-          <div className="grid w-full max-w-5xl grow overflow-hidden rounded-3xl bg-secondary shadow-xl grid-cols-[1fr_1.1fr]">
-            <div className="relative flex flex-col justify-between overflow-hidden bg-primary p-8 text-primary-foreground">
-              <Button
-                variant="link"
-                className="relative z-10 text-lg font-bold text-white w-fit p-0"
-                onClick={reset}
-                disabled={busy}
-              >
-                <ChevronLeft />
-                Back
-              </Button>
-              <div className="relative z-10 space-y-4 text-white flex flex-col">
-                <span className="text-md font-bold tracking-widest font-sans">
-                  Step 2 of 3
-                </span>
-                <span className="max-w-xs text-xs text-white/70 font-poppins">
-                  Capture &amp; Edit your photos. Take shots, apply filters, and
-                  adjust framing to create the perfect strip before moving to
-                  the final review.
-                </span>
-              </div>
-            </div>
-
-            <div className="bg-white flex flex-col h-full overflow-hidden">
-              <div className="grow pt-8 pb-4 px-8 flex flex-col">
-                <p className="text-xs font-bold uppercase tracking-widest text-primary">
-                  Choose your style
-                </p>
-                <h1 className="my-2 text-3xl font-bold text-foreground">
-                  Apply filters
-                </h1>
-                {filterPicker}
-              </div>
-            </div>
+  return (
+    <div className="container mx-auto px-4 py-8 lg:py-16 flex flex-col gap-6 grow overflow-hidden">
+      {/* Header */}
+      <div className="flex justify-between items-center gap-4">
+        <div className="flex items-center gap-3">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={reset}
+            disabled={busy}
+            className="gap-1"
+          >
+            <ChevronLeft className="size-4" /> Back
+          </Button>
+          <div className="flex flex-col">
+            <span className="text-sm font-bold text-neutral-800 font-sans">
+              Capture Photos
+            </span>
+            <span className="text-xs text-neutral-400 font-sans">
+              {photos.length}/{photoCount} shots taken
+            </span>
           </div>
         </div>
-
-        {/* Capture */}
-        <div className="col-span-8 row-span-6 flex flex-row gap-12">
-          {shutterControls}
-          {renderCamera()}
-        </div>
-
-        {/* Frame strip */}
-        {frame && (
-          <FramePreview
-            className="col-start-9 col-span-4 row-start-1 row-span-10 flex flex-col"
-            frame={frame}
-            photos={photos}
-            pending={pending}
-            adjustments={adjustments}
-            activeSlotIdx={activeSlotIdx}
-            reviewing={reviewing}
-            globalFilter={globalFilter}
-            cacheBuster={cacheBuster}
-            isSlotInteractive={isSlotInteractive}
-            onSlotClick={setSelectedSlotIdx}
-            onMouseDown={handleMouseDown}
-            onTouchStart={handleTouchStart}
-            containerRef={frameContainerRef}
-            onZoomChange={adjusting ? handleZoomChange : undefined}
-          />
+        {adjusting && (
+          <Button
+            size="lg"
+            onClick={handleGoToFilter}
+          >
+            Next <ChevronRight />
+          </Button>
         )}
       </div>
-    </div>
-  )
 
-  // ── Below xl: 2-step stepper (1. Capture → 2. Edit) ───────────────────────
-  const stepperLayout = (
-    <div className="container px-4 mx-auto flex flex-col grow min-h-0 justify-center">
-      {activeTab === 'capture' ? (
-        <div
-          ref={capturePanelRef}
-          className="flex flex-col items-center gap-24 w-full h-full min-h-0 overflow-y-auto py-8"
-        >
-          <div className="flex flex-col items-center justify-center gap-2 w-full grow p-2 bg-white">
-            {renderCamera( 'w-full max-h-[45vh] shrink-0 rounded-none' )}
+      {/* 2-column layout: camera + trigger | frame preview */}
+      <div className="flex flex-col lg:grid lg:grid-cols-2 gap-6 grow min-h-0 overflow-hidden">
+        {/* Left: Camera + Shutter */}
+        <div className="flex flex-col items-center gap-6 min-h-0">
+          <div className="flex-1 w-full flex items-center justify-center min-h-0">
+            {renderCamera( 'w-full max-h-full' )}
           </div>
-          <div className="h-32">
+          <div className="shrink-0 h-28 flex items-center justify-center">
             {shutterControls}
           </div>
-
-          {/* Captured shots, filling as you snap */}
-          {/* {photoCount > 0 && (
-            <div className="grid grid-cols-2 w-full gap-2 shrink-0">
-              {Array.from( { length : photoCount } ).map( ( _, i ) => (
-                <div
-                  key={i}
-                  className={cn(
-                    'w-full aspect-3/2 overflow-hidden rounded-md border',
-                    i === photos.length && !reviewing
-                      ? 'border-primary'
-                      : 'border-neutral-200',
-                  )}
-                >
-                  {photos[i] ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={photos[i].url}
-                      alt={`Shot ${i + 1}`}
-                      className="h-full w-full object-cover"
-                      style={{ filter : getCSSFilter( globalFilter ) }}
-                    />
-                  ) : (
-                    <div className="flex h-full w-full items-center justify-center bg-accent text-[10px] font-bold text-neutral-400">
-                      {i + 1}
-                    </div>
-                  )}
-                </div>
-              ) )}
-            </div>
-          )} */}
         </div>
-      ) : (
-        // Strip fills the height left above the docked filter bar; aspect ratio
-        // turns that height into the width.
-        <div className="flex grow items-center justify-center min-h-0">
-          {frame && (
+
+        {/* Right: Frame preview */}
+        {frame && (
+          <div className="flex items-center justify-center min-h-0 h-full overflow-hidden">
             <FramePreview
-              rootRef={framePanelRef}
               style={
                 {
                   '--frame-ar' : `${frame.width} / ${frame.height}`,
@@ -669,7 +517,7 @@ export function StepCapture() {
               adjustments={adjustments}
               activeSlotIdx={activeSlotIdx}
               reviewing={reviewing}
-              globalFilter={globalFilter}
+              globalFilter="none"
               cacheBuster={cacheBuster}
               isSlotInteractive={isSlotInteractive}
               onSlotClick={setSelectedSlotIdx}
@@ -678,79 +526,18 @@ export function StepCapture() {
               containerRef={frameContainerRef}
               onZoomChange={adjusting ? handleZoomChange : undefined}
             />
-          )}
-        </div>
-      )}
-    </div>
-  )
+          </div>
+        )}
+      </div>
 
-  // Bottom Back/Next bar — drives the stepper between its two steps
-  const stepperNav = (
-    <div className="flex justify-between px-4 pt-8 lg:pt-16">
-      <Button
-        size="lg"
-        variant="ghost"
-        className="-mx-2.5"
-        onClick={
-          activeTab === 'capture' ? reset : () => setActiveTab( 'capture' )
-        }
-        disabled={busy || !frame}
-      >
-        <ChevronLeft className="size-6" />
-      </Button>
-      {activeTab === 'capture' ? (
-        <Button
-          size="lg"
-          onClick={() => setActiveTab( 'edit' )}
-          disabled={!frame || photos.length < photoCount}
-        >
-          Next <ChevronRight />
-        </Button>
-      ) : (
-        <Button size="lg"
-          onClick={handleCompose}
-          disabled={!adjusting}
-        >
-          Finish <ChevronRight />
-        </Button>
-      )}
-    </div>
-  )
+      {errorBanner}
 
-  // Full-width filter bar docked at the bottom of the edit step (mobile navbar
-  // style). Lives outside the padded container so it spans the full width.
-  const filterBar = (
-    <div
-      ref={filterPanelRef}
-      className="w-full shrink-0 h-28 overflow-hidden bg-white px-4 pt-2 flex flex-col"
-    >
-      <h1 className="text-md font-bold text-foreground mb-2">Apply filters</h1>
-      {filterPicker}
-    </div>
-  )
-
-  // Clean up MediaRecorder on unmount
-  useEffect( () => {
-    return () => {
-      const recorder = mediaRecorderRef.current
-      if ( recorder && recorder.state !== 'inactive' ) {
-        recorder.stop()
-      }
-    }
-  }, [] )
-
-  return (
-    <div className="flex flex-col gap-6 grow xl:overflow-hidden">
       {/* Hidden canvas for countdown video recording */}
       <canvas
         ref={recordingCanvasRef}
         className="hidden"
         aria-hidden="true"
       />
-      {!isXl && stepperNav}
-      {isXl ? desktopLayout : stepperLayout}
-      {errorBanner}
-      {!isXl && activeTab === 'edit' && filterBar}
     </div>
   )
 }

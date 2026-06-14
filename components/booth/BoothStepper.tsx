@@ -2,7 +2,7 @@
 import { cn } from '@/lib/utils'
 import { useBoothStore } from '../../store/boothStore'
 
-const STEPS = ['Select Frame', 'Capture', 'Your Strip'] as const
+const STEPS = ['Select Frame', 'Capture', 'Filter', 'Your Strip'] as const
 
 export function BoothStepper( ) {
   const { step } =

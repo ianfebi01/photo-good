@@ -127,9 +127,9 @@ export function StepResult() {
       </div>
 
       {/* ── Grid: Strip (hero) + Media cards ───────────────────── */}
-      <div className="flex flex-wrap gap-2 lg:gap-4">
+      <div className="flex flex-col lg:grid lg:grid-cols-[1fr_1.5fr] gap-6">
         {/* Photo Strip */}
-        <Card className='flex flex-col justify-between flex-1'>
+        <Card className="flex flex-col overflow-hidden">
           <CardHeader className="pb-3">
             <div className="flex items-center gap-2">
               <div className="flex items-center justify-center rounded-lg size-8 bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400">
@@ -166,213 +166,216 @@ export function StepResult() {
           </CardContent>
         </Card>
 
-        {/* ── Countdown Mashup Video ───────────────────────────── */}
-        <Card className='flex flex-col justify-between flex-1'>
-          <CardHeader className="pb-3">
-            <div className="flex items-center gap-2">
-              <div className="flex items-center justify-center rounded-lg size-8 bg-rose-100 text-rose-600 dark:bg-rose-900/30 dark:text-rose-400">
-                <Film className="size-4" />
-              </div>
-              <div>
-                <CardTitle className="text-base">
-                  {countdownClips.length > 0
-                    ? 'Countdown Mashup'
-                    : 'Video Slideshow'}
-                </CardTitle>
-                <CardDescription>
-                  {countdownClips.length > 0
-                    ? `${countdownClips.length} clips combined`
-                    : 'MP4 with all photos'}
-                </CardDescription>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {videoStatus === 'loading' && (
-              <div className="flex items-center justify-center rounded-lg bg-muted/50"
-                style={{ aspectRatio : '16/9', height : 'auto' }}
-              >
-                <div className="flex flex-col items-center gap-3 text-muted-foreground">
-                  <Loader2 className="size-8 animate-spin" />
-                  <span className="text-xs font-medium">
-                    Rendering video&hellip;
-                  </span>
-                </div>
-              </div>
-            )}
-
-            {( videoStatus === 'ready' && videoUrl ) && (
-              <>
-                <video
-                  autoPlay
-                  loop
-                  muted
-                  playsInline
-                  webkit-playsinline="true"
-                  preload="auto"
-                  className="w-full border rounded-lg shadow-sm"
-                >
-                  <source src={videoUrl}
-                    type="video/mp4"
-                  />
-                </video>
-                <a
-                  href={videoUrl}
-                  download={`photobooth-${frameKey}.mp4`}
-                  className="block"
-                >
-                  <Button variant="outline"
-                    size="sm"
-                    className="w-full"
-                  >
-                    <Download className="mr-2 size-4" />
-                    Download Video
-                  </Button>
-                </a>
-              </>
-            )}
-
-            {videoStatus === 'unavailable' && (
-              <div className="flex flex-col items-center gap-2 py-6 text-center">
-                <Film className="size-8 text-muted-foreground/40" />
-                <p className="text-sm text-muted-foreground">
-                  ffmpeg is not installed.
-                  <br />
-                  Install it to enable video generation.
-                </p>
-              </div>
-            )}
-
-            {videoStatus === 'error' && (
-              <div className="flex flex-col items-center gap-2 py-4 text-center">
-                <p className="text-sm text-destructive">
-                  Failed to generate video
-                </p>
-                <Button variant="outline"
-                  size="sm"
-                  onClick={retryVideo}
-                >
-                  <RefreshCw className="mr-2 size-3" />
-                  Retry
-                </Button>
-              </div>
-            )}
-
-            {videoStatus === 'idle' && (
-              <div className="flex items-center justify-center border border-dashed rounded-lg bg-muted/30"
-                style={{ aspectRatio : '16/9', height : 'auto' }}
-              >
-                <span className="text-xs text-muted-foreground">
-                  Waiting for strip&hellip;
-                </span>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        <div className='flex flex-col xl:basis-1/2'>
-          {/* ── Loop Video ────────────────────────────────────────── */}
-          <Card className="w-full h-fit">
-            <CardHeader className="pb-3">
-              <div className="flex items-center gap-2">
-                <div className="flex items-center justify-center text-indigo-600 bg-indigo-100 rounded-lg size-8 dark:bg-indigo-900/30 dark:text-indigo-400">
-                  <Repeat className="size-4" />
-                </div>
-                <div>
-                  <CardTitle className="text-base">Loop Video</CardTitle>
-                  <CardDescription>
-                  All {photos.length} photos &bull; 0.7s each
-                  </CardDescription>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {loopStatus === 'loading' && (
-                <div className="flex items-center justify-center rounded-lg bg-muted/50"
-                  style={{ aspectRatio : '3/2', height : 'auto' }}
-                >
-                  <div className="flex flex-col items-center gap-3 text-muted-foreground">
-                    <Loader2 className="size-8 animate-spin" />
-                    <span className="text-xs font-medium">
-                    Rendering loop video&hellip;
-                    </span>
+        {/* Right column for videos */}
+        <div className="flex flex-col gap-6 min-h-0 overflow-hidden">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            {/* ── Countdown Mashup Video ───────────────────────────── */}
+            <Card className="flex flex-col">
+              <CardHeader className="pb-3">
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center justify-center rounded-lg size-8 bg-rose-100 text-rose-600 dark:bg-rose-900/30 dark:text-rose-400">
+                    <Film className="size-4" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-base">
+                      {countdownClips.length > 0
+                        ? 'Countdown Mashup'
+                        : 'Video Slideshow'}
+                    </CardTitle>
+                    <CardDescription>
+                      {countdownClips.length > 0
+                        ? `${countdownClips.length} clips combined`
+                        : 'MP4 with all photos'}
+                    </CardDescription>
                   </div>
                 </div>
-              )}
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {videoStatus === 'loading' && (
+                  <div className="flex items-center justify-center rounded-lg bg-muted/50"
+                    style={{ aspectRatio : '16/9', height : 'auto' }}
+                  >
+                    <div className="flex flex-col items-center gap-3 text-muted-foreground">
+                      <Loader2 className="size-8 animate-spin" />
+                      <span className="text-xs font-medium">
+                    Rendering video&hellip;
+                      </span>
+                    </div>
+                  </div>
+                )}
 
-              {( loopStatus === 'ready' && loopVideoUrl ) && (
-                <>
-                  <video
-                    controls={false}
-                    loop
-                    autoPlay
-                    muted
-                    playsInline
-                    webkit-playsinline="true"
-                    preload="auto"
-                    className="w-full border rounded-lg shadow-sm"
-                    style={{ aspectRatio : '3/2', height : 'auto' }}
-                  >
-                    <source src={loopVideoUrl}
-                      type="video/mp4"
-                    />
-                  </video>
-                  <a
-                    href={loopVideoUrl}
-                    download={`photobooth-${frameKey}-loop.mp4`}
-                    className="block"
-                  >
+                {( videoStatus === 'ready' && videoUrl ) && (
+                  <>
+                    <video
+                      autoPlay
+                      loop
+                      muted
+                      playsInline
+                      webkit-playsinline="true"
+                      preload="auto"
+                      className="w-full border rounded-lg shadow-sm"
+                    >
+                      <source src={videoUrl}
+                        type="video/mp4"
+                      />
+                    </video>
+                    <a
+                      href={videoUrl}
+                      download={`photobooth-${frameKey}.mp4`}
+                      className="block"
+                    >
+                      <Button variant="outline"
+                        size="sm"
+                        className="w-full"
+                      >
+                        <Download className="mr-2 size-4" />
+                    Download Video
+                      </Button>
+                    </a>
+                  </>
+                )}
+
+                {videoStatus === 'unavailable' && (
+                  <div className="flex flex-col items-center gap-2 py-6 text-center">
+                    <Film className="size-8 text-muted-foreground/40" />
+                    <p className="text-sm text-muted-foreground">
+                  ffmpeg is not installed.
+                      <br />
+                  Install it to enable video generation.
+                    </p>
+                  </div>
+                )}
+
+                {videoStatus === 'error' && (
+                  <div className="flex flex-col items-center gap-2 py-4 text-center">
+                    <p className="text-sm text-destructive">
+                  Failed to generate video
+                    </p>
                     <Button variant="outline"
                       size="sm"
-                      className="w-full"
+                      onClick={retryVideo}
                     >
-                      <Download className="mr-2 size-4" />
-                    Download Loop
-                    </Button>
-                  </a>
-                </>
-              )}
-
-              {loopStatus === 'unavailable' && (
-                <div className="flex flex-col items-center gap-2 py-6 text-center">
-                  <Repeat className="size-8 text-muted-foreground/40" />
-                  <p className="text-sm text-muted-foreground">
-                  ffmpeg is not installed.
-                    <br />
-                  Install it to enable video generation.
-                  </p>
-                </div>
-              )}
-
-              {loopStatus === 'error' && (
-                <div className="flex flex-col items-center gap-2 py-4 text-center">
-                  <p className="text-sm text-destructive">
-                  Failed to generate loop video
-                  </p>
-                  <Button variant="outline"
-                    size="sm"
-                    onClick={retryLoop}
-                  >
-                    <RefreshCw className="mr-2 size-3" />
+                      <RefreshCw className="mr-2 size-3" />
                   Retry
-                  </Button>
-                </div>
-              )}
+                    </Button>
+                  </div>
+                )}
 
-              {loopStatus === 'idle' && (
-                <div className="flex items-center justify-center border border-dashed rounded-lg bg-muted/30"
-                  style={{ aspectRatio : '3/2', height : 'auto' }}
-                >
-                  <span className="text-xs text-muted-foreground">
+                {videoStatus === 'idle' && (
+                  <div className="flex items-center justify-center border border-dashed rounded-lg bg-muted/30"
+                    style={{ aspectRatio : '16/9', height : 'auto' }}
+                  >
+                    <span className="text-xs text-muted-foreground">
                   Waiting for strip&hellip;
-                  </span>
+                    </span>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* ── Loop Video ────────────────────────────────────────── */}
+            <Card className="flex flex-col">
+              <CardHeader className="pb-3">
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center justify-center text-indigo-600 bg-indigo-100 rounded-lg size-8 dark:bg-indigo-900/30 dark:text-indigo-400">
+                    <Repeat className="size-4" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-base">Loop Video</CardTitle>
+                    <CardDescription>
+                  All {photos.length} photos &bull; 0.7s each
+                    </CardDescription>
+                  </div>
                 </div>
-              )}
-            </CardContent>
-          </Card>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {loopStatus === 'loading' && (
+                  <div className="flex items-center justify-center rounded-lg bg-muted/50"
+                    style={{ aspectRatio : '3/2', height : 'auto' }}
+                  >
+                    <div className="flex flex-col items-center gap-3 text-muted-foreground">
+                      <Loader2 className="size-8 animate-spin" />
+                      <span className="text-xs font-medium">
+                    Rendering loop video&hellip;
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                {( loopStatus === 'ready' && loopVideoUrl ) && (
+                  <>
+                    <video
+                      controls={false}
+                      loop
+                      autoPlay
+                      muted
+                      playsInline
+                      webkit-playsinline="true"
+                      preload="auto"
+                      className="w-full border rounded-lg shadow-sm"
+                      style={{ aspectRatio : '3/2', height : 'auto' }}
+                    >
+                      <source src={loopVideoUrl}
+                        type="video/mp4"
+                      />
+                    </video>
+                    <a
+                      href={loopVideoUrl}
+                      download={`photobooth-${frameKey}-loop.mp4`}
+                      className="block"
+                    >
+                      <Button variant="outline"
+                        size="sm"
+                        className="w-full"
+                      >
+                        <Download className="mr-2 size-4" />
+                    Download Loop
+                      </Button>
+                    </a>
+                  </>
+                )}
+
+                {loopStatus === 'unavailable' && (
+                  <div className="flex flex-col items-center gap-2 py-6 text-center">
+                    <Repeat className="size-8 text-muted-foreground/40" />
+                    <p className="text-sm text-muted-foreground">
+                  ffmpeg is not installed.
+                      <br />
+                  Install it to enable video generation.
+                    </p>
+                  </div>
+                )}
+
+                {loopStatus === 'error' && (
+                  <div className="flex flex-col items-center gap-2 py-4 text-center">
+                    <p className="text-sm text-destructive">
+                  Failed to generate loop video
+                    </p>
+                    <Button variant="outline"
+                      size="sm"
+                      onClick={retryLoop}
+                    >
+                      <RefreshCw className="mr-2 size-3" />
+                  Retry
+                    </Button>
+                  </div>
+                )}
+
+                {loopStatus === 'idle' && (
+                  <div className="flex items-center justify-center border border-dashed rounded-lg bg-muted/30"
+                    style={{ aspectRatio : '3/2', height : 'auto' }}
+                  >
+                    <span className="text-xs text-muted-foreground">
+                  Waiting for strip&hellip;
+                    </span>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
           {/* ── Countdown clips ──────────────────────────────────── */}
           {countdownClips.length > 0 && (
-            <Card className="w-full mt-2 lg:mt-4 overflow-hidden grow">
+            <Card className="flex flex-col overflow-hidden shrink-0">
               <CardHeader className="pb-3">
                 <div className="flex items-center gap-2">
                   <div className="flex items-center justify-center rounded-lg size-8 bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400">

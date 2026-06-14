@@ -14,7 +14,7 @@ import {
   DialogClose,
 } from '@/components/ui/dialog'
 import gsap from 'gsap'
-import { type ClientFrame } from '@/lib/photobooth/frames.client'
+import { type ClientFrame, validateFrameDimensions } from '@/lib/photobooth/frames.client'
 import {
   type FrameSlot,
   FRAMES_QUERY_KEY,
@@ -99,15 +99,34 @@ export function AddFrameDialog( { onUploaded, trigger }: AddFrameDialogProps ) {
     setServerPreviewUrl( null )
   }
 
+  const [imageDims, setImageDims] = useState<{ width: number; height: number } | null>( null )
+
   const handleFileChange = ( selectedFile: File | null ) => {
     setFile( selectedFile )
     setErr( null )
     setServerPreviewUrl( null )
     setDetectedSlots( [] )
+    setImageDims( null )
 
     if ( !selectedFile ) return
 
-    previewMutation.mutate( selectedFile )
+    // Client-side 4×6 dimension validation
+    const img = new Image()
+    img.onload = () => {
+      const dims = { width : img.naturalWidth, height : img.naturalHeight }
+      setImageDims( dims )
+      const dimError = validateFrameDimensions( dims.width, dims.height )
+      if ( dimError ) {
+        setErr( dimError )
+
+        return
+      }
+      previewMutation.mutate( selectedFile )
+    }
+    img.onerror = () => {
+      setErr( 'Could not read image dimensions' )
+    }
+    img.src = URL.createObjectURL( selectedFile )
   }
 
   const handleCopyGreenColor = () => {
@@ -427,6 +446,12 @@ export function AddFrameDialog( { onUploaded, trigger }: AddFrameDialogProps ) {
                       </span>
                     )}
                   </div>
+                  {imageDims && (
+                    <div className="rounded-lg border border-neutral-100 bg-neutral-50/30 px-3 py-2 text-xs font-medium text-neutral-600 mt-1">
+                      {imageDims.width} × {imageDims.height} px
+                      {!err && ' • 4:6 ✓'}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
