@@ -26,6 +26,7 @@ import {
 } from '@/lib/photobooth/frames.query'
 import { AddFrameDialog } from '@/components/booth/AddFrameDialog'
 import { DashboardPageHeader } from './DashboardPageHeader'
+import { WarningDialog } from '@/components/ui/warning-dialog'
 
 const ITEMS_PER_PAGE = 8
 
@@ -59,15 +60,11 @@ export function FramesManager() {
   const safePage = Math.min( page, totalPages )
 
   const handleDelete = ( key: string ) => {
-    if (
-      !confirm( 'Are you sure you want to delete this custom frame? This cannot be undone.' )
-    ) {
-      return
-    }
-    deleteMutation.mutate( key, {
-      onError : ( error ) => {
-        alert( error instanceof Error ? error.message : 'Error deleting frame' )
-      },
+    return new Promise<void>( ( resolve, reject ) => {
+      deleteMutation.mutate( key, {
+        onSuccess : () => resolve(),
+        onError   : ( error ) => reject( error ),
+      } )
     } )
   }
     
@@ -222,20 +219,32 @@ export function FramesManager() {
 
                 {!frame.builtIn && (
                   <div className="pt-3">
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => handleDelete( frame.key )}
-                      disabled={deletingKey === frame.key}
-                      className="w-full gap-1"
-                    >
-                      {deletingKey === frame.key ? (
-                        <Loader2 className="size-3.5 animate-spin" />
-                      ) : (
-                        <Trash2 className="size-3.5" />
-                      )}
-                      Delete
-                    </Button>
+                    <WarningDialog
+                      title="Delete Frame"
+                      description={
+                        <>
+                          Are you sure you want to delete <span className="font-semibold text-neutral-900">{frame.label}</span>? This action cannot be undone.
+                        </>
+                      }
+                      confirmText="Delete"
+                      isDestructive
+                      onConfirm={() => handleDelete( frame.key )}
+                      trigger={
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          disabled={deletingKey === frame.key}
+                          className="w-full gap-1"
+                        >
+                          {deletingKey === frame.key ? (
+                            <Loader2 className="size-3.5 animate-spin" />
+                          ) : (
+                            <Trash2 className="size-3.5" />
+                          )}
+                          Delete
+                        </Button>
+                      }
+                    />
                   </div>
                 )}
               </div>
