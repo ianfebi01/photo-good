@@ -168,5 +168,15 @@ export async function detectGreenSlots(
 
   const validSlots = slots.filter( ( s ) => s.left >= 0 && s.width > 10 && s.height > 10 );
 
+  // Sort slots vertically (column-major order)
+  // If difference in 'left' is significant (> 5% of width), they belong to different columns
+  validSlots.sort( ( a, b ) => {
+    if ( Math.abs( a.left - b.left ) > width * 0.05 ) {
+      return a.left - b.left;
+    }
+    
+    return a.top - b.top;
+  } );
+
   return { width, height, slots : validSlots };
 }
