@@ -127,7 +127,7 @@ export function StepResult() {
       </div>
 
       {/* ── Grid: Strip (hero) + Media cards ───────────────────── */}
-      <div className="flex flex-col gap-6 lg:flex-row lg:flex-wrap">
+      <div className="flex flex-col gap-6 lg:flex-row lg:flex-wrap overflow-hidden">
         {/* Photo Strip */}
         <Card className="flex flex-col overflow-hidden lg:basis-[calc(50%-0.75rem)]">
           <CardHeader className="pb-3">
@@ -272,7 +272,7 @@ export function StepResult() {
           </CardContent>
         </Card>
 
-        <div className='flex flex-col gap-6 lg:flex-row lg:basis-full'>
+        <div className='flex flex-col gap-6 lg:flex-row lg:basis-full overflow-hidden'>
         
           {/* ── Loop Video ────────────────────────────────────────── */}
           <Card className="flex flex-col lg:grow">
