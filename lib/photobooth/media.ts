@@ -8,6 +8,7 @@ import sharp from "sharp";
 import { CAPTURES_DIR, getFrame } from "./config";
 import { getFrameFromDb } from "./frames.db";
 import { getR2ObjectBuffer } from "@/lib/r2";
+import { clearGreenPixels } from "./slots";
 
 // ── Helpers ────────────────────────────────────────────────────────
 
@@ -287,11 +288,12 @@ export async function generateCountdownMashup(
     lastOut = outTag
   }
 
-  // Frame image: key out green, overlay on top of clips
+  // Frame image: already pre-keyed (green pixels → transparent via sharp),
+  // so just ensure rgba pixel format before overlaying on top of clips.
   const frameIdx = countdownFiles.length
   inputs.push( "-i", frameImagePath )
   filters.push(
-    `[${frameIdx}:v]colorkey=0x00BF63:similarity=0.3:blend=0.2,format=rgba[fk]`,
+    `[${frameIdx}:v]format=rgba[fk]`,
   )
   filters.push( `[${lastOut}][fk]overlay=0:0,scale=720:-2,format=yuv420p[out]` )
 
@@ -323,30 +325,52 @@ export async function generateCountdownMashup(
   return { file : vidName, url : `/api/captures/${vidName}` }
 }
 
-/** Resolve frame image bytes to a temp PNG path that ffmpeg can read. */
+/** Resolve frame image to a pre-keyed RGBA PNG that ffmpeg can overlay directly.
+ *  Uses the same sharp + clearGreenPixels pipeline as composeStrip so green
+ *  marker pixels are reliably turned transparent (with dilation for anti-aliased
+ *  edges), avoiding ffmpeg's less precise colorkey filter. */
 async function resolveFrameImagePath( frameKey: string ): Promise<string> {
   const frame = await getFrame( frameKey )
   if ( !frame ) throw new Error( `Unknown frame: ${frameKey}` )
 
-  // If it's a local filesystem frame, return the path directly
-  if ( frame.image ) return frame.image
-
-  // DB-backed (R2) frame — download and cache to disk
-  const dbFrame = await getFrameFromDb( frameKey )
-  if ( !dbFrame ) throw new Error( `Frame ${frameKey} not found in DB` )
-
   const cachedPath = path.join( CAPTURES_DIR, `.frame-${frameKey}.png` )
-  // Write if not already cached
+
+  // Return cached pre-keyed overlay if it already exists
   try {
     await readFile( cachedPath )
 
     return cachedPath
   } catch {
-    // not cached yet — download
+    // not cached yet — build it below
   }
 
-  const buffer = await getR2ObjectBuffer( dbFrame.image_key )
-  await writeFile( cachedPath, buffer )
+  let imageBuffer: Buffer
+  if ( frame.image ) {
+    // Local filesystem frame
+    imageBuffer = await readFile( frame.image )
+  } else {
+    // DB-backed (R2) frame
+    const dbFrame = await getFrameFromDb( frameKey )
+    if ( !dbFrame ) throw new Error( `Frame ${frameKey} not found in DB` )
+    imageBuffer = await getR2ObjectBuffer( dbFrame.image_key )
+  }
+
+  // Process through sharp: convert to RGBA, clear green marker pixels
+  const { data, info } = await sharp( imageBuffer )
+    .ensureAlpha()
+    .raw()
+    .toBuffer( { resolveWithObject : true } )
+
+  const pixels = Buffer.from( data )
+  clearGreenPixels( pixels, info.width, info.height, info.channels )
+
+  const overlay = await sharp( pixels, {
+    raw : { width : info.width, height : info.height, channels : info.channels },
+  } )
+    .png()
+    .toBuffer()
+
+  await writeFile( cachedPath, overlay )
 
   return cachedPath
 }
