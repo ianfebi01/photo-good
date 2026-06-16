@@ -375,7 +375,7 @@ export function StepResult() {
           </div>
           {/* ── Countdown clips ──────────────────────────────────── */}
           {countdownClips.length > 0 && (
-            <Card className="flex flex-col overflow-hidden shrink-0">
+            <Card className="flex flex-col overflow-hidden shrink-0 grow">
               <CardHeader className="pb-3">
                 <div className="flex items-center gap-2">
                   <div className="flex items-center justify-center rounded-lg size-8 bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400">
@@ -394,7 +394,7 @@ export function StepResult() {
                   {countdownClips.map( ( clip, i ) => (
                     <div
                       key={clip.file}
-                      className="h-full rounded-lg shadow-sm relative"
+                      className="h-full rounded-lg shadow-sm relative min-h-50"
                       style={{ aspectRatio : 3 / 2, width : 'auto' }}
                     >
                       <video
