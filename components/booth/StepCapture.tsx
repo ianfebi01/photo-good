@@ -457,7 +457,7 @@ export function StepCapture() {
   )
 
   return (
-    <div className="container mx-auto px-4 py-8 lg:py-16 flex flex-col gap-6 grow overflow-hidden">
+    <div className="container mx-auto px-4 py-8 lg:py-16 flex flex-col gap-6 grow overflow-visible">
       {/* Header */}
       <div className="flex justify-between items-center gap-4">
         <div className="flex items-center gap-3">
@@ -490,10 +490,10 @@ export function StepCapture() {
       </div>
 
       {/* 2-column layout: camera + trigger | frame preview */}
-      <div className="flex flex-col lg:grid lg:grid-cols-2 gap-6 grow min-h-0 overflow-hidden">
+      <div className="flex flex-col lg:grid lg:grid-cols-2 gap-6 grow min-h-0 overflow-visible">
         {/* Left: Camera + Shutter */}
-        <div className="flex flex-col items-center gap-6 min-h-0">
-          <div className="flex-1 w-full flex items-center justify-center min-h-0">
+        <div className="flex flex-col items-center justify-center gap-6 min-h-0 max-xl:flex-1">
+          <div className="w-full h-full max-xl:bg-white max-xl:flex max-xl:p-2 max-xl:items-center xl:h-max">
             {renderCamera( 'w-full max-h-full' )}
           </div>
           <div className="shrink-0 h-28 flex items-center justify-center">
@@ -503,7 +503,7 @@ export function StepCapture() {
 
         {/* Right: Frame preview */}
         {frame && (
-          <div className="flex items-center justify-center min-h-0 h-full overflow-hidden">
+          <div className="hidden xl:flex items-center justify-center min-h-0 h-full overflow-hidden">
             <FramePreview
               style={
                 {
