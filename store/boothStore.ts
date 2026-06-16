@@ -165,6 +165,7 @@ export const useBoothStore = create<BoothState>()(
       // ── Session reset ──────────────────────────────
       reset : () => {
         _capturing = false;
+        const frames = get().frames;
         set( {
           started          : false,
           sessionId        : "",
@@ -179,7 +180,7 @@ export const useBoothStore = create<BoothState>()(
           error            : null,
           flash            : false,
           step             : 0,
-          frameKey         : DEFAULT_FRAME_KEY,
+          frameKey         : frames[0]?.key ?? DEFAULT_FRAME_KEY,
           timerSecondsLeft : null,
         } );
         get().restartPreview();
