@@ -130,7 +130,7 @@ function FrameCard( {
       className={cn(
         'group relative flex flex-col items-center gap-2 rounded-xl p-3 transition-all duration-200 cursor-pointer text-left',
         active
-          ? 'bg-primary/5 ring-2 ring-primary shadow-sm'
+          ? 'border border-primary shadow-sm'
           : 'bg-white hover:bg-neutral-50 border border-neutral-100 hover:border-neutral-200 hover:shadow-sm',
       )}
     >
