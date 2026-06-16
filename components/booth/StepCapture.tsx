@@ -468,7 +468,7 @@ export function StepCapture() {
             disabled={busy}
             className="gap-1"
           >
-            <ChevronLeft className="size-4" /> Back
+            <ChevronLeft className="size-4" />
           </Button>
           <div className="flex flex-col">
             <span className="text-sm font-bold text-neutral-800 font-sans">
