@@ -75,9 +75,9 @@ export function StepFilter() {
   if ( !frame ) return null
 
   return (
-    <div className="container mx-auto px-4 py-8 lg:py-16 flex flex-col gap-6 grow overflow-hidden">
+    <div className="container flex flex-col gap-6 px-4 py-8 mx-auto overflow-hidden lg:py-16 grow">
       {/* Header */}
-      <div className="flex justify-between items-center gap-4">
+      <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <Button
             variant="ghost"
@@ -86,13 +86,13 @@ export function StepFilter() {
             disabled={busy}
             className="gap-1"
           >
-            <ChevronLeft className="size-4" /> Back
+            <ChevronLeft className="size-4" />
           </Button>
           <div className="flex flex-col">
-            <span className="text-sm font-bold text-neutral-800 font-sans">
+            <span className="font-sans text-sm font-bold text-neutral-800">
               Apply Filter
             </span>
-            <span className="text-xs text-neutral-400 font-sans">
+            <span className="font-sans text-xs text-neutral-400">
               Choose a filter style for your photos
             </span>
           </div>
@@ -109,9 +109,9 @@ export function StepFilter() {
       {/* 2-column: preview + filters */}
       <div className="flex flex-col lg:grid lg:grid-cols-[1fr_1.2fr] gap-6 grow min-h-0 overflow-hidden">
         {/* Left: Frame preview with filter */}
-        <div className="flex items-center justify-center min-h-0 h-full overflow-hidden">
+        <div className="flex items-center justify-center w-full h-full min-h-0 overflow-hidden">
           <FramePreview
-            className="flex flex-col h-full max-w-full"
+            className="flex flex-col w-full h-full"
             style={
               {
                 '--frame-ar' : `${frame.width} / ${frame.height}`,
@@ -134,17 +134,17 @@ export function StepFilter() {
         </div>
 
         {/* Right: Filter picker */}
-        <div className="flex flex-col gap-4 min-h-0 overflow-hidden">
-          <div className="rounded-3xl bg-white shadow-sm border border-neutral-100 p-6 flex flex-col gap-4 grow overflow-hidden">
+        <div className="flex flex-col h-full min-h-0 gap-4 overflow-hidden max-h-50 xl:max-h-75 xl:my-auto">
+          <div className="flex flex-col gap-4 p-6 overflow-hidden bg-white rounded-3xl grow">
             <div className="space-y-1">
-              <p className="text-xs font-bold uppercase tracking-widest text-primary">
+              <p className="text-xs font-bold tracking-widest uppercase text-primary">
                 Choose your style
               </p>
               <h2 className="text-2xl font-bold text-foreground">
                 Filters
               </h2>
             </div>
-            <div className="grow overflow-hidden">
+            <div className="overflow-hidden grow">
               <FilterPicker
                 photos={photos}
                 pending={pending}
