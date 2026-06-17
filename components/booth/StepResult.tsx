@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
-import { Download, Film, Images, Loader2, RefreshCw, Repeat, Clapperboard } from 'lucide-react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { Download, Film, Images, Loader2, RefreshCw, Repeat, Clapperboard, ImageDown } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -39,6 +39,32 @@ export function StepResult() {
 
   // Index of the clip currently being converted to MP4 for download (or null).
   const [downloadingClip, setDownloadingClip] = useState<number | null>( null )
+  const [downloadingAllPhotos, setDownloadingAllPhotos] = useState( false )
+
+  /** Download every raw capture photo sequentially as individual files. */
+  const handleDownloadAllPhotos = useCallback( async () => {
+    if ( downloadingAllPhotos || photos.length === 0 ) return
+    setDownloadingAllPhotos( true )
+    try {
+      for ( let i = 0; i < photos.length; i++ ) {
+        const { url, file } = photos[i]
+        // Infer a clean filename from the stored file name, falling back to index.
+        const name = file || `photo-${i + 1}.jpg`
+        const a = document.createElement( 'a' )
+        a.href = url
+        a.download = name
+        document.body.appendChild( a )
+        a.click()
+        a.remove()
+        // Small delay so the browser doesn't coalesce / block multiple downloads
+        if ( i < photos.length - 1 ) {
+          await new Promise( ( r ) => setTimeout( r, 300 ) )
+        }
+      }
+    } finally {
+      setDownloadingAllPhotos( false )
+    }
+  }, [downloadingAllPhotos, photos] )
 
   const handleDownloadClip = async ( file: string, index: number ) => {
     if ( downloadingClip !== null ) return
@@ -443,7 +469,19 @@ export function StepResult() {
       </div>
 
       {/* ── Bottom actions ──────────────────────────────────────── */}
-      <div className="flex justify-center mt-10">
+      <div className="flex justify-center gap-3 mt-10">
+        <Button size="lg"
+          variant="outline"
+          onClick={handleDownloadAllPhotos}
+          disabled={downloadingAllPhotos}
+        >
+          {downloadingAllPhotos ? (
+            <Loader2 className="mr-2 size-4 animate-spin" />
+          ) : (
+            <ImageDown className="mr-2 size-4" />
+          )}
+          Download all photos
+        </Button>
         <Button size="lg"
           variant="outline"
           onClick={reset}
