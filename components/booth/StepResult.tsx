@@ -298,7 +298,7 @@ export function StepResult() {
           </CardContent>
         </Card>
 
-        <div className='flex flex-col gap-6 lg:flex-row lg:basis-full overflow-hidden'>
+        <div className='flex flex-col gap-6 lg:grid lg:grid-cols-2 lg:basis-full overflow-hidden'>
         
           {/* ── Loop Video ────────────────────────────────────────── */}
           <Card className="flex flex-col lg:grow">
