@@ -1,7 +1,7 @@
 'use client'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Images, LayoutDashboard, User, Users } from 'lucide-react'
+import { Images, LayoutDashboard, Monitor, User, Users } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
 import { buttonVariants } from '@/components/ui/button'
@@ -10,6 +10,7 @@ import { hasRole, type AuthUser } from '@/lib/auth/types'
 const navItems = [
   { href : '/dashboard', label : 'Dashboard', icon : LayoutDashboard },
   { href : '/dashboard/frames', label : 'Frames', icon : Images, role : 'admin' as const },
+  { href : '/dashboard/booths', label : 'Booths', icon : Monitor, role : 'admin' as const },
   { href : '/dashboard/profile', label : 'Profile', icon : User },
   { href : '/dashboard/users', label : 'Users', icon : Users, role : 'super_admin' as const },
 ]
