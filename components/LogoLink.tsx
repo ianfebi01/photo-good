@@ -13,7 +13,7 @@ const LogoLink = () => {
         <span className="absolute inset-1 rounded-full bg-primary transition-transform duration-150 group-hover:scale-105 group-active:scale-90 group-disabled:scale-100"></span>
       </div>
       <span className="text-lg font-bold text-neutral-900 font-sans">
-        photo good.
+        photogood.
       </span>
     </Link>
   )
