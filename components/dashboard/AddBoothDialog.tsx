@@ -15,17 +15,7 @@ import {
   DialogClose,
 } from '@/components/ui/dialog'
 import gsap from 'gsap'
-
-type Booth = {
-  id : string
-  name : string
-  location : string | null
-  active : boolean
-  created_at : string
-  updated_at : string
-}
-
-export const BOOTHS_QUERY_KEY = ['admin', 'booths'] as const
+import { BOOTHS_QUERY_KEY, type Booth } from '@/lib/photobooth/booths.query'
 
 interface AddBoothDialogProps {
   onCreated? : ( booth : Booth ) => void
