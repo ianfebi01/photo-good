@@ -32,7 +32,10 @@ export async function authenticateBooth( request : Request ) : Promise<BoothAuth
     if ( result.rows.length === 0 ) return null
     
     return result.rows[0] as BoothAuth
-  } catch {
+  } catch ( err ) {
+    // eslint-disable-next-line no-console
+    console.error( '[booth/auth] DB lookup failed:', err )
+
     return null
   }
 }

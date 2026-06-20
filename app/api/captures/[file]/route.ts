@@ -6,7 +6,7 @@ import { CAPTURES_DIR } from "@/lib/photobooth/config";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const FILE_RE = /^(shot|strip|raw-shot|anim|slideshow|countdown|countdown-mashup|loop)-[a-z0-9-]+\.(jpg|gif|mp4|webm)$/i;
+const FILE_RE = /^(shot|strip|raw-shot|anim|slideshow|countdown|countdown-mashup|loop|booth)-[a-z0-9-]+\.(jpg|gif|mp4|webm)$/i;
 
 const MIME: Record<string, string> = {
   jpg  : "image/jpeg",
