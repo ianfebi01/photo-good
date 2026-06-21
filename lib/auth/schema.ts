@@ -47,6 +47,43 @@ export function ensureAuthSchema() {
       created_by UUID REFERENCES app_users(id),
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
+
+    CREATE TABLE IF NOT EXISTS app_booths (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      name TEXT NOT NULL,
+      api_key TEXT NOT NULL UNIQUE,
+      location TEXT,
+      active BOOLEAN NOT NULL DEFAULT true,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS app_media (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      booth_id UUID NOT NULL REFERENCES app_booths(id) ON DELETE CASCADE,
+      filename TEXT NOT NULL,
+      url TEXT NOT NULL,
+      mime_type TEXT NOT NULL,
+      size_bytes INTEGER NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+
+    CREATE INDEX IF NOT EXISTS app_media_booth_id_idx ON app_media(booth_id);
+
+    CREATE TABLE IF NOT EXISTS app_results (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      booth_id UUID NOT NULL REFERENCES app_booths(id) ON DELETE CASCADE,
+      session_id TEXT,
+      media_id UUID REFERENCES app_media(id) ON DELETE CASCADE,
+      media_type TEXT CHECK (media_type IN ('strip', 'image', 'mashup', 'countdown', 'loop')),
+      frame_key TEXT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      expires_at TIMESTAMPTZ NOT NULL DEFAULT (NOW() + INTERVAL '7 days')
+    );
+
+    CREATE INDEX IF NOT EXISTS app_results_booth_id_idx ON app_results(booth_id);
+    CREATE INDEX IF NOT EXISTS app_results_session_id_idx ON app_results(session_id);
+    CREATE INDEX IF NOT EXISTS app_results_expires_at_idx ON app_results(expires_at);
   ` ).then( () => undefined )
 
   return schemaReady
