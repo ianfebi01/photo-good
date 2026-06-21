@@ -23,6 +23,7 @@ interface AddBoothDialogProps {
 }
 
 export function AddBoothDialog( { onCreated, trigger } : AddBoothDialogProps ) {
+  const [open, setOpen] = useState( false )
   const [name, setName] = useState( '' )
   const [location, setLocation] = useState( '' )
   const [newApiKey, setNewApiKey] = useState<string | null>( null )
@@ -31,7 +32,6 @@ export function AddBoothDialog( { onCreated, trigger } : AddBoothDialogProps ) {
   const popupRef = useRef<HTMLDivElement>( null )
   const contentRef = useRef<HTMLDivElement>( null )
   const overlayRef = useRef<HTMLDivElement>( null )
-  const actionsRef = useRef<{ unmount : () => void; close : () => void } | null>( null )
   const tlRef = useRef<gsap.core.Timeline | null>( null )
   const isAnimatingRef = useRef( false )
 
@@ -128,24 +128,16 @@ export function AddBoothDialog( { onCreated, trigger } : AddBoothDialogProps ) {
     tlRef.current = tl
   }, [] )
 
-  const handleOpenChange = useCallback( ( nextOpen : boolean, event : { preventUnmountOnClose : () => void } ) => {
-    if ( nextOpen ) {
-      resetForm()
-      
-      return
-    }
-
+  const animateClose = useCallback( () => {
     if ( isAnimatingRef.current ) return
     isAnimatingRef.current = true
-
-    event.preventUnmountOnClose()
 
     tlRef.current?.kill()
 
     const tl = gsap.timeline( {
       onComplete : () => {
         isAnimatingRef.current = false
-        actionsRef.current?.unmount()
+        setOpen( false )
       },
     } )
 
@@ -186,6 +178,18 @@ export function AddBoothDialog( { onCreated, trigger } : AddBoothDialogProps ) {
     tlRef.current = tl
   }, [] )
 
+  const handleOpenChange = useCallback( ( nextOpen : boolean, event : { preventUnmountOnClose : () => void } ) => {
+    if ( nextOpen ) {
+      resetForm()
+      setOpen( true )
+
+      return
+    }
+
+    event.preventUnmountOnClose()
+    animateClose()
+  }, [animateClose] )
+
   const submit = () => {
     if ( !name.trim() ) return
     setErr( null )
@@ -194,8 +198,8 @@ export function AddBoothDialog( { onCreated, trigger } : AddBoothDialogProps ) {
 
   return (
     <Dialog
+      open={open}
       onOpenChange={handleOpenChange}
-      actionsRef={actionsRef}
     >
       <DialogTrigger
         render={
@@ -300,7 +304,7 @@ export function AddBoothDialog( { onCreated, trigger } : AddBoothDialogProps ) {
             />
             <Button
               disabled={creating || !name.trim()}
-              onClick={() => ( newApiKey ? actionsRef.current?.close() : submit() )}
+              onClick={() => ( newApiKey ? animateClose() : submit() )}
               className="rounded-xl font-sans text-sm font-bold"
             >
               {creating && <Loader2 className="size-4 animate-spin" />}
