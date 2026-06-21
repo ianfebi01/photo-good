@@ -1,7 +1,7 @@
 'use client'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Clapperboard, Images, LayoutDashboard, Monitor, User, Users } from 'lucide-react'
+import { Clapperboard, CreditCard, Images, LayoutDashboard, Monitor, User, Users } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
 import { buttonVariants } from '@/components/ui/button'
@@ -12,6 +12,7 @@ const navItems = [
   { href : '/dashboard/frames', label : 'Frames', icon : Images, role : 'admin' as const },
   { href : '/dashboard/booths', label : 'Booths', icon : Monitor, role : 'admin' as const },
   { href : '/dashboard/results', label : 'Results', icon : Clapperboard, role : 'admin' as const },
+  { href : '/dashboard/payments', label : 'Payments', icon : CreditCard, role : 'admin' as const },
   { href : '/dashboard/profile', label : 'Profile', icon : User },
   { href : '/dashboard/users', label : 'Users', icon : Users, role : 'super_admin' as const },
 ]
