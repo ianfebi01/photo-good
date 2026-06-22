@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { ArrowRight, Camera, Images, ShieldCheck, Sparkles } from 'lucide-react'
+import { ArrowRight, Images, ShieldCheck, Sparkles } from 'lucide-react'
 
 import { requireUser } from '@/lib/auth/require'
 import { hasRole } from '@/lib/auth/types'
@@ -31,13 +31,6 @@ export default async function DashboardPage() {
             <span className="font-sans text-2xl">{user.name.split( ' ' )[0]}</span>
           </h1>
         </div>
-        <Link
-          href="/booth"
-          className="inline-flex h-9 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-sans font-semibold text-white transition hover:bg-primary/90"
-        >
-          <Camera className="size-4" />
-          Open Booth
-        </Link>
       </div>
 
       {/* Stat cards */}
@@ -86,17 +79,6 @@ export default async function DashboardPage() {
           <p className="mt-0.5 text-xs text-neutral-400">Common booth management tasks</p>
 
           <div className="mt-4 grid gap-2 sm:grid-cols-2">
-            <Link
-              href="/booth"
-              className="group flex items-center justify-between rounded-xl border border-neutral-100 bg-neutral-50 p-4 transition hover:border-neutral-200 hover:bg-neutral-100"
-            >
-              <div>
-                <p className="text-xs font-semibold text-neutral-900">Start a capture session</p>
-                <p className="mt-0.5 text-[0.625rem] text-neutral-400">Open the photo booth</p>
-              </div>
-              <ArrowRight className="size-4 text-neutral-300 transition group-hover:text-neutral-600" />
-            </Link>
-
             {hasRole( user.role, 'admin' ) && (
               <Link
                 href="/dashboard/frames"

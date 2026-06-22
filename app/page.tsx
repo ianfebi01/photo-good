@@ -53,23 +53,20 @@ export default async function Home() {
                 </p>
               </div>
 
-              {/* Starburst START button */}
+              {/* Starburst decorative circle */}
               <div className="relative z-10 flex items-center justify-center">
-                <Link
-                  href="/booth"
-                  className="group relative flex items-center"
-                >
+                <div className="group relative flex items-center">
                   <div
-                    className="group relative flex size-20 items-center justify-center cursor-pointer disabled:cursor-not-allowed select-none rounded-full focus:outline-none disabled:opacity-50"
-                    title="Snap"
+                    className="group relative flex size-20 items-center justify-center cursor-default select-none rounded-full focus:outline-none"
+                    title="Photo Good"
                   >
                     <span className="absolute inset-0 rounded-full border-3 border-primary" />
-                    <span className="absolute inset-1.5 rounded-full bg-primary transition-transform duration-150 group-hover:scale-105 group-active:scale-90 group-disabled:scale-100"></span>
+                    <span className="absolute inset-1.5 rounded-full bg-primary"></span>
                   </div>
                   <span className="text-2xl font-bold text-neutral-700 font-sans ml-2">
-                    Start!
+                    Photo Good
                   </span>
-                </Link>
+                </div>
               </div>
             </AppCard>
 

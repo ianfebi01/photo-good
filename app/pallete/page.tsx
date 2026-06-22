@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
 
@@ -47,10 +46,6 @@ export default function Pallete() {
         <Button variant="ghost">Ghost</Button>
         <Button variant="destructive">Destructive</Button>
       </div>
-
-      <Link href="/booth">
-        <Button size="lg">Open the photobooth →</Button>
-      </Link>
     </main>
   );
 }

@@ -1,5 +1,11 @@
 import type { ClientFrame } from './frames.client'
-import type { Status } from '@/store/boothStore'
+
+type Status = {
+  connected: boolean
+  mock: boolean
+  model?: string
+  gphoto2: boolean
+}
 
 export const FRAMES_QUERY_KEY = ['frames'] as const
 export const CAMERA_STATUS_QUERY_KEY = ['camera-status'] as const
