@@ -11,8 +11,8 @@ const R2_BUCKET_NAME = process.env.R2_BUCKET_NAME ?? 'photobooth-frames'
 
 function getClient(): S3Client {
   return new S3Client( {
-    region  : 'auto',
-    endpoint : R2_ENDPOINT,
+    region      : 'auto',
+    endpoint    : R2_ENDPOINT,
     credentials : {
       accessKeyId     : R2_ACCESS_KEY_ID ?? '',
       secretAccessKey : R2_SECRET_ACCESS_KEY ?? '',
@@ -43,9 +43,23 @@ export async function uploadToR2( {
 
   await client.send( command )
 
-  const publicUrl = R2_PUBLIC_URL
-    ? `${R2_PUBLIC_URL.replace( /\/$/, '' )}/${key}`
-    : `${R2_ENDPOINT}/${R2_BUCKET_NAME}/${key}`
+  let publicUrl = ''
+  if ( R2_PUBLIC_URL ) {
+    const baseUrl = R2_PUBLIC_URL.replace( /\/$/, '' )
+    // If using default Cloudflare r2.dev subdomain, the bucket name must be in the URL path
+    if ( baseUrl.includes( '.r2.dev' ) && !baseUrl.endsWith( `/${R2_BUCKET_NAME}` ) ) {
+      publicUrl = `${baseUrl}/${R2_BUCKET_NAME}/${key}`
+    } else {
+      publicUrl = `${baseUrl}/${key}`
+    }
+  } else {
+    const baseUrl = R2_ENDPOINT ? R2_ENDPOINT.replace( /\/$/, '' ) : ''
+    if ( baseUrl.endsWith( `/${R2_BUCKET_NAME}` ) ) {
+      publicUrl = `${baseUrl}/${key}`
+    } else {
+      publicUrl = `${baseUrl}/${R2_BUCKET_NAME}/${key}`
+    }
+  }
 
   return { publicUrl }
 }

@@ -12,7 +12,7 @@ import {
   validateFrameDimensions,
 } from "@/lib/photobooth/config";
 import { getAllFramesFromDb, deleteFrameFromDb } from "@/lib/photobooth/frames.db";
-import { deleteR2Object } from "@/lib/r2";
+import { deleteR2Object, uploadToR2 } from "@/lib/r2";
 import { detectGreenSlots } from "@/lib/photobooth/slots";
 import { getCurrentUser } from "@/lib/auth/session";
 import { hasRole } from "@/lib/auth/types";
@@ -209,6 +209,15 @@ export async function POST( request: Request ) {
     key = `user-${baseSlug}-${suffix++}`;
   }
 
+  // Upload to R2 so frame images are accessible from any deployment
+  const imageKey = `frames/user/${key}-${Date.now()}.png`;
+  const { publicUrl } = await uploadToR2( {
+    key         : imageKey,
+    body        : buffer,
+    contentType : 'image/png',
+  } );
+
+  // Also save to manifest for backward-compat filesystem lookups
   const ext = extFromType( file.type );
   const filename = `${key}.${ext}`;
   await writeFile( path.join( USER_FRAMES_DIR, filename ), buffer );
@@ -228,7 +237,7 @@ export async function POST( request: Request ) {
     frame : {
       key,
       label      : entry.label,
-      publicUrl  : `/frames/user/${filename}`,
+      publicUrl,
       width      : entry.width,
       height     : entry.height,
       photoCount : entry.slots.length,

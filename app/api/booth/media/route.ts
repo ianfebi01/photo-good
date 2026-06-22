@@ -1,10 +1,7 @@
-import { writeFile, mkdir } from 'node:fs/promises'
-import path from 'node:path'
-
 import { db } from '@/lib/db'
 import { requireBooth } from '@/lib/auth/booth'
 import { ensureAuthSchema } from '@/lib/auth/schema'
-import { CAPTURES_DIR } from '@/lib/photobooth/config'
+import { uploadToR2 } from '@/lib/r2'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -49,8 +46,14 @@ export async function POST( request : Request ) {
 
   try {
     await ensureAuthSchema()
-    await mkdir( CAPTURES_DIR, { recursive : true } )
-    await writeFile( path.join( CAPTURES_DIR, filename ), buffer )
+
+    // Upload directly to R2 under 'captures/' folder
+    const key = `captures/${filename}`
+    await uploadToR2( {
+      key,
+      body        : buffer,
+      contentType : mime,
+    } )
 
     const url = `/api/captures/${filename}`
     const result = await db.query(

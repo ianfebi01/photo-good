@@ -131,10 +131,14 @@ export async function getFrame( key: string ): Promise<FrameDef | null> {
   // 1. DB takes precedence — seeded built-ins + user uploads live here
   const dbFrame = await getFrameFromDb( key );
   if ( dbFrame ) {
+    // If image_key is an absolute path it refers to a local file on disk;
+    // otherwise it is an R2 object key and compose/preview should fetch from R2.
+    const isLocalPath = dbFrame.image_key.startsWith( '/' );
+
     return {
       key       : dbFrame.key,
       label     : dbFrame.label,
-      image     : dbFrame.image_key, // local file path
+      image     : isLocalPath ? dbFrame.image_key : '',
       publicUrl : dbFrame.image_url,
       width     : dbFrame.width,
       height    : dbFrame.height,

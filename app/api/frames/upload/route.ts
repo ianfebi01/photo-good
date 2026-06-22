@@ -1,13 +1,11 @@
-import { writeFile, mkdir } from 'node:fs/promises'
-import path from 'node:path'
-
 import sharp from 'sharp'
 
 import { getCurrentUser } from '@/lib/auth/session'
 import { hasRole } from '@/lib/auth/types'
 import { ensureAuthSchema } from '@/lib/auth/schema'
-import { BUILT_IN_KEYS, USER_FRAMES_DIR, validateFrameDimensions } from '@/lib/photobooth/config'
+import { BUILT_IN_KEYS, validateFrameDimensions } from '@/lib/photobooth/config'
 import { insertFrame } from '@/lib/photobooth/frames.db'
+import { uploadToR2 } from '@/lib/r2'
 import { slugifyKey } from '@/lib/utils'
 
 export const runtime = 'nodejs'
@@ -81,29 +79,28 @@ export async function POST( request: Request ) {
   const height = meta.height
 
   const baseSlug = slugifyKey( labelRaw )
-  const ext = 'png'
-  const filename = `user-${baseSlug}-${Date.now()}.${ext}`
-
-  // Save to local filesystem instead of R2
-  await mkdir( USER_FRAMES_DIR, { recursive : true } )
-  const filePath = path.join( USER_FRAMES_DIR, filename )
-  await writeFile( filePath, buffer )
-
-  const publicUrl = `/frames/user/${filename}`
   const key = `user-${baseSlug}`
 
   if ( BUILT_IN_KEYS.has( key ) ) {
     return Response.json( { error : 'Key conflicts with built-in frame' }, { status : 409 } )
   }
 
+  // Upload to R2 so frame images are accessible from any deployment
+  const imageKey = `frames/user/${key}-${Date.now()}.png`
+  const { publicUrl } = await uploadToR2( {
+    key         : imageKey,
+    body        : buffer,
+    contentType : 'image/png',
+  } )
+
   // Ensure DB table exists
   await ensureAuthSchema()
 
-  // Save to DB with local path as image_key
+  // Save to DB with R2 object key and public URL
   const frame = await insertFrame( {
     key,
     label      : labelRaw,
-    image_key  : filePath,
+    image_key  : imageKey,
     image_url  : publicUrl,
     width,
     height,
@@ -124,3 +121,4 @@ export async function POST( request: Request ) {
     },
   } )
 }
+

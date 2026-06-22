@@ -1,7 +1,8 @@
-import { stat, open } from "node:fs/promises";
+import { stat, open, mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 import { CAPTURES_DIR } from "@/lib/photobooth/config";
+import { getR2ObjectBuffer } from "@/lib/r2";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -41,12 +42,29 @@ export async function GET(
 
   const filePath = path.join( CAPTURES_DIR, name );
   let size: number;
+  let useR2Buffer: Buffer | null = null;
+
   try {
     const info = await stat( filePath );
-    if ( !info.isFile() ) return new Response( "Not found", { status : 404 } );
+    if ( !info.isFile() ) throw new Error( "Not a file" );
     size = info.size;
   } catch {
-    return new Response( "Not found", { status : 404 } );
+    // Fallback to Cloudflare R2
+    try {
+      const buffer = await getR2ObjectBuffer( `captures/${name}` );
+      size = buffer.length;
+      useR2Buffer = buffer;
+
+      // Try to cache locally on disk for subsequent requests
+      try {
+        await mkdir( CAPTURES_DIR, { recursive : true } );
+        await writeFile( filePath, buffer );
+      } catch {
+        // Ignore write errors (e.g. read-only filesystem)
+      }
+    } catch {
+      return new Response( "Not found", { status : 404 } );
+    }
   }
 
   const ext = path.extname( name ).slice( 1 ).toLowerCase();
@@ -82,22 +100,27 @@ export async function GET(
       }
 
       end = Math.min( end, size - 1 );
-      const body = await readRange( filePath, start, end );
+      
+      const body = useR2Buffer 
+        ? new Uint8Array( useR2Buffer.subarray( start, end + 1 ) )
+        : await readRange( filePath, start, end );
 
       return new Response( body, {
         status  : 206,
         headers : {
-          "Content-Type"  : contentType,
-          "Content-Range" : `bytes ${start}-${end}/${size}`,
-          "Accept-Ranges" : "bytes",
+          "Content-Type"   : contentType,
+          "Content-Range"  : `bytes ${start}-${end}/${size}`,
+          "Accept-Ranges"  : "bytes",
           "Content-Length" : String( end - start + 1 ),
-          "Cache-Control" : "no-store",
+          "Cache-Control"  : "no-store",
         },
       } );
     }
   }
 
-  const body = await readRange( filePath, 0, size - 1 );
+  const body = useR2Buffer
+    ? new Uint8Array( useR2Buffer )
+    : await readRange( filePath, 0, size - 1 );
 
   return new Response( body, {
     headers : {
