@@ -3,7 +3,7 @@
 import { useState, useRef, useCallback } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Button } from '@/components/ui/button'
-import { Plus, X, Loader2 } from 'lucide-react'
+import { Plus, X, Loader2, Copy, Check } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -23,15 +23,17 @@ interface AddBoothDialogProps {
 }
 
 export function AddBoothDialog( { onCreated, trigger } : AddBoothDialogProps ) {
-  const [open, setOpen] = useState( false )
   const [name, setName] = useState( '' )
   const [location, setLocation] = useState( '' )
   const [newApiKey, setNewApiKey] = useState<string | null>( null )
   const [err, setErr] = useState<string | null>( null )
+  const [copied, setCopied] = useState( false )
 
   const popupRef = useRef<HTMLDivElement>( null )
   const contentRef = useRef<HTMLDivElement>( null )
   const overlayRef = useRef<HTMLDivElement>( null )
+  const actionsRef = useRef<{ unmount: () => void; close: () => void } | null>( null )
+  const createdBoothRef = useRef<Booth | null>( null )
   const tlRef = useRef<gsap.core.Timeline | null>( null )
   const isAnimatingRef = useRef( false )
 
@@ -42,6 +44,8 @@ export function AddBoothDialog( { onCreated, trigger } : AddBoothDialogProps ) {
     setLocation( '' )
     setNewApiKey( null )
     setErr( null )
+    setCopied( false )
+    createdBoothRef.current = null
   }
 
   const createMutation = useMutation( {
@@ -60,9 +64,8 @@ export function AddBoothDialog( { onCreated, trigger } : AddBoothDialogProps ) {
       return data.booth as Booth & { api_key : string }
     },
     onSuccess : ( booth ) => {
-      queryClient.invalidateQueries( { queryKey : BOOTHS_QUERY_KEY } )
+      createdBoothRef.current = booth
       setNewApiKey( booth.api_key )
-      onCreated?.( booth )
     },
     onError : ( error ) => {
       setErr( error instanceof Error ? error.message : 'Create failed' )
@@ -137,7 +140,11 @@ export function AddBoothDialog( { onCreated, trigger } : AddBoothDialogProps ) {
     const tl = gsap.timeline( {
       onComplete : () => {
         isAnimatingRef.current = false
-        setOpen( false )
+        if ( createdBoothRef.current ) {
+          queryClient.invalidateQueries( { queryKey : BOOTHS_QUERY_KEY } )
+          onCreated?.( createdBoothRef.current )
+        }
+        actionsRef.current?.unmount()
       },
     } )
 
@@ -176,12 +183,11 @@ export function AddBoothDialog( { onCreated, trigger } : AddBoothDialogProps ) {
     }
 
     tlRef.current = tl
-  }, [] )
+  }, [onCreated, queryClient] )
 
   const handleOpenChange = useCallback( ( nextOpen : boolean, event : { preventUnmountOnClose : () => void } ) => {
     if ( nextOpen ) {
       resetForm()
-      setOpen( true )
 
       return
     }
@@ -198,8 +204,8 @@ export function AddBoothDialog( { onCreated, trigger } : AddBoothDialogProps ) {
 
   return (
     <Dialog
-      open={open}
       onOpenChange={handleOpenChange}
+      actionsRef={actionsRef}
     >
       <DialogTrigger
         render={
@@ -275,7 +281,32 @@ export function AddBoothDialog( { onCreated, trigger } : AddBoothDialogProps ) {
             {/* API Key reveal */}
             {newApiKey && (
               <div className="rounded-xl bg-emerald-50 border border-emerald-200 p-4">
-                <p className="text-xs font-semibold text-emerald-700 mb-1.5">API Key — copy now!</p>
+                <div className="flex items-center justify-between mb-1.5">
+                  <p className="text-xs font-semibold text-emerald-700">API Key — copy now!</p>
+                  <button
+                    type="button"
+                    className="flex items-center gap-1 rounded-lg border border-emerald-300 bg-white px-2.5 py-1 text-xs font-medium text-emerald-700 hover:bg-emerald-100 transition cursor-pointer"
+                    onClick={async () => {
+                      if ( newApiKey ) {
+                        await navigator.clipboard.writeText( newApiKey )
+                        setCopied( true )
+                        setTimeout( () => setCopied( false ), 2000 )
+                      }
+                    }}
+                  >
+                    {copied ? (
+                      <>
+                        <Check className="size-3" />
+                        Copied
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="size-3" />
+                        Copy
+                      </>
+                    )}
+                  </button>
+                </div>
                 <code className="text-xs break-all select-all text-emerald-800 font-mono">{newApiKey}</code>
               </div>
             )}
@@ -304,7 +335,7 @@ export function AddBoothDialog( { onCreated, trigger } : AddBoothDialogProps ) {
             />
             <Button
               disabled={creating || !name.trim()}
-              onClick={() => ( newApiKey ? animateClose() : submit() )}
+              onClick={() => ( newApiKey ? actionsRef.current?.close() : submit() )}
               className="rounded-xl font-sans text-sm font-bold"
             >
               {creating && <Loader2 className="size-4 animate-spin" />}
