@@ -1,7 +1,13 @@
+import type { Metadata } from 'next'
 import { updateProfileAction } from '@/app/auth/actions'
 import { Button } from '@/components/ui/button'
 import { requireUser } from '@/lib/auth/require'
 import { DashboardPageHeader } from '@/components/dashboard/DashboardPageHeader'
+
+export const metadata: Metadata = {
+  title       : "Profile — Photo Good",
+  description : "Update your name, email, and account information for the Photo Good dashboard.",
+}
 
 export default async function ProfilePage() {
   const user = await requireUser()

@@ -1,6 +1,12 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
+
+export const metadata: Metadata = {
+  title       : "Palette — Photo Good",
+  description : "Preview the Photo Good color palette and themed UI components.",
+};
 
 const swatches = [
   { name : "Primary", hex : "#EB4C4C", className : "bg-primary text-primary-foreground" },

@@ -1,9 +1,15 @@
+import type { Metadata } from 'next'
 import { dehydrate, HydrationBoundary, QueryClient } from '@tanstack/react-query'
 
 import { FramesManager } from '@/components/dashboard/FramesManager'
 import { FRAMES_QUERY_KEY } from '@/lib/photobooth/frames.query'
 import { getFramesForSsr } from '@/lib/photobooth/frames.query.server'
 import { requireRole } from '@/lib/auth/require'
+
+export const metadata: Metadata = {
+  title       : "Frames — Photo Good",
+  description : "Upload, review, and manage photo booth frame templates from the dashboard.",
+}
 
 export default async function DashboardFramesPage() {
   await requireRole( 'admin' )

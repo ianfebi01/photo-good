@@ -1,9 +1,15 @@
+import type { Metadata } from 'next'
 import { updateRoleAction } from '@/app/auth/actions'
 import { Button } from '@/components/ui/button'
 import { requireRole } from '@/lib/auth/require'
 import { listUsers } from '@/lib/auth/users'
 import { roles } from '@/lib/auth/types'
 import { DashboardPageHeader } from '@/components/dashboard/DashboardPageHeader'
+
+export const metadata: Metadata = {
+  title       : "Users — Photo Good",
+  description : "Manage team member roles and access control for the Photo Good dashboard.",
+}
 
 export default async function UsersPage() {
   const currentUser = await requireRole( 'super_admin' )

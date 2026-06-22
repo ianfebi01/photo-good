@@ -1,6 +1,12 @@
+import type { Metadata } from 'next'
 import { db } from '@/lib/db'
 import { requireRole } from '@/lib/auth/require'
 import { CreditCard, CheckCircle2, Clock, XCircle, AlertTriangle, Ban } from 'lucide-react'
+
+export const metadata: Metadata = {
+  title       : "Payments — Photo Good",
+  description : "View QRIS payment transactions and revenue from booth clients.",
+}
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'

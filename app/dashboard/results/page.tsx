@@ -1,7 +1,13 @@
+import type { Metadata } from 'next'
 import { db } from '@/lib/db'
 import { requireRole } from '@/lib/auth/require'
 import Link from 'next/link'
 import { ExternalLink, Film, Image, Clapperboard } from 'lucide-react'
+
+export const metadata: Metadata = {
+  title       : "Results — Photo Good",
+  description : "Browse recent booth sessions, photo strips, videos, and mashup results.",
+}
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'

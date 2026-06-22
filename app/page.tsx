@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import { dehydrate, HydrationBoundary, QueryClient } from '@tanstack/react-query'
 import { cn } from '@/lib/utils'
 import LogoCard from '@/components/LogoCard'
@@ -9,6 +10,11 @@ import AppCard from '@/components/AppCard'
 import Link from 'next/link'
 import { FRAMES_QUERY_KEY } from '@/lib/photobooth/frames.query'
 import { getFramesForSsr } from '@/lib/photobooth/frames.query.server'
+
+export const metadata: Metadata = {
+  title       : "Let's Capture Some Memories — Photo Good",
+  description : "Your personal photo booth, wrapped in warm memories. Start capturing beautiful photo strips today.",
+}
 
 export default async function Home() {
   const queryClient = new QueryClient()

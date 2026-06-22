@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import { dehydrate, HydrationBoundary, QueryClient } from '@tanstack/react-query'
 
 import { RESULTS_QUERY_KEY } from '@/lib/photobooth/results.query'
@@ -6,6 +7,19 @@ import { ResultView } from '@/components/booth/ResultView'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
+
+export async function generateMetadata( {
+  params,
+} : {
+  params : Promise<{ sessionId : string }>
+} ) : Promise<Metadata> {
+  const { sessionId } = await params
+
+  return {
+    title       : `Session ${sessionId} — Photo Good`,
+    description : `View your Photo Good booth session results for ${sessionId}.`,
+  }
+}
 
 export default async function ResultPage( {
   params,

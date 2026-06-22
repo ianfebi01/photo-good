@@ -1,8 +1,14 @@
+import type { Metadata } from 'next'
 import Link from 'next/link'
 import { ArrowRight, Camera, Images, ShieldCheck, Sparkles } from 'lucide-react'
 
 import { requireUser } from '@/lib/auth/require'
 import { hasRole } from '@/lib/auth/types'
+
+export const metadata: Metadata = {
+  title       : "Dashboard — Photo Good",
+  description : "Manage your photo booth, frames, and account from the Photo Good dashboard.",
+}
 
 export default async function DashboardPage() {
   const user = await requireUser()

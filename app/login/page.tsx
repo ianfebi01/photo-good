@@ -1,7 +1,13 @@
+import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 
 import { GoogleSignInButton } from '@/components/auth/GoogleSignInButton'
 import { getCurrentUser } from '@/lib/auth/session'
+
+export const metadata: Metadata = {
+  title       : "Sign In — Photo Good",
+  description : "Sign in to Photo Good to manage your photo booth, frames, and dashboard access.",
+}
 
 export default async function LoginPage() {
   const user = await getCurrentUser()
