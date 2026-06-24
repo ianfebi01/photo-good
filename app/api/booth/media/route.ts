@@ -49,13 +49,13 @@ export async function POST( request : Request ) {
 
     // Upload directly to R2 under 'captures/' folder
     const key = `captures/${filename}`
-    await uploadToR2( {
+    const { publicUrl } = await uploadToR2( {
       key,
       body        : buffer,
       contentType : mime,
     } )
 
-    const url = `/api/captures/${filename}`
+    const url = publicUrl
     const result = await db.query(
       `INSERT INTO app_media (booth_id, filename, url, mime_type, size_bytes)
        VALUES ($1, $2, $3, $4, $5)
