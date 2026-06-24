@@ -73,7 +73,9 @@ export default async function DashboardResultsPage() {
               </thead>
               <tbody className="divide-y divide-neutral-100">
                 {sessions.map( ( s ) => (
-                  <tr key={s.session_id} className="hover:bg-neutral-50/50 transition-colors">
+                  <tr key={s.session_id}
+                    className="hover:bg-neutral-50/50 transition-colors"
+                  >
                     <td className="px-6 py-4">
                       <code className="text-xs font-mono text-neutral-600">{s.session_id}</code>
                     </td>
@@ -106,9 +108,9 @@ export default async function DashboardResultsPage() {
                     </td>
                     <td className="px-6 py-4 text-xs text-neutral-500">
                       {new Date( s.latest_at ).toLocaleDateString( 'en-US', {
-                        month : 'short',
-                        day   : 'numeric',
-                        hour  : 'numeric',
+                        month  : 'short',
+                        day    : 'numeric',
+                        hour   : 'numeric',
                         minute : '2-digit',
                       } )}
                     </td>
@@ -121,6 +123,8 @@ export default async function DashboardResultsPage() {
                     <td className="px-6 py-4 text-right">
                       <Link
                         href={`/r/${s.session_id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
                         className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
                       >
                         View <ExternalLink className="size-3" />
