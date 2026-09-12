@@ -57,11 +57,11 @@ function ResultContent( { data } : { data : SessionResults } ) {
   return (
     <div className="container px-4 py-8 mx-auto overflow-auto lg:py-12 grow scrollbar-none">
       {/* ── Header ─────────────────────────────────────────────── */}
-      <div className="mb-10 space-y-2 text-center">
+      <div className="mb-10 space-y-2 text-center font-jakarta">
         {boothName && (
           <p className="text-xs font-semibold text-neutral-400 uppercase tracking-wider">{boothName}</p>
         )}
-        <h2 className="text-3xl font-bold tracking-tight lg:text-4xl text-foreground">
+        <h2 className="text-3xl font-bold tracking-tight lg:text-4xl text-foreground font-sans">
           Your photos are ready!
         </h2>
         <p className="max-w-md mx-auto text-sm text-muted-foreground lg:text-base">
