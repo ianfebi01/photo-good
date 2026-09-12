@@ -2,6 +2,8 @@ import { loadAllFrames, BUILT_IN_KEYS } from '@/lib/photobooth/config'
 import { getAllFramesFromDb } from '@/lib/photobooth/frames.db'
 import { ensureAuthSchema } from '@/lib/auth/schema'
 import { requireBooth } from '@/lib/auth/booth'
+import { isFrameEnabledForBooth } from '@/lib/photobooth/booth-settings'
+import { getBoothSettingsForBooth } from '@/lib/photobooth/booth-settings.server'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -42,8 +44,12 @@ export async function GET( request : Request ) {
       } ) ),
     ]
 
+    // Only expose the frames the admin enabled for this booth.
+    const settings = await getBoothSettingsForBooth( auth.id )
+    const allowedFrames = frames.filter( ( f ) => isFrameEnabledForBooth( settings, f.key ) )
+
     return Response.json(
-      { frames },
+      { frames : allowedFrames },
       {
         headers : {
           'Access-Control-Allow-Origin'  : '*',

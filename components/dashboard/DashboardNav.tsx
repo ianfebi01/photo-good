@@ -25,7 +25,10 @@ export function DashboardNav( { user }: { user: AuthUser } ) {
       {navItems.map( ( item ) => {
         if ( item.role && !hasRole( user.role, item.role ) ) return null
         const Icon = item.icon
+        // Keep the section highlighted on nested routes, but never let the
+        // dashboard root match every child page.
         const isActive = pathname === item.href
+          || ( item.href !== '/dashboard' && pathname.startsWith( `${item.href}/` ) )
 
         return (
           <Link

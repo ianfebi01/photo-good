@@ -20,6 +20,7 @@ import {
   PaginationPrevious,
 } from '@/components/ui/pagination'
 import {
+  FRAMES_PAGE_SIZE,
   FRAMES_QUERY_KEY,
   deleteFrame,
   getFrames,
@@ -28,7 +29,7 @@ import { AddFrameDialog } from '@/components/booth/AddFrameDialog'
 import { DashboardPageHeader } from './DashboardPageHeader'
 import { WarningDialog } from '@/components/ui/warning-dialog'
 
-const ITEMS_PER_PAGE = 8
+const ITEMS_PER_PAGE = FRAMES_PAGE_SIZE
 
 export function FramesManager() {
   const queryClient = useQueryClient()

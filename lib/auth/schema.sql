@@ -46,9 +46,12 @@ CREATE TABLE IF NOT EXISTS app_booths (
   api_key TEXT NOT NULL UNIQUE,
   location TEXT,
   active BOOLEAN NOT NULL DEFAULT true,
+  settings JSONB NOT NULL DEFAULT '{"paymentEnabled": false, "disabledFrameKeys": [], "timerEnabled": false, "captureCounterEnabled": false}'::jsonb,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+ALTER TABLE app_booths ADD COLUMN IF NOT EXISTS settings JSONB NOT NULL DEFAULT '{"paymentEnabled": false, "disabledFrameKeys": [], "timerEnabled": false, "captureCounterEnabled": false}'::jsonb;
 
 CREATE TABLE IF NOT EXISTS app_media (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

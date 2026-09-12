@@ -10,6 +10,9 @@ type Status = {
 export const FRAMES_QUERY_KEY = ['frames'] as const
 export const CAMERA_STATUS_QUERY_KEY = ['camera-status'] as const
 
+/** Shared page size so the frames page and booth settings stay in sync. */
+export const FRAMES_PAGE_SIZE = 8
+
 export type PageArg = { page: number; limit: number }
 
 export type FramesResponse = {

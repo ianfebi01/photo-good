@@ -1,11 +1,13 @@
 'use client'
 import { useState } from 'react'
+import Link from 'next/link'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Monitor, Power, PowerOff, Trash2, Loader2, Radio } from 'lucide-react'
+import { Monitor, Power, PowerOff, Settings2, Trash2, Loader2, Radio } from 'lucide-react'
 
-import { Button } from '@/components/ui/button'
+import { Button, buttonVariants } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { WarningDialog } from '@/components/ui/warning-dialog'
+import { cn } from '@/lib/utils'
 import { DashboardPageHeader } from './DashboardPageHeader'
 import { AddBoothDialog } from './AddBoothDialog'
 import {
@@ -218,6 +220,13 @@ export function BoothsManager() {
                         <Power className="size-3.5" />
                       )}
                     </Button>
+                    <Link
+                      href={`/dashboard/booths/${b.id}`}
+                      title="Booth settings"
+                      className={cn( buttonVariants( { variant : 'outline', size : 'sm' } ) )}
+                    >
+                      <Settings2 className="size-3.5" />
+                    </Link>
                     <WarningDialog
                       title="Delete Booth"
                       description={<>Are you sure you want to delete <span className="font-semibold">{b.name}</span>? This will stop the booth immediately.</>}
