@@ -1,27 +1,11 @@
+import type { BoothClientSettings } from '@/types/booth'
+
 /**
- * Per-booth settings consumed by the booth client.
- *
- * These live in `app_booths.settings` (JSONB) and are exposed to the booth
- * client through `GET /api/booth/settings`. They only control what the booth
- * client renders — they never disable the underlying APIs.
+ * The settings shape is defined once, in `types/booth.ts`, because that file is
+ * the stand-alone contract the booth client consumes. Re-exported here so
+ * server code has a single import site.
  */
-export type BoothClientSettings = {
-  /** Show the payment step before a session starts. */
-  paymentEnabled : boolean
-  /**
-   * Frame keys hidden from this booth. Empty means every frame is available,
-   * including frames uploaded later.
-   *
-   * A deny-list (rather than an allow-list) keeps the setting usable from a
-   * paginated frame picker — toggling one frame never requires knowing the
-   * full catalog.
-   */
-  disabledFrameKeys : string[]
-  /** Show the countdown timer before each capture. */
-  timerEnabled : boolean
-  /** Show the "photo X of Y" capture counter. */
-  captureCounterEnabled : boolean
-}
+export type { BoothClientSettings }
 
 /** Settings applied to new booths and used as fallback for legacy rows. */
 export const DEFAULT_BOOTH_SETTINGS : BoothClientSettings = {
