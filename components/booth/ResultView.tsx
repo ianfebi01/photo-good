@@ -1,5 +1,6 @@
 'use client'
 import { useQuery } from '@tanstack/react-query'
+import type { MouseEvent } from 'react'
 import { Download, Images, Film, Clapperboard, Repeat, ImageDown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -8,6 +9,7 @@ import {
   getResults,
   type SessionResults,
 } from '@/lib/photobooth/results.query'
+import { downloadMedia } from '@/lib/photobooth/download'
 import Image from 'next/image'
 import { Swiper, SwiperSlide } from 'swiper/react'
 import { Pagination } from 'swiper/modules'
@@ -58,6 +60,23 @@ function ResultContent( { data } : { data : SessionResults } ) {
   const countdowns = results.filter( ( r ) => r.media_type === 'countdown' )
   const loop = results.find( ( r ) => r.media_type === 'loop' )
   const frameKey = strip?.frame_key ?? loop?.frame_key ?? null
+  const stripFilename = `photobooth-${frameKey ?? 'strip'}.jpg`
+  const mashupFilename = 'countdown-mashup.webm'
+  const loopFilename = `photobooth-${frameKey ?? 'session'}-loop.webm`
+
+  // `<a download>` is ignored cross-origin, so fetch the bytes and save via blob.
+  const handleDownload = (
+    event : MouseEvent<HTMLAnchorElement>,
+    url : string,
+    filename : string,
+  ) => {
+    event.preventDefault()
+
+    void downloadMedia( url, filename ).catch( () => {
+      // Fetch failed — fall back to the plain link so the media is still reachable.
+      window.open( url, '_blank', 'noopener' )
+    } )
+  }
 
   return (
     <div className="container px-4 py-8 mx-auto overflow-auto lg:py-12 grow scrollbar-none">
@@ -109,11 +128,13 @@ function ResultContent( { data } : { data : SessionResults } ) {
                   alt="Composed photo strip"
                   className="w-full h-full object-contain"
                   fill
+                  quality={80}
                 />
               </div>
               <a
                 href={strip.url}
-                download={`photobooth-${frameKey ?? 'strip'}.jpg`}
+                download={stripFilename}
+                onClick={( e ) => handleDownload( e, strip.url, stripFilename )}
                 className="block"
               >
                 <Button
@@ -166,7 +187,8 @@ function ResultContent( { data } : { data : SessionResults } ) {
               </div>
               <a
                 href={mashup.url}
-                download="countdown-mashup.webm"
+                download={mashupFilename}
+                onClick={( e ) => handleDownload( e, mashup.url, mashupFilename )}
                 className="block"
               >
                 <Button
@@ -219,7 +241,8 @@ function ResultContent( { data } : { data : SessionResults } ) {
                 </div>
                 <a
                   href={loop.url}
-                  download={`photobooth-${frameKey ?? 'session'}-loop.webm`}
+                  download={loopFilename}
+                  onClick={( e ) => handleDownload( e, loop.url, loopFilename )}
                   className="block"
                 >
                   <Button
@@ -265,7 +288,7 @@ function ResultContent( { data } : { data : SessionResults } ) {
                 >
                   {countdowns.map( ( clip, i ) => (
                     <SwiperSlide key={clip.url}>
-                      <div className="relative aspect-3/2 overflow-hidden rounded-lg bg-neutral-100 flex items-center justify-center">
+                      <div className="relative aspect-3/2 overflow-hidden bg-neutral-100 flex items-center justify-center">
                         <video
                           autoPlay
                           loop
@@ -280,13 +303,14 @@ function ResultContent( { data } : { data : SessionResults } ) {
                             type="video/webm"
                           />
                         </video>
-                        <div className="absolute bottom-0 inset-x-0 flex items-center justify-between gap-4 text-white rounded-b-lg overflow-hidden">
+                        <div className="absolute bottom-0 inset-x-0 flex items-center justify-between gap-4 text-white overflow-hidden">
                           <div className="absolute w-full bottom-0 bg-linear-to-t from-black/50 to-transparent h-full z-0" />
                           <div className="flex items-center justify-between relative z-1 w-full pb-2 pt-8 px-4">
-                            <span className="text-lg font-medium">Clip {i + 1}</span>
+                            <span className="text-md font-jakarta font-medium">Clip {i + 1}</span>
                             <a
                               href={clip.url}
                               download={`countdown-${i + 1}.webm`}
+                              onClick={( e ) => handleDownload( e, clip.url, `countdown-${i + 1}.webm` )}
                             >
                               <Button
                                 variant="ghost"
@@ -330,13 +354,15 @@ function ResultContent( { data } : { data : SessionResults } ) {
                     key={img.url}
                     href={img.url}
                     download={`photo-${i + 1}.jpg`}
-                    className="group relative overflow-hidden rounded-lg border border-neutral-200 hover:border-neutral-400 transition shadow-sm"
+                    onClick={( e ) => handleDownload( e, img.url, `photo-${i + 1}.jpg` )}
+                    className="relative aspect-3/2 overflow-hidden bg-neutral-100 flex items-center justify-center"
                   >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
+                    <Image
                       src={img.url}
                       alt={`Photo ${i + 1}`}
-                      className="w-full aspect-3/2 object-cover"
+                      className="w-full h-full object-cover"
+                      fill
+                      quality={30}
                     />
                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition flex items-center justify-center">
                       <Download className="size-5 text-white opacity-0 group-hover:opacity-100 transition drop-shadow-lg" />
