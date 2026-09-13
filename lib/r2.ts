@@ -21,6 +21,20 @@ function getClient(): S3Client {
 }
 
 /**
+ * Resolve a stored domain-less path (e.g. `/captures/booth-abc.jpg`) to its
+ * public URL using `R2_PUBLIC_URL`.
+ *
+ * Media rows store paths instead of absolute URLs, so a bucket domain change
+ * never invalidates them. `scripts/migrate-media-urls.ts` converts old rows.
+ */
+export function r2PublicUrl( path: string ): string {
+  const base = ( R2_PUBLIC_URL ?? '' ).replace( /\/+$/, '' )
+  const normalized = path.startsWith( '/' ) ? path : `/${path}`
+
+  return base ? `${base}${normalized}` : normalized
+}
+
+/**
  * Upload a buffer directly to R2 from the server.
  */
 export async function uploadToR2( {

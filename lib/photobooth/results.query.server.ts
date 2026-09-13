@@ -2,6 +2,7 @@ import 'server-only'
 
 import { db } from '@/lib/db'
 import { ensureAuthSchema } from '@/lib/auth/schema'
+import { r2PublicUrl } from '@/lib/r2'
 import type { BoothMediaType } from '@/types/booth'
 
 export type ResultRow = {
@@ -39,6 +40,8 @@ export async function getResultsForSsr( sessionId : string ) : Promise<SessionRe
   return {
     sessionId,
     boothName : rows[0].booth_name,
-    results   : rows,
+    // Rows store the domain-less path — rebuild the URL so a bucket domain
+    // change never invalidates stored sessions.
+    results   : rows.map( ( r ) => ( { ...r, url : r2PublicUrl( r.url ) } ) ),
   }
 }

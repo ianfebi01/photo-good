@@ -1,6 +1,7 @@
 import { db } from '@/lib/db'
 import { requireBooth } from '@/lib/auth/booth'
 import { ensureAuthSchema } from '@/lib/auth/schema'
+import { r2PublicUrl } from '@/lib/r2'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -156,7 +157,8 @@ export async function GET( request : Request ) {
     results   : rows.map( ( r ) => ( {
       id        : r.id,
       mediaType : r.media_type,
-      url       : r.url,
+      // Stored value is the domain-less path; rebuild the URL from it.
+      url       : r2PublicUrl( r.url ),
       frameKey  : r.frame_key,
       createdAt : r.created_at,
       expiresAt : r.expires_at,

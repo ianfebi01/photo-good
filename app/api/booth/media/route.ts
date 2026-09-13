@@ -1,7 +1,7 @@
 import { db } from '@/lib/db'
 import { requireBooth } from '@/lib/auth/booth'
 import { ensureAuthSchema } from '@/lib/auth/schema'
-import { uploadToR2 } from '@/lib/r2'
+import { r2PublicUrl, uploadToR2 } from '@/lib/r2'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -49,22 +49,27 @@ export async function POST( request : Request ) {
 
     // Upload directly to R2 under 'captures/' folder
     const key = `captures/${filename}`
-    const { publicUrl } = await uploadToR2( {
+    await uploadToR2( {
       key,
       body        : buffer,
       contentType : mime,
     } )
 
-    const url = publicUrl
+    // Persist the domain-less path — never the bucket URL — so the media keeps
+    // working if the bucket domain changes. The URL is rebuilt on every read.
+    const mediaPath = `/${key}`
     const result = await db.query(
       `INSERT INTO app_media (booth_id, filename, url, mime_type, size_bytes)
        VALUES ($1, $2, $3, $4, $5)
        RETURNING id, filename, url, mime_type, size_bytes, created_at`,
-      [auth.id, filename, url, mime, buffer.length]
+      [auth.id, filename, mediaPath, mime, buffer.length]
     )
 
+    // Respond with the absolute URL so existing clients stay unchanged.
+    const media = { ...result.rows[0], url : r2PublicUrl( mediaPath ) }
+
     return Response.json(
-      { media : result.rows[0] },
+      { media },
       {
         status  : 201,
         headers : {

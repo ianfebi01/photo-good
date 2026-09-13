@@ -59,6 +59,10 @@ export type BoothSettingsResponse = {
 export type BoothMedia = {
   id : string
   filename : string
+  /**
+   * Absolute public URL, rebuilt from the stored domain-less path on every read.
+   * The database never stores the bucket domain.
+   */
   url : string
   mime_type : string
   size_bytes : number
