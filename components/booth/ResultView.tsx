@@ -128,7 +128,7 @@ function ResultContent( { data } : { data : SessionResults } ) {
                   alt="Composed photo strip"
                   className="w-full h-full object-contain"
                   fill
-                  quality={80}
+                  sizes=''
                 />
               </div>
               <a
