@@ -8,6 +8,11 @@ import {
   getResults,
   type SessionResults,
 } from '@/lib/photobooth/results.query'
+import Image from 'next/image'
+import { Swiper, SwiperSlide } from 'swiper/react'
+import { Pagination } from 'swiper/modules'
+import 'swiper/css'
+import 'swiper/css/pagination'
 
 export function ResultView( { sessionId } : { sessionId : string } ) {
   const {
@@ -98,12 +103,14 @@ function ResultContent( { data } : { data : SessionResults } ) {
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={strip.url}
-                alt="Composed photo strip"
-                className="w-full border rounded-lg shadow-sm"
-              />
+              <div className='relative aspect-4/6 overflow-hidden bg-neutral-100 flex items-center justify-center'>
+                <Image
+                  src={strip.url}
+                  alt="Composed photo strip"
+                  className="w-full h-full object-contain"
+                  fill
+                />
+              </div>
               <a
                 href={strip.url}
                 download={`photobooth-${frameKey ?? 'strip'}.jpg`}
@@ -141,20 +148,22 @@ function ResultContent( { data } : { data : SessionResults } ) {
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
-              <video
-                autoPlay
-                loop
-                muted
-                playsInline
-                webkit-playsinline="true"
-                preload="auto"
-                className="w-full border rounded-lg shadow-sm"
-              >
-                <source
-                  src={mashup.url}
-                  type="video/webm"
-                />
-              </video>
+              <div className='relative aspect-4/6 overflow-hidden bg-neutral-100 flex items-center justify-center'>
+                <video
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                  webkit-playsinline="true"
+                  preload="auto"
+                  className="w-full h-full"
+                >
+                  <source
+                    src={mashup.url}
+                    type="video/webm"
+                  />
+                </video>
+              </div>
               <a
                 href={mashup.url}
                 download="countdown-mashup.webm"
@@ -191,21 +200,23 @@ function ResultContent( { data } : { data : SessionResults } ) {
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
-                <video
-                  loop
-                  autoPlay
-                  muted
-                  playsInline
-                  webkit-playsinline="true"
-                  preload="auto"
-                  className="w-full border rounded-lg shadow-sm"
-                  style={{ aspectRatio : '3/2', height : 'auto' }}
-                >
-                  <source
-                    src={loop.url}
-                    type="video/webm"
-                  />
-                </video>
+                <div className='relative aspect-3/2 overflow-hidden bg-neutral-100 flex items-center justify-center'>
+                  <video
+                    loop
+                    autoPlay
+                    muted
+                    playsInline
+                    webkit-playsinline="true"
+                    preload="auto"
+                    className="w-full h-full"
+                    style={{ aspectRatio : '3/2', height : 'auto' }}
+                  >
+                    <source
+                      src={loop.url}
+                      type="video/webm"
+                    />
+                  </video>
+                </div>
                 <a
                   href={loop.url}
                   download={`photobooth-${frameKey ?? 'session'}-loop.webm`}
@@ -235,54 +246,62 @@ function ResultContent( { data } : { data : SessionResults } ) {
                   <div>
                     <CardTitle className="text-base">Raw Countdown Clips</CardTitle>
                     <CardDescription>
-                      {countdowns.length} clip{countdowns.length > 1 ? 's' : ''} &bull; scroll to view
+                      {countdowns.length} clip{countdowns.length > 1 ? 's' : ''} &bull; swipe to view
                     </CardDescription>
                   </div>
                 </div>
               </CardHeader>
               <CardContent className="overflow-hidden grow">
-                <div className="flex h-full gap-3 overflow-x-auto scrollbar-thin scrollbar-thumb-neutral-300">
+                {/* paddingBottom is inline because Swiper's own `.swiper { padding: 0 }`
+                    beats utility classes — the space below holds the pagination dots. */}
+                <Swiper
+                  modules={[Pagination]}
+                  pagination={{ clickable : true }}
+                  slidesPerView={1}
+                  spaceBetween={12}
+                  grabCursor
+                  style={{ paddingBottom : '2rem' }}
+                  className="w-full [--swiper-pagination-color:#171717] [--swiper-pagination-bullet-inactive-color:#a3a3a3] [--swiper-pagination-bullet-inactive-opacity:1] [--swiper-pagination-bullet-size:6px]"
+                >
                   {countdowns.map( ( clip, i ) => (
-                    <div
-                      key={clip.url}
-                      className="h-full rounded-lg shadow-sm relative min-h-50"
-                      style={{ aspectRatio : 3 / 2, width : 'auto' }}
-                    >
-                      <video
-                        autoPlay
-                        loop
-                        muted
-                        playsInline
-                        webkit-playsinline="true"
-                        preload="auto"
-                        className="w-full h-full object-cover rounded-lg"
-                      >
-                        <source
-                          src={clip.url}
-                          type="video/webm"
-                        />
-                      </video>
-                      <div className="absolute bottom-0 inset-x-0 flex items-center justify-between gap-4 text-white rounded-b-lg overflow-hidden">
-                        <div className="absolute w-full bottom-0 bg-linear-to-t from-black/50 to-transparent h-full z-0" />
-                        <div className="flex items-center justify-between relative z-1 w-full pb-2 pt-8 px-4">
-                          <span className="text-lg font-medium">Clip {i + 1}</span>
-                          <a
-                            href={clip.url}
-                            download={`countdown-${i + 1}.webm`}
-                          >
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="size-8"
+                    <SwiperSlide key={clip.url}>
+                      <div className="relative aspect-3/2 overflow-hidden rounded-lg bg-neutral-100 flex items-center justify-center">
+                        <video
+                          autoPlay
+                          loop
+                          muted
+                          playsInline
+                          webkit-playsinline="true"
+                          preload="auto"
+                          className="w-full h-full object-contain"
+                        >
+                          <source
+                            src={clip.url}
+                            type="video/webm"
+                          />
+                        </video>
+                        <div className="absolute bottom-0 inset-x-0 flex items-center justify-between gap-4 text-white rounded-b-lg overflow-hidden">
+                          <div className="absolute w-full bottom-0 bg-linear-to-t from-black/50 to-transparent h-full z-0" />
+                          <div className="flex items-center justify-between relative z-1 w-full pb-2 pt-8 px-4">
+                            <span className="text-lg font-medium">Clip {i + 1}</span>
+                            <a
+                              href={clip.url}
+                              download={`countdown-${i + 1}.webm`}
                             >
-                              <Download className="size-6" />
-                            </Button>
-                          </a>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="size-8"
+                              >
+                                <Download className="size-6" />
+                              </Button>
+                            </a>
+                          </div>
                         </div>
                       </div>
-                    </div>
+                    </SwiperSlide>
                   ) )}
-                </div>
+                </Swiper>
               </CardContent>
             </Card>
           )}
