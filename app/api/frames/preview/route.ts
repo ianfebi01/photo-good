@@ -12,6 +12,13 @@ export const runtime = 'nodejs'
 const ALLOWED_TYPES = new Set( ['image/png'] )
 const MAX_BYTES = 8 * 1024 * 1024 // 8 MB
 
+// Composed previews are only ever rendered as small thumbnails (frame pickers,
+// dashboard grid), while the frame artwork itself is 1200×3600+ — so serve a
+// downscaled PNG instead. Callers may override the width with `?w=`.
+const DEFAULT_PREVIEW_WIDTH = 480
+const MIN_PREVIEW_WIDTH = 64
+const MAX_PREVIEW_WIDTH = 1600
+
 /**
  * The frame image with its green slot panels turned transparent, so photos
  * placed underneath show through while the surrounding artwork stays on top.
@@ -102,6 +109,11 @@ export async function GET( request: Request ) {
   const raw = searchParams.get( 'raw' ) === 'true'
   const overlay = searchParams.get( 'overlay' ) === 'true'
 
+  const requestedWidth = Number.parseInt( searchParams.get( 'w' ) ?? '', 10 )
+  const previewWidth = Number.isFinite( requestedWidth )
+    ? Math.min( Math.max( requestedWidth, MIN_PREVIEW_WIDTH ), MAX_PREVIEW_WIDTH )
+    : DEFAULT_PREVIEW_WIDTH
+
   if ( !key ) {
     return Response.json( { error : 'Missing key parameter' }, { status : 400 } )
   }
@@ -166,7 +178,14 @@ export async function GET( request: Request ) {
       } )
     }
 
-    return new Response( new Uint8Array( composed ), {
+    // The composite is built at native frame size, but these previews are only
+    // ever shown as small thumbnails — downscale before sending.
+    const thumbnail = await sharp( composed )
+      .resize( { width : previewWidth, withoutEnlargement : true } )
+      .png()
+      .toBuffer()
+
+    return new Response( new Uint8Array( thumbnail ), {
       headers : {
         'Content-Type'  : 'image/png',
         'Cache-Control' : 'no-store, no-cache, must-revalidate, proxy-revalidate',
