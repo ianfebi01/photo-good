@@ -17,7 +17,6 @@ const EXT_BY_MIME : Record<string, string> = {
   'image/heic'      : '.heic',
   'video/mp4'       : '.mp4',
   'video/quicktime' : '.mov',
-  'video/webm'      : '.webm',
 }
 
 /**
@@ -26,19 +25,20 @@ const EXT_BY_MIME : Record<string, string> = {
  * The mime type wins, because the uploaded filename can lie (and the booth
  * sends names like `countdown-abc-0.mp4` that we must not trust blindly).
  * Only when the mime is unknown do we fall back to the original filename's
- * extension, then to a format-appropriate default. Previously every video was
- * stored as `.webm`, which mislabelled MP4 uploads while their `mime_type`
- * still said `video/mp4`.
+ * extension, then to a format-appropriate default. WebM is not part of the
+ * pipeline, so a `.webm` name never decides the stored extension either —
+ * videos land as `.mp4`.
  */
 function extensionFor( mime : string, originalName : string ) : string {
   const normalized = mime.toLowerCase().split( ';' )[0].trim()
   const known = EXT_BY_MIME[normalized]
   if ( known ) return known
 
-  const fromName = /\.([a-z0-9]{2,4})$/i.exec( originalName )?.[1]
-  if ( fromName ) return `.${fromName.toLowerCase()}`
+  const isVideo = normalized.startsWith( 'video/' )
+  const fromName = /\.([a-z0-9]{2,4})$/i.exec( originalName )?.[1]?.toLowerCase()
+  if ( fromName && fromName !== 'webm' ) return `.${fromName}`
 
-  return normalized.startsWith( 'video/' ) ? '.mp4' : '.jpg'
+  return isVideo ? '.mp4' : '.jpg'
 }
 
 /** POST — upload a single media file. Returns the media row ID for use in result creation. */
@@ -62,6 +62,14 @@ export async function POST( request : Request ) {
     }
     if ( !file.type.startsWith( 'image/' ) && !file.type.startsWith( 'video/' ) ) {
       return Response.json( { error : 'File must be an image or video' }, { status : 400 } )
+    }
+    // WebM is not part of the booth pipeline any more — every video is
+    // MP4/H.264, so a VP9/VP8 upload would only break playback and downloads.
+    if ( file.type === 'video/webm' ) {
+      return Response.json(
+        { error : 'WebM is not supported — upload MP4/H.264 video' },
+        { status : 400 },
+      )
     }
 
     mime = file.type

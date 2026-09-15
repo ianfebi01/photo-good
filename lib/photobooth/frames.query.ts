@@ -311,47 +311,6 @@ export async function generateSessionLoopVideo( {
   return parseJson( response, 'Loop video generation failed' )
 }
 
-/** Upload a countdown video clip (webm) recorded during the 3s countdown. */
-export async function uploadCountdownClip( {
-  sessionId,
-  index,
-  blob,
-}: {
-  sessionId: string
-  index: number
-  blob: Blob
-} ): Promise<{ file: string; url: string }> {
-  const form = new FormData()
-  form.append( 'file', blob, `countdown-${sessionId}-${index}.webm` )
-  form.append( 'sessionId', sessionId )
-  form.append( 'index', String( index ) )
-  form.append( 'kind', 'countdown' )
-
-  const response = await fetch( '/api/captures/upload', {
-    method : 'POST',
-    body   : form,
-  } )
-
-  return parseJson( response, 'Countdown video upload failed' )
-}
-
-/** Convert a recorded countdown clip (webm) to a downloadable MP4. */
-export async function convertCountdownClip( {
-  file,
-}: {
-  file: string
-} ): Promise<{ file: string; url: string } | null> {
-  const response = await fetch( '/api/captures/countdown-mp4', {
-    method  : 'POST',
-    headers : { 'Content-Type' : 'application/json' },
-    body    : JSON.stringify( { file } ),
-  } )
-  // 501 means ffmpeg not available — return null gracefully
-  if ( response.status === 501 ) return null
-
-  return parseJson( response, 'MP4 conversion failed' )
-}
-
 /* ── Frame upload helper (proxied through server) ───────────────── */
 
 export async function uploadFrameWithSlots( {

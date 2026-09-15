@@ -61,8 +61,8 @@ function ResultContent( { data } : { data : SessionResults } ) {
   const loop = results.find( ( r ) => r.media_type === 'loop' )
   const frameKey = strip?.frame_key ?? loop?.frame_key ?? null
   const stripFilename = `photobooth-${frameKey ?? 'strip'}.jpg`
-  const mashupFilename = 'countdown-mashup.webm'
-  const loopFilename = `photobooth-${frameKey ?? 'session'}-loop.webm`
+  const mashupFilename = 'countdown-mashup.mp4'
+  const loopFilename = `photobooth-${frameKey ?? 'session'}-loop.mp4`
 
   // `<a download>` is ignored cross-origin, so fetch the bytes and save via blob.
   const handleDownload = (
@@ -181,7 +181,7 @@ function ResultContent( { data } : { data : SessionResults } ) {
                 >
                   <source
                     src={mashup.url}
-                    type="video/webm"
+                    type="video/mp4"
                   />
                 </video>
               </div>
@@ -235,7 +235,7 @@ function ResultContent( { data } : { data : SessionResults } ) {
                   >
                     <source
                       src={loop.url}
-                      type="video/webm"
+                      type="video/mp4"
                     />
                   </video>
                 </div>
@@ -300,7 +300,7 @@ function ResultContent( { data } : { data : SessionResults } ) {
                         >
                           <source
                             src={clip.url}
-                            type="video/webm"
+                            type="video/mp4"
                           />
                         </video>
                         <div className="absolute bottom-0 inset-x-0 flex items-center justify-between gap-4 text-white overflow-hidden">
@@ -309,8 +309,8 @@ function ResultContent( { data } : { data : SessionResults } ) {
                             <span className="text-md font-jakarta font-medium">Clip {i + 1}</span>
                             <a
                               href={clip.url}
-                              download={`countdown-${i + 1}.webm`}
-                              onClick={( e ) => handleDownload( e, clip.url, `countdown-${i + 1}.webm` )}
+                              download={`countdown-${i + 1}.mp4`}
+                              onClick={( e ) => handleDownload( e, clip.url, `countdown-${i + 1}.mp4` )}
                             >
                               <Button
                                 variant="ghost"

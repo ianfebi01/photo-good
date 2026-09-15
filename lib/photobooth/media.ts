@@ -5,7 +5,7 @@ import { readFile, writeFile, mkdir } from "node:fs/promises";
 import path from "node:path";
 import sharp from "sharp";
 
-import { CAPTURES_DIR, getFrame } from "./config";
+import { CAPTURES_DIR, getFrame, type FrameDef } from "./config";
 import { getFrameFromDb } from "./frames.db";
 import { getR2ObjectBuffer } from "@/lib/r2";
 import { clearGreenPixels } from "./slots";
@@ -233,9 +233,32 @@ export async function generateSlideshowVideo(
 // ── Countdown video mashup onto frame ─────────────────────────────
 
 /**
- * Overlay each countdown .webm clip into its corresponding slot on the
+ * Result video canvas — the frame's own pixels, rounded down to even numbers.
+ *
+ * libx264 with yuv420p needs both dimensions even, so a 1333×1999 frame can't be
+ * encoded as it stands. Encoding at the frame's size (rather than the 4×6 print
+ * size) keeps the artwork unresampled, so decorations stay as crisp as the strip
+ * the guest prints from the same design.
+ */
+function outputSize( frame: FrameDef ): { width: number; height: number } {
+  return {
+    width  : Math.floor( frame.width / 2 ) * 2,
+    height : Math.floor( frame.height / 2 ) * 2,
+  };
+}
+
+/**
+ * Output cadence. The clips are recorded at this rate and the canvas is built at
+ * it too, so the mashup runs exactly as long as the countdown — a 24 fps slot
+ * chain over a 25 fps canvas rounded 5.00s down to 4.96s.
+ */
+const OUT_FPS = 25
+
+/**
+ * Overlay each countdown clip (MP4/H.264) into its corresponding slot on the
  * frame image, producing a single combined MP4. Each clip is scaled to
- * fit its slot rect; the output is as long as the shortest clip.
+ * fit its slot rect; the output runs as long as the countdown the guest saw, so
+ * a 5s countdown yields a 5s video.
  */
 export async function generateCountdownMashup(
   sessionId: string,
@@ -257,6 +280,7 @@ export async function generateCountdownMashup(
 
   const vidName = `countdown-mashup-${sessionId}.mp4`
   const outPath = path.join( CAPTURES_DIR, vidName )
+  const { width: outW, height: outH } = outputSize( frame )
 
   // Build filter graph:
   // 1. Black canvas at frame size
@@ -268,7 +292,7 @@ export async function generateCountdownMashup(
 
   // Synthetic black canvas [0:v]
   filters.push(
-    `color=c=black:s=${frame.width}x${frame.height}:d=9999,format=rgba[canvas]`,
+    `color=c=black:s=${frame.width}x${frame.height}:d=9999:r=${OUT_FPS},format=rgba[canvas]`,
   )
   let lastOut = "canvas"
 
@@ -284,7 +308,7 @@ export async function generateCountdownMashup(
 
     const tag = `v${i}`
     filters.push(
-      `[${idx}:v]scale=${slot.width}:${slot.height}:force_original_aspect_ratio=increase,crop=${slot.width}:${slot.height},setsar=1,fps=24,format=rgba[${tag}]`,
+      `[${idx}:v]scale=${slot.width}:${slot.height}:force_original_aspect_ratio=increase,crop=${slot.width}:${slot.height},setsar=1,fps=${OUT_FPS},format=rgba[${tag}]`,
     )
 
     const outTag = i === countdownFiles.length - 1 ? "clips" : `o${i}`
@@ -301,7 +325,7 @@ export async function generateCountdownMashup(
   filters.push(
     `[${frameIdx}:v]format=rgba[fk]`,
   )
-  filters.push( `[${lastOut}][fk]overlay=0:0,scale=720:-2,format=yuv420p[out]` )
+  filters.push( `[${lastOut}][fk]overlay=0:0,scale=${outW}:${outH}:flags=lanczos,format=yuv420p[out]` )
 
   const filterComplex = filters.join( ";" )
 
@@ -312,11 +336,18 @@ export async function generateCountdownMashup(
       "-filter_complex", filterComplex,
       "-map", "[out]",
       "-c:v", "libx264",
-      "-preset", "fast",
-      "-crf", "23",
+      // Near-lossless: this is the last encode generation, and the clips inside
+      // it are already upscaled live-view frames. Measured against a lossless
+      // master of the same composite: CRF 15 is already SSIM 0.9992, CRF 12 is
+      // 0.9995 at ~35% more bytes — a cheap margin for real camera motion.
+      "-preset", "slow",
+      "-crf", "12",
       "-pix_fmt", "yuv420p",
       "-profile:v", "main",
-      "-level", "4.0",
+      // Level 5.0 is the lowest level whose frame-size limit covers this canvas:
+      // 1332×1998 is 10,500 macroblocks per frame, past level 4.2's 8,704 (and
+      // level 4.0's 8,192).
+      "-level", "5.0",
       "-tag:v", "avc1",
       "-movflags", "+faststart",
       outPath,
@@ -448,75 +479,6 @@ export async function generateLoopVideo(
   } )
 
   return { file : vidName, url : `/api/captures/${vidName}` }
-}
-
-// ── Countdown clip → MP4 conversion ───────────────────────────────
-
-/**
- * Convert a single recorded countdown `.webm` clip into an MP4 with H.264 so
- * it downloads/plays everywhere (Safari, iOS, QuickTime won't open VP9 webm).
- * The result is cached on disk and reused on subsequent requests.
- */
-export async function convertCountdownToMp4(
-  webmFile: string,
-): Promise<{ file: string; url: string } | null> {
-  const base = path.basename( webmFile )
-  if ( !base.toLowerCase().endsWith( ".webm" ) ) return null
-
-  const hasFfmpeg = await ffmpegAvailable()
-  if ( !hasFfmpeg ) return null
-
-  await mkdir( CAPTURES_DIR, { recursive : true } )
-
-  const srcPath = path.join( CAPTURES_DIR, base )
-  // Fail fast if the source clip doesn't exist.
-  try {
-    await readFile( srcPath )
-  } catch {
-    return null
-  }
-
-  const mp4Name = base.replace( /\.webm$/i, ".mp4" )
-  const outPath = path.join( CAPTURES_DIR, mp4Name )
-
-  // Reuse a previously converted MP4 if present.
-  try {
-    await readFile( outPath )
-
-    return { file : mp4Name, url : `/api/captures/${mp4Name}` }
-  } catch {
-    // not converted yet
-  }
-
-  await new Promise<void>( ( resolve, reject ) => {
-    const proc = spawn( "ffmpeg", [
-      "-y",
-      "-i", srcPath,
-      "-vf",
-      [
-        // libx264 requires even dimensions; round down to the nearest even px.
-        "scale=trunc(iw/2)*2:trunc(ih/2)*2",
-        "fps=24",
-        "format=yuv420p",
-      ].join( "," ),
-      "-c:v", "libx264",
-      "-preset", "fast",
-      "-crf", "23",
-      "-pix_fmt", "yuv420p",
-      "-profile:v", "main",
-      "-level", "4.0",
-      "-tag:v", "avc1",
-      "-movflags", "+faststart",
-      "-an",
-      outPath,
-    ], { stdio : "inherit" } )
-    proc.on( "close", ( code ) => {
-      if ( code === 0 ) resolve()
-      else reject( new Error( `ffmpeg countdown mp4 conversion exited with ${code}` ) )
-    } )
-  } )
-
-  return { file : mp4Name, url : `/api/captures/${mp4Name}` }
 }
 
 // ── Save raw (unprocessed copy) ────────────────────────────────────
