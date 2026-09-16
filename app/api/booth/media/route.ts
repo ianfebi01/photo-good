@@ -64,7 +64,7 @@ export async function POST( request : Request ) {
 
   if ( head.size > MEDIA_MAX_BYTES ) {
     return Response.json(
-      { error : 'File too large (max 10 MB)' },
+      { error : 'File too large (max 50 MB)' },
       { status : 400, headers : CORS_HEADERS },
     )
   }

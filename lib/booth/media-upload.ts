@@ -15,7 +15,7 @@ export const MEDIA_OBJECT_PREFIX = 'captures/'
 /** Prefixes a media finalise request may reference. */
 export const MEDIA_OBJECT_PREFIXES = [MEDIA_OBJECT_PREFIX] as const
 
-export const MEDIA_MAX_BYTES = 10 * 1024 * 1024 // 10 MB
+export const MEDIA_MAX_BYTES = 50 * 1024 * 1024 // 50 MB
 
 /** Canonical extension per mime type — the format the bytes actually are. */
 const EXT_BY_MIME: Record<string, string> = {
