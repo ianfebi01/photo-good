@@ -341,7 +341,7 @@ export function AddFrameDialog( { onUploaded, trigger }: AddFrameDialogProps ) {
           </DialogHeader>
 
           {/* Form Fields Body (3-column layout) */}
-          <div className="flex flex-col sm:grid sm:grid-cols-[160px_1fr_160px] gap-6 px-6 py-6 grow min-h-[300px] font-jakarta">
+          <div className="flex flex-col sm:grid sm:grid-cols-[160px_1fr_160px] gap-6 px-6 py-6 grow min-h-75 font-jakarta">
             {/* Column 1: Upload Dragzone Box */}
             <div className="flex flex-col gap-1.5 h-full">
               <span className="font-semibold text-neutral-500 text-[10px] tracking-wider">Upload Template</span>
@@ -352,7 +352,7 @@ export function AddFrameDialog( { onUploaded, trigger }: AddFrameDialogProps ) {
                 onDrop={handleDrop}
                 onClick={() => fileInputRef.current?.click()}
                 className={cn(
-                  'overflow-hidden flex flex-col items-center justify-center relative h-[260px] sm:h-full font-sans cursor-pointer transition select-none rounded-none',
+                  'overflow-hidden flex flex-col items-center justify-center relative h-65 sm:h-full font-sans cursor-pointer transition select-none rounded-none',
                   previewUrl
                     ? 'border-none p-0 bg-transparent'
                     : cn(
@@ -474,7 +474,7 @@ export function AddFrameDialog( { onUploaded, trigger }: AddFrameDialogProps ) {
               <span className="font-semibold text-neutral-500 text-[10px] tracking-wider">Preview Slots</span>
               <div
                 className={cn(
-                  'flex-1 overflow-hidden flex items-center justify-center relative min-h-[260px] sm:min-h-[unset] sm:h-full font-sans rounded-none',
+                  'flex-1 overflow-hidden flex items-center justify-center relative min-h-65 sm:min-h-[unset] sm:h-full font-sans rounded-none',
                   serverPreviewUrl
                     ? 'border-none p-0 bg-transparent'
                     : 'border border-neutral-100 bg-neutral-50/50'

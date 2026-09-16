@@ -1,3 +1,13 @@
 ignoredBuiltDependencies:
   - sharp
   - unrs-resolver
+
+# Every @aws-sdk / @smithy package declares a caret range on @smithy/types, so
+# pnpm happily installs two copies (4.14.3 for @aws-sdk/core, 4.18.0 for
+# @aws-sdk/s3-request-presigner). S3Client built from one copy is not assignable
+# to getSignedUrl() from the other:
+#   "Argument of type 'S3Client' is not assignable to parameter of type 'Client<…>'"
+# Pin a single version so the graph can never diverge again. Keep
+# @aws-sdk/client-s3 and @aws-sdk/s3-request-presigner on the same version too.
+overrides:
+  '@smithy/types': 4.18.0
