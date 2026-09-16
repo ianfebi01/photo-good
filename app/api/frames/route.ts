@@ -1,47 +1,19 @@
-import { mkdir, readFile, writeFile, unlink } from "node:fs/promises";
+import { readFile, writeFile, unlink } from "node:fs/promises";
 import path from "node:path";
-
-import sharp from "sharp";
 
 import {
   BUILT_IN_KEYS,
-  MAX_SLOTS_PER_FRAME,
   USER_FRAMES_DIR,
   USER_FRAMES_MANIFEST,
-  validateFrameDimensions,
 } from "@/lib/photobooth/config";
 import { getAllFramesFromDb, deleteFrameFromDb } from "@/lib/photobooth/frames.db";
-import { deleteR2Object, uploadToR2 } from "@/lib/r2";
-import { detectGreenSlots } from "@/lib/photobooth/slots";
+import { deleteR2Object } from "@/lib/r2";
 import { getCurrentUser } from "@/lib/auth/session";
 import { hasRole } from "@/lib/auth/types";
 import { ensureAuthSchema } from "@/lib/auth/schema";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-
-const MAX_BYTES = 8 * 1024 * 1024; // 8 MB upload cap
-const ALLOWED_TYPES = new Set( ["image/png"] );
-
-function slugify( raw: string ): string {
-  return raw
-    .toLowerCase()
-    .trim()
-    .replace( /[^a-z0-9]+/g, "-" )
-    .replace( /^-+|-+$/g, "" )
-    .slice( 0, 32 );
-}
-
-function extFromType( type: string ): string {
-  if ( type === "image/png" ) return "png";
-  if ( type === "image/webp" ) return "webp";
-
-  return "jpg";
-}
-
-async function ensureUserDir() {
-  await mkdir( USER_FRAMES_DIR, { recursive : true } );
-}
 
 async function readManifest(): Promise<{ frames: ManifestEntry[] }> {
   try {
@@ -119,125 +91,6 @@ export async function GET( request: Request ) {
   } ) );
 
   return Response.json( { frames : payload, total } );
-}
-
-/**
- * Accept a user-uploaded frame image. Multipart form fields:
- *   - file: PNG/JPEG/WEBP, ≤ 8 MB, with solid-green panels marking each slot
- *   - label: human-readable name
- */
-export async function POST( request: Request ) {
-  const forbidden = await requireFrameAdmin();
-  if ( forbidden ) return forbidden;
-
-  let form: FormData;
-  try {
-    form = await request.formData();
-  } catch {
-    return Response.json( { error : "Expected multipart/form-data" }, { status : 400 } );
-  }
-
-  const file = form.get( "file" );
-  const labelRaw = String( form.get( "label" ) ?? "" ).trim();
-
-  if ( !( file instanceof File ) ) {
-    return Response.json( { error : "Missing file" }, { status : 400 } );
-  }
-  if ( !labelRaw ) {
-    return Response.json( { error : "Missing label" }, { status : 400 } );
-  }
-  if ( labelRaw.length > 60 ) {
-    return Response.json( { error : "Label too long (max 60 chars)" }, { status : 400 } );
-  }
-  if ( !ALLOWED_TYPES.has( file.type ) ) {
-    return Response.json(
-      { error : "Unsupported image type (use PNG)" },
-      { status : 400 },
-    );
-  }
-  if ( file.size > MAX_BYTES ) {
-    return Response.json( { error : "File too large (max 8 MB)" }, { status : 400 } );
-  }
-
-  const buffer = Buffer.from( await file.arrayBuffer() );
-
-  // Confirm the bytes really are an image sharp can decode.
-  let meta: sharp.Metadata;
-  try {
-    meta = await sharp( buffer ).metadata();
-  } catch {
-    return Response.json( { error : "Could not decode image" }, { status : 400 } );
-  }
-  if ( !meta.width || !meta.height ) {
-    return Response.json( { error : "Image has no dimensions" }, { status : 400 } );
-  }
-
-  // Validate 4×6 aspect ratio for DNP RX1 printer compatibility
-  const dimError = validateFrameDimensions( meta.width, meta.height );
-  if ( dimError ) {
-    return Response.json( { error : dimError }, { status : 400 } );
-  }
-
-  const detected = await detectGreenSlots( buffer );
-  if ( detected.slots.length === 0 ) {
-    return Response.json(
-      { error : "No green slots detected — paint each photo area solid green" },
-      { status : 400 },
-    );
-  }
-  if ( detected.slots.length > MAX_SLOTS_PER_FRAME ) {
-    return Response.json(
-      { error : `Too many slots detected (${detected.slots.length}); max ${MAX_SLOTS_PER_FRAME}` },
-      { status : 400 },
-    );
-  }
-
-  await ensureUserDir();
-  const manifest = await readManifest();
-
-  const baseSlug = slugify( labelRaw ) || "frame";
-  const existing = new Set( manifest.frames.map( ( f ) => f.key ) );
-  let key = `user-${baseSlug}`;
-  let suffix = 2;
-  while ( existing.has( key ) || BUILT_IN_KEYS.has( key ) ) {
-    key = `user-${baseSlug}-${suffix++}`;
-  }
-
-  // Upload to R2 so frame images are accessible from any deployment
-  const imageKey = `frames/user/${key}-${Date.now()}.png`;
-  const { publicUrl } = await uploadToR2( {
-    key         : imageKey,
-    body        : buffer,
-    contentType : 'image/png',
-  } );
-
-  // Also save to manifest for backward-compat filesystem lookups
-  const ext = extFromType( file.type );
-  const filename = `${key}.${ext}`;
-  await writeFile( path.join( USER_FRAMES_DIR, filename ), buffer );
-
-  const entry: ManifestEntry = {
-    key,
-    label  : labelRaw,
-    filename,
-    width  : detected.width,
-    height : detected.height,
-    slots  : detected.slots,
-  };
-  manifest.frames.push( entry );
-  await writeManifest( manifest );
-
-  return Response.json( {
-    frame : {
-      key,
-      label      : entry.label,
-      publicUrl,
-      width      : entry.width,
-      height     : entry.height,
-      photoCount : entry.slots.length,
-      builtIn    : false,
-    },
-  } );
 }
 
 /**

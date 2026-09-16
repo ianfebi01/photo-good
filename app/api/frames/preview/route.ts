@@ -2,15 +2,23 @@ import sharp from 'sharp'
 import fs from 'node:fs/promises'
 import { getFrame, validateFrameDimensions } from '@/lib/photobooth/config'
 import { getFrameFromDb } from '@/lib/photobooth/frames.db'
-import { getR2ObjectBuffer } from '@/lib/r2'
+import {
+  FRAME_MAX_BYTES,
+  FRAME_MAX_MB,
+  FRAME_OBJECT_PREFIXES,
+} from '@/lib/photobooth/frame-upload'
+import {
+  deleteR2Object,
+  getR2ObjectBuffer,
+  headR2Object,
+  isManagedObjectKey,
+  r2PublicUrl,
+} from '@/lib/r2'
 import { detectGreenSlots, clearGreenPixels } from '@/lib/photobooth/slots'
 import { getCurrentUser } from '@/lib/auth/session'
 import { hasRole } from '@/lib/auth/types'
 
 export const runtime = 'nodejs'
-
-const ALLOWED_TYPES = new Set( ['image/png'] )
-const MAX_BYTES = 8 * 1024 * 1024 // 8 MB
 
 // Composed previews are only ever rendered as small thumbnails (frame pickers,
 // dashboard grid), while the frame artwork itself is 1200×3600+ — so serve a
@@ -18,6 +26,12 @@ const MAX_BYTES = 8 * 1024 * 1024 // 8 MB
 const DEFAULT_PREVIEW_WIDTH = 480
 const MIN_PREVIEW_WIDTH = 64
 const MAX_PREVIEW_WIDTH = 1600
+
+/**
+ * Width of the composer preview returned by POST — the dialog shows it in a
+ * ~400px column, so a 720px PNG is plenty and keeps the base64 payload tiny.
+ */
+const PREVIEW_RESPONSE_WIDTH = 720
 
 /**
  * The frame image with its green slot panels turned transparent, so photos
@@ -199,63 +213,113 @@ export async function GET( request: Request ) {
   }
 }
 
+/**
+ * Discard an uploaded object that can never become a saved frame (wrong
+ * format, wrong aspect ratio, no slots) — otherwise the browser's direct upload
+ * leaves an orphan in the bucket, since nothing else references it.
+ *
+ * Deleting is best-effort: the surrounding response stays the same either way.
+ */
+async function discardUnusableUpload( key: string ) {
+  await deleteR2Object( key ).catch( () => {
+    // Already gone, or the key is being retried — the error is not actionable.
+  } )
+}
+
 export async function POST( request: Request ) {
   const user = await getCurrentUser()
   if ( !user || !hasRole( user.role, 'admin' ) ) {
     return Response.json( { error : 'Forbidden' }, { status : 403 } )
   }
 
-  let form: FormData
+  let body: unknown
   try {
-    form = await request.formData()
+    body = await request.json()
   } catch {
-    return Response.json( { error : 'Expected multipart/form-data' }, { status : 400 } )
+    return Response.json( { error : 'Expected a JSON body' }, { status : 400 } )
   }
 
-  const file = form.get( 'file' )
-  if ( !( file instanceof File ) ) {
-    return Response.json( { error : 'Missing file' }, { status : 400 } )
+  const { key } = ( body ?? {} ) as { key?: unknown }
+  if ( !isManagedObjectKey( key, FRAME_OBJECT_PREFIXES ) ) {
+    return Response.json( { error : 'Invalid object key' }, { status : 400 } )
   }
-  if ( !ALLOWED_TYPES.has( file.type ) ) {
+
+  // The object only exists if the browser's presigned PUT actually landed.
+  const head = await headR2Object( key )
+  if ( !head ) {
     return Response.json(
-      { error : 'Unsupported image type' },
+      { error : 'Upload not found — the file did not reach storage' },
       { status : 400 },
     )
   }
-  if ( file.size > MAX_BYTES ) {
-    return Response.json( { error : 'File too large (max 8 MB)' }, { status : 400 } )
+  if ( head.size > FRAME_MAX_BYTES ) {
+    await discardUnusableUpload( key )
+
+    return Response.json(
+      { error : `File too large (max ${FRAME_MAX_MB} MB)` },
+      { status : 400 },
+    )
   }
 
-  const buffer = Buffer.from( await file.arrayBuffer() )
+  let buffer: Buffer
+  try {
+    buffer = await getR2ObjectBuffer( key )
+  } catch {
+    return Response.json( { error : 'Could not read the uploaded frame' }, { status : 400 } )
+  }
 
   let meta: sharp.Metadata
   try {
     meta = await sharp( buffer ).metadata()
   } catch {
+    await discardUnusableUpload( key )
+
     return Response.json( { error : 'Could not decode image' }, { status : 400 } )
   }
   if ( !meta.width || !meta.height ) {
+    await discardUnusableUpload( key )
+
     return Response.json( { error : 'Image has no dimensions' }, { status : 400 } )
   }
 
   // Validate 4×6 aspect ratio
   const dimError = validateFrameDimensions( meta.width, meta.height )
   if ( dimError ) {
+    await discardUnusableUpload( key )
+
     return Response.json( { error : dimError }, { status : 400 } )
   }
 
   // Detect slots for return payload
   const detected = await detectGreenSlots( buffer )
 
+  // No slots means the upload can never be saved — drop it instead of leaving
+  // an object behind. The empty `slots` payload is the same as before.
+  if ( detected.slots.length === 0 ) {
+    await discardUnusableUpload( key )
+  }
+
   try {
     const composed = await generatePreviewBuffer( buffer )
-    const dataUrl = composed ? `data:image/png;base64,${composed.toString( 'base64' )}` : null
+
+    // The composite is built at native frame size (1200×1800+); only ever shown
+    // as a thumbnail in the dialog, so downscale before base64ing it into JSON.
+    const thumbnail = composed
+      ? await sharp( composed )
+        .resize( { width : PREVIEW_RESPONSE_WIDTH, withoutEnlargement : true } )
+        .png()
+        .toBuffer()
+      : null
+
+    const dataUrl = thumbnail ? `data:image/png;base64,${thumbnail.toString( 'base64' )}` : null
 
     return Response.json( {
       width      : detected.width,
       height     : detected.height,
       slots      : detected.slots,
       previewUrl : dataUrl,
+      key,
+      publicUrl  : r2PublicUrl( key ),
     } )
   } catch ( e ) {
     return Response.json(

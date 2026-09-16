@@ -1,102 +1,99 @@
 import { db } from '@/lib/db'
 import { requireBooth } from '@/lib/auth/booth'
 import { ensureAuthSchema } from '@/lib/auth/schema'
-import { r2PublicUrl, uploadToR2 } from '@/lib/r2'
+import {
+  MEDIA_MAX_BYTES,
+  MEDIA_OBJECT_PREFIXES,
+  isMediaMime,
+  mimeForObjectKey,
+  normalizeMediaMime,
+  validateMediaMime,
+} from '@/lib/booth/media-upload'
+import { headR2Object, isManagedObjectKey, r2PublicUrl } from '@/lib/r2'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
-const MAX_BYTES = 10 * 1024 * 1024 // 10 MB
-
-/** Canonical extension per mime type — the format the bytes actually are. */
-const EXT_BY_MIME : Record<string, string> = {
-  'image/jpeg'      : '.jpg',
-  'image/png'       : '.png',
-  'image/webp'      : '.webp',
-  'image/gif'       : '.gif',
-  'image/heic'      : '.heic',
-  'video/mp4'       : '.mp4',
-  'video/quicktime' : '.mov',
-}
+const CORS_HEADERS = {
+  'Access-Control-Allow-Origin'  : '*',
+  'Access-Control-Allow-Methods' : 'POST, OPTIONS',
+  'Access-Control-Allow-Headers' : 'Authorization, Content-Type, x-booth-key',
+} as const
 
 /**
- * Extension for a stored upload.
+ * Step 2 of a booth media upload: the bytes are already in R2, so record them.
  *
- * The mime type wins, because the uploaded filename can lie (and the booth
- * sends names like `countdown-abc-0.mp4` that we must not trust blindly).
- * Only when the mime is unknown do we fall back to the original filename's
- * extension, then to a format-appropriate default. WebM is not part of the
- * pipeline, so a `.webm` name never decides the stored extension either —
- * videos land as `.mp4`.
+ * Body (JSON):
+ *   - key: the object key returned by POST /api/booth/media/presign
+ *
+ * The size and MIME type are read back from R2 rather than trusted from the
+ * client, so the stored row always describes what actually landed in the
+ * bucket. Returns the media row ID for use in result creation.
  */
-function extensionFor( mime : string, originalName : string ) : string {
-  const normalized = mime.toLowerCase().split( ';' )[0].trim()
-  const known = EXT_BY_MIME[normalized]
-  if ( known ) return known
-
-  const isVideo = normalized.startsWith( 'video/' )
-  const fromName = /\.([a-z0-9]{2,4})$/i.exec( originalName )?.[1]?.toLowerCase()
-  if ( fromName && fromName !== 'webm' ) return `.${fromName}`
-
-  return isVideo ? '.mp4' : '.jpg'
-}
-
-/** POST — upload a single media file. Returns the media row ID for use in result creation. */
 export async function POST( request : Request ) {
   const auth = await requireBooth( request )
   if ( auth instanceof Response ) return auth
 
-  let buffer : Buffer
-  let mime : string
-  let uploadedName = ''
-
+  let body : unknown
   try {
-    const form = await request.formData()
-    const file = form.get( 'file' )
-
-    if ( !file || !( file instanceof Blob ) ) {
-      return Response.json( { error : 'Missing file field' }, { status : 400 } )
-    }
-    if ( file.size > MAX_BYTES ) {
-      return Response.json( { error : 'File too large (max 10 MB)' }, { status : 400 } )
-    }
-    if ( !file.type.startsWith( 'image/' ) && !file.type.startsWith( 'video/' ) ) {
-      return Response.json( { error : 'File must be an image or video' }, { status : 400 } )
-    }
-    // WebM is not part of the booth pipeline any more — every video is
-    // MP4/H.264, so a VP9/VP8 upload would only break playback and downloads.
-    if ( file.type === 'video/webm' ) {
-      return Response.json(
-        { error : 'WebM is not supported — upload MP4/H.264 video' },
-        { status : 400 },
-      )
-    }
-
-    mime = file.type
-    uploadedName = file instanceof File ? file.name : ''
-    buffer = Buffer.from( await file.arrayBuffer() )
+    body = await request.json()
   } catch {
-    // eslint-disable-next-line no-console
-    console.error( '[booth/media] Invalid form data' )
-
-    return Response.json( { error : 'Invalid form data' }, { status : 400 } )
+    return Response.json(
+      { error : 'Expected a JSON body' },
+      { status : 400, headers : CORS_HEADERS },
+    )
   }
 
-  const boothShort = auth.id.replace( /-/g, '' ).slice( 0, 12 )
-  const ts = Date.now()
-  const ext = extensionFor( mime, uploadedName )
-  const filename = `booth-${boothShort}-${ts}${ext}`
+  const { key } = ( body ?? {} ) as { key? : unknown }
+
+  if ( !isManagedObjectKey( key, MEDIA_OBJECT_PREFIXES ) ) {
+    return Response.json(
+      { error : 'Invalid object key' },
+      { status : 400, headers : CORS_HEADERS },
+    )
+  }
+
+  // The object only exists if the client's presigned PUT actually landed.
+  const head = await headR2Object( key )
+  if ( !head ) {
+    return Response.json(
+      { error : 'Upload not found — the file did not reach storage' },
+      { status : 400, headers : CORS_HEADERS },
+    )
+  }
+
+  if ( head.size > MEDIA_MAX_BYTES ) {
+    return Response.json(
+      { error : 'File too large (max 10 MB)' },
+      { status : 400, headers : CORS_HEADERS },
+    )
+  }
+
+  // Prefer what R2 reports. A generic type or none at all falls back to the
+  // extension the presign route generated from the declared mime type — R2 does
+  // not infer a content type from the extension on its own.
+  const reported = head.contentType ? normalizeMediaMime( head.contentType ) : null
+  const mime = reported && isMediaMime( reported ) ? reported : mimeForObjectKey( key )
+
+  if ( !mime ) {
+    return Response.json(
+      { error : 'Upload has no recognizable content type' },
+      { status : 400, headers : CORS_HEADERS },
+    )
+  }
+
+  const mimeError = validateMediaMime( mime )
+  if ( mimeError ) {
+    return Response.json(
+      { error : mimeError },
+      { status : 400, headers : CORS_HEADERS },
+    )
+  }
+
+  const filename = key.slice( key.lastIndexOf( '/' ) + 1 )
 
   try {
     await ensureAuthSchema()
-
-    // Upload directly to R2 under 'captures/' folder
-    const key = `captures/${filename}`
-    await uploadToR2( {
-      key,
-      body        : buffer,
-      contentType : mime,
-    } )
 
     // Persist the domain-less path — never the bucket URL — so the media keeps
     // working if the bucket domain changes. The URL is rebuilt on every read.
@@ -105,41 +102,24 @@ export async function POST( request : Request ) {
       `INSERT INTO app_media (booth_id, filename, url, mime_type, size_bytes)
        VALUES ($1, $2, $3, $4, $5)
        RETURNING id, filename, url, mime_type, size_bytes, created_at`,
-      [auth.id, filename, mediaPath, mime, buffer.length]
+      [auth.id, filename, mediaPath, mime, head.size]
     )
 
     // Respond with the absolute URL so existing clients stay unchanged.
     const media = { ...result.rows[0], url : r2PublicUrl( mediaPath ) }
 
-    return Response.json(
-      { media },
-      {
-        status  : 201,
-        headers : {
-          'Access-Control-Allow-Origin'  : '*',
-          'Access-Control-Allow-Methods' : 'POST, OPTIONS',
-          'Access-Control-Allow-Headers' : 'Authorization, Content-Type, x-booth-key',
-        },
-      }
-    )
+    return Response.json( { media }, { status : 201, headers : CORS_HEADERS } )
   } catch ( err ) {
     // eslint-disable-next-line no-console
     console.error( '[booth/media] Upload failed:', err )
 
     return Response.json(
       { error : err instanceof Error ? err.message : 'Upload failed' },
-      { status : 500 }
+      { status : 500, headers : CORS_HEADERS },
     )
   }
 }
 
 export async function OPTIONS() {
-  return new Response( null, {
-    status  : 204,
-    headers : {
-      'Access-Control-Allow-Origin'  : '*',
-      'Access-Control-Allow-Methods' : 'POST, OPTIONS',
-      'Access-Control-Allow-Headers' : 'Authorization, Content-Type, x-booth-key',
-    },
-  } )
+  return new Response( null, { status : 204, headers : CORS_HEADERS } )
 }

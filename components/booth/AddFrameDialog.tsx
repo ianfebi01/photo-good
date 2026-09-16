@@ -38,6 +38,10 @@ export function AddFrameDialog( { onUploaded, trigger }: AddFrameDialogProps ) {
   const [detectedSlots, setDetectedSlots] = useState<FrameSlot[]>( [] )
   const [serverPreviewUrl, setServerPreviewUrl] = useState<string | null>( null )
 
+  // R2 object key of the frame the browser uploaded directly during detection.
+  // Saving reuses it, so the file is transferred exactly once.
+  const [uploadedKey, setUploadedKey] = useState<string | null>( null )
+
   const fileInputRef = useRef<HTMLInputElement>( null )
   const popupRef = useRef<HTMLDivElement>( null )
   const contentRef = useRef<HTMLDivElement>( null )
@@ -60,10 +64,11 @@ export function AddFrameDialog( { onUploaded, trigger }: AddFrameDialogProps ) {
   }, [previewUrl] )
 
   const previewMutation = useMutation( {
-    mutationFn : previewFrame,
+    mutationFn : ( file: File ) => previewFrame( file, label.trim() ),
     onSuccess  : ( data ) => {
       setDetectedSlots( data.slots ?? [] )
       setServerPreviewUrl( data.previewUrl )
+      setUploadedKey( data.key )
     },
     onError : ( error ) => {
       setErr( error instanceof Error ? error.message : 'Failed to generate preview' )
@@ -71,9 +76,15 @@ export function AddFrameDialog( { onUploaded, trigger }: AddFrameDialogProps ) {
   } )
 
   const uploadMutation = useMutation( {
-    mutationFn : async ( { file, label }: { file: File; label: string } ) => {
-      const result = await uploadFrameWithSlots( { file, label, slots : detectedSlots } )
-      
+    mutationFn : async ( { label }: { label: string } ) => {
+      if ( !uploadedKey ) throw new Error( 'The frame has not finished uploading yet' )
+
+      const result = await uploadFrameWithSlots( {
+        key   : uploadedKey,
+        label,
+        slots : detectedSlots,
+      } )
+
       return result.frame
     },
     onSuccess : ( frame ) => {
@@ -97,6 +108,7 @@ export function AddFrameDialog( { onUploaded, trigger }: AddFrameDialogProps ) {
     setErr( null )
     setDetectedSlots( [] )
     setServerPreviewUrl( null )
+    setUploadedKey( null )
   }
 
   const [imageDims, setImageDims] = useState<{ width: number; height: number } | null>( null )
@@ -106,6 +118,7 @@ export function AddFrameDialog( { onUploaded, trigger }: AddFrameDialogProps ) {
     setErr( null )
     setServerPreviewUrl( null )
     setDetectedSlots( [] )
+    setUploadedKey( null )
     setImageDims( null )
 
     if ( !selectedFile ) return
@@ -155,9 +168,9 @@ export function AddFrameDialog( { onUploaded, trigger }: AddFrameDialogProps ) {
   }
 
   const submit = () => {
-    if ( !file || !label.trim() ) return
+    if ( !file || !label.trim() || !uploadedKey ) return
     setErr( null )
-    uploadMutation.mutate( { file, label : label.trim() } )
+    uploadMutation.mutate( { label : label.trim() } )
   }
 
   // Run enter animation whenever popup mounts
@@ -432,7 +445,7 @@ export function AddFrameDialog( { onUploaded, trigger }: AddFrameDialogProps ) {
                     {previewLoading ? (
                       <span className="text-neutral-400 flex items-center gap-1.5 animate-pulse">
                         <Loader2 className="size-3 animate-spin" />
-                        Detecting slots...
+                        Uploading & detecting slots...
                       </span>
                     ) : detectedSlots.length > 0 ? (
                       <span className="text-emerald-600 flex items-center gap-1.5">
@@ -470,7 +483,7 @@ export function AddFrameDialog( { onUploaded, trigger }: AddFrameDialogProps ) {
                 {previewLoading ? (
                   <div className="text-xs text-neutral-400 font-sans font-medium flex flex-col items-center gap-1.5 animate-pulse">
                     <Loader2 className="size-5 text-primary animate-spin" />
-                    <span>Processing slots...</span>
+                    <span>Uploading & processing slots...</span>
                   </div>
                 ) : serverPreviewUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
@@ -501,7 +514,7 @@ export function AddFrameDialog( { onUploaded, trigger }: AddFrameDialogProps ) {
           <DialogFooter className="border-t border-neutral-100 px-6 py-4 bg-transparent shrink-0 font-sans flex items-center justify-end gap-2">
             <Button
               onClick={submit}
-              disabled={!file || !label.trim() || uploading || detectedSlots.length === 0 || previewLoading}
+              disabled={!file || !label.trim() || !uploadedKey || uploading || detectedSlots.length === 0 || previewLoading}
               className="bg-primary hover:bg-primary/95 text-primary-foreground font-semibold text-sm px-4 py-2.5 rounded-lg transition font-sans cursor-pointer"
             >
               {uploading ? 'Uploading…' : 'Upload frame'}

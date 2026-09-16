@@ -1,4 +1,8 @@
 import type { ClientFrame } from './frames.client'
+import {
+  type PresignedUpload,
+  uploadFileWithPresign,
+} from '@/lib/presigned-upload'
 
 type Status = {
   connected: boolean
@@ -58,27 +62,89 @@ export async function deleteFrame( key: string ): Promise<void> {
   await parseJson( response, 'Failed to delete frame' )
 }
 
-export async function previewFrame( file: File ): Promise<{ slots: FrameSlot[]; previewUrl: string }> {
-  const form = new FormData()
-  form.append( 'file', file )
+export type FramePreview = {
+  width: number
+  height: number
+  slots: FrameSlot[]
+  /** Composed preview (numbered slots) as a downscaled data URL, when available. */
+  previewUrl: string | null
+  /** R2 object key of the frame that was uploaded — pass to `uploadFrameWithSlots`. */
+  key: string
+  publicUrl: string
+}
 
-  const response = await fetch( '/api/frames/preview', {
-    method : 'POST',
-    body   : form,
+const JSON_HEADERS = { 'Content-Type' : 'application/json' } as const
+
+/**
+ * Ask the server for a short-lived PUT URL. The frame bytes go straight from
+ * the browser to R2, so they never pass through the Next.js server.
+ */
+async function presignFrameUpload( {
+  contentType,
+  size,
+  label,
+}: {
+  contentType: string
+  size: number
+  label?: string
+} ): Promise<PresignedUpload> {
+  const response = await fetch( '/api/frames/presign', {
+    method  : 'POST',
+    headers : JSON_HEADERS,
+    body    : JSON.stringify( { contentType, size, label } ),
   } )
 
-  return parseJson( response, 'Failed to generate preview' )
+  return parseJson<PresignedUpload>( response, 'Could not start the upload' )
 }
 
-export async function uploadFrame( { file, label }: { file: File; label: string } ): Promise<{ frame: ClientFrame }> {
-  const form = new FormData()
-  form.append( 'file', file )
-  form.append( 'label', label )
+/**
+ * Upload the frame to R2 and detect its green slots.
+ *
+ * The upload happens here (once, directly to R2) rather than on submit, so the
+ * returned `key` is what the final save re-uses — no second transfer. The label
+ * is optional and only shapes the object key for readability.
+ */
+export async function previewFrame( file: File, label?: string ): Promise<FramePreview> {
+  const presign = await presignFrameUpload( {
+    contentType : file.type || 'image/png',
+    size        : file.size,
+    label,
+  } )
 
-  return parseJson( await fetch( '/api/frames', { method : 'POST', body : form } ), 'Upload failed' )
+  await uploadFileWithPresign( { presign, file } )
+
+  const response = await fetch( '/api/frames/preview', {
+    method  : 'POST',
+    headers : JSON_HEADERS,
+    body    : JSON.stringify( { key : presign.key } ),
+  } )
+
+  return parseJson<FramePreview>( response, 'Failed to generate preview' )
 }
 
-// ── Camera service URL resolution ────────────────────────────────────
+/**
+ * Save an already-uploaded frame object as a frame template.
+ *
+ * `key` comes from `previewFrame`; the server re-reads the object from R2 to
+ * validate its dimensions and slot geometry before inserting the row.
+ */
+export async function uploadFrameWithSlots( {
+  key,
+  label,
+  slots,
+}: {
+  key: string
+  label: string
+  slots: FrameSlot[]
+} ): Promise<{ frame: ClientFrame }> {
+  const response = await fetch( '/api/frames/upload', {
+    method  : 'POST',
+    headers : JSON_HEADERS,
+    body    : JSON.stringify( { key, label, slots } ),
+  } )
+
+  return parseJson( response, 'Upload failed' )
+}// ── Camera service URL resolution ────────────────────────────────────
 //
 // Priority:
 //   1. `__CAMERA_SERVICE_URL` — runtime override via browser console
@@ -309,23 +375,4 @@ export async function generateSessionLoopVideo( {
   if ( response.status === 501 ) return null
 
   return parseJson( response, 'Loop video generation failed' )
-}
-
-/* ── Frame upload helper (proxied through server) ───────────────── */
-
-export async function uploadFrameWithSlots( {
-  file,
-  label,
-  slots,
-}: {
-  file: File
-  label: string
-  slots: FrameSlot[]
-} ): Promise<{ frame: ClientFrame }> {
-  const form = new FormData()
-  form.append( 'file', file )
-  form.append( 'label', label )
-  form.append( 'slots', JSON.stringify( slots ) )
-
-  return parseJson( await fetch( '/api/frames/upload', { method : 'POST', body : form } ), 'Upload failed' )
 }
