@@ -1,4 +1,4 @@
-import { loadAllFrames, BUILT_IN_KEYS } from '@/lib/photobooth/config'
+import { BUILT_IN_KEYS } from '@/lib/photobooth/config'
 import { getAllFramesFromDb } from '@/lib/photobooth/frames.db'
 import { ensureAuthSchema } from '@/lib/auth/schema'
 import { requireBooth } from '@/lib/auth/booth'
@@ -15,23 +15,9 @@ export async function GET( request : Request ) {
   try {
     await ensureAuthSchema()
 
-    const fsFrames = await loadAllFrames()
     const dbFrames = await getAllFramesFromDb()
-    const dbFrameKeys = new Set( dbFrames.map( ( f ) => f.key ) )
 
     const frames = [
-      // Filesystem frames (legacy user uploads not yet in DB)
-      ...fsFrames
-        .filter( ( f ) => !f.builtIn && !dbFrameKeys.has( f.key ) )
-        .map( ( f ) => ( {
-          key      : f.key,
-          label    : f.label,
-          imageUrl : f.publicUrl,
-          width    : f.width,
-          height   : f.height,
-          slots    : f.slots,
-          builtIn  : f.builtIn,
-        } ) ),
       // DB frames (includes built-in and custom)
       ...dbFrames.map( ( f ) => ( {
         key      : f.key,

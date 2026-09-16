@@ -1,4 +1,3 @@
-import { readFile } from "node:fs/promises";
 import path from "node:path";
 
 import { getFrameFromDb } from "./frames.db";
@@ -83,50 +82,6 @@ export const USER_FRAMES_MANIFEST = path.join(
   "manifest.json",
 );
 
-type UserManifestEntry = {
-  key: string;
-  label: string;
-  filename: string;
-  width: number;
-  height: number;
-  slots: FrameSlot[];
-};
-
-type UserManifest = { frames: UserManifestEntry[] };
-
-async function readUserManifest(): Promise<UserManifest> {
-  try {
-    const raw = await readFile( USER_FRAMES_MANIFEST, "utf8" );
-    const parsed = JSON.parse( raw );
-    if ( !parsed || !Array.isArray( parsed.frames ) ) return { frames : [] };
-
-    return parsed as UserManifest;
-  } catch {
-    return { frames : [] };
-  }
-}
-
-function userEntryToFrame( e: UserManifestEntry ): FrameDef {
-  return {
-    key       : e.key,
-    label     : e.label,
-    image     : path.join( USER_FRAMES_DIR, e.filename ),
-    publicUrl : `/frames/user/${e.filename}`,
-    width     : e.width,
-    height    : e.height,
-    slots     : e.slots,
-    builtIn   : false,
-  };
-}
-
-/** All frames available right now (built-in + persisted user uploads). */
-export async function loadAllFrames(): Promise<FrameDef[]> {
-  const manifest = await readUserManifest();
-  const userFrames = manifest.frames.map( userEntryToFrame );
-
-  return [...BUILT_IN, ...userFrames];
-}
-
 export async function getFrame( key: string ): Promise<FrameDef | null> {
   // 1. DB takes precedence — seeded built-ins + user uploads live here
   const dbFrame = await getFrameFromDb( key );
@@ -146,11 +101,8 @@ export async function getFrame( key: string ): Promise<FrameDef | null> {
       builtIn   : BUILT_IN_KEYS.has( dbFrame.key ),
     };
   }
-
-  // 2. Fall back to filesystem (built-in + legacy user-manifest frames)
-  const all = await loadAllFrames();
   
-  return all.find( ( f ) => f.key === key ) ?? null;
+  return null
 }
 
 export const DEFAULT_FRAME = "summer-day";

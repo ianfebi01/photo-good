@@ -8,7 +8,6 @@ import {
   MAX_SLOTS_PER_FRAME,
   USER_FRAMES_DIR,
   USER_FRAMES_MANIFEST,
-  loadAllFrames,
   validateFrameDimensions,
 } from "@/lib/photobooth/config";
 import { getAllFramesFromDb, deleteFrameFromDb } from "@/lib/photobooth/frames.db";
@@ -88,15 +87,10 @@ export async function GET( request: Request ) {
   const page = Math.max( 1, Number( searchParams.get( "page" ) ) || 1 );
   const limit = Math.min( 50, Math.max( 1, Number( searchParams.get( "limit" ) ) || 8 ) );
 
-  // Merge built-in + filesystem user frames + DB frames
-  const fsFrames = await loadAllFrames();
   await ensureAuthSchema();
   const dbFrames = await getAllFramesFromDb();
 
-  const dbFrameKeys = new Set( dbFrames.map( ( f ) => f.key ) );
   const all = [
-    // Only legacy user-manifest frames from filesystem — built-in frames come from DB
-    ...fsFrames.filter( ( f ) => !f.builtIn && !dbFrameKeys.has( f.key ) ),
     ...dbFrames.map( ( f ) => ( {
       key       : f.key,
       label     : f.label,
