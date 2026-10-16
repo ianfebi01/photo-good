@@ -1,7 +1,7 @@
 import { db } from '@/lib/db'
 import { requireBooth } from '@/lib/auth/booth'
 import { ensurePaymentSchema } from '@/lib/payment/schema'
-import { getTransactionStatus } from '@/lib/payment/midtrans'
+import { getPaymentStatus } from '@/lib/payment'
 import type { PaymentRow } from '@/lib/payment/schema'
 
 export const runtime = 'nodejs'
@@ -14,7 +14,7 @@ export const dynamic = 'force-dynamic'
  *   orderId — the order ID returned from the charge endpoint
  *
  * Returns:
- *   The current transaction status from Midtrans (or DB fallback)
+ *   The current transaction status from the active payment gateway (or DB fallback)
  */
 export async function GET( request : Request ) {
   const auth = await requireBooth( request )
@@ -30,27 +30,18 @@ export async function GET( request : Request ) {
   try {
     await ensurePaymentSchema()
 
-    // Call Midtrans for the authoritative status
-    const status = await getTransactionStatus( orderId )
-
-    // Update our DB to stay in sync
-    await db.query(
-      `UPDATE app_payments
-       SET transaction_status = $1, updated_at = NOW()
-       WHERE order_id = $2 AND booth_id = $3`,
-      [status.transaction_status, orderId, auth.id],
-    )
+    // Call authoritative payment gateway status check (DOKU or Midtrans)
+    const status = await getPaymentStatus( orderId, auth.id )
 
     return Response.json(
       {
-        orderId           : status.order_id,
-        transactionId     : status.transaction_id,
-        transactionStatus : status.transaction_status,
-        fraudStatus       : status.fraud_status,
-        grossAmount       : status.gross_amount,
-        paymentType       : status.payment_type,
-        settlementTime    : status.settlement_time ?? null,
-        expiryTime        : status.expiry_time ?? null,
+        orderId           : status.orderId,
+        transactionId     : status.transactionId,
+        transactionStatus : status.transactionStatus,
+        grossAmount       : status.grossAmount,
+        paymentType       : status.paymentType,
+        settlementTime    : status.settlementTime ?? null,
+        expiryTime        : status.expiryTime ?? null,
       },
       {
         headers : {
@@ -61,9 +52,9 @@ export async function GET( request : Request ) {
       },
     )
   } catch ( err ) {
-    // If Midtrans call fails, fall back to what we have in DB
+    // If gateway call fails, fall back to what we have in DB
     // eslint-disable-next-line no-console
-    console.error( '[booth/payment/status] Midtrans call failed:', err )
+    console.error( '[booth/payment/status] Gateway call failed:', err )
 
     try {
       const result = await db.query(
