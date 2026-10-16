@@ -392,15 +392,6 @@ export function normalizeDokuStatus( status : string ) : string {
 }
 
 /**
- * Get the default payment amount from env or fallback.
- */
-export function getDefaultAmount() : number {
-  const env = process.env.DOKU_PAYMENT_AMOUNT
-
-  return env ? Number.parseInt( env, 10 ) : 15000
-}
-
-/**
  * Ensure the DOKU credentials are configured.
  * Returns null if OK, or an error message.
  */

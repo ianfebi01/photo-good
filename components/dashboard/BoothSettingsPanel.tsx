@@ -9,6 +9,7 @@ import {
   Hash,
   Loader2,
   RotateCcw,
+  Tag,
   Timer,
 } from 'lucide-react'
 
@@ -37,13 +38,31 @@ import {
   getFrames,
 } from '@/lib/photobooth/frames.query'
 import {
+  BOOLEAN_SETTING_KEYS,
+  DISCOUNT_TYPES,
+  MAX_BOOTH_PRICE,
+  getBoothDiscountAmount,
+  getBoothPaymentAmount,
   isFrameEnabledForBooth,
   normalizeBoothSettings,
   type BoothClientSettings,
+  type BoothDiscountType,
 } from '@/lib/photobooth/booth-settings'
 
-/** Keys rendered as simple on/off switches (everything except the frame list). */
-type ToggleSettingKey = Exclude<keyof BoothClientSettings, 'disabledFrameKeys'>
+/** Keys rendered as simple on/off switches. */
+type ToggleSettingKey = ( typeof BOOLEAN_SETTING_KEYS )[number]
+
+/** Settings edited through the pricing number inputs. */
+type AmountSettingKey = 'price' | 'discountValue'
+
+const DISCOUNT_TYPE_LABELS : Record<BoothDiscountType, string> = {
+  percentage : 'Percentage (%)',
+  fixed      : 'Fixed (Rp)',
+}
+
+function formatRupiah( amount : number ) {
+  return `Rp ${amount.toLocaleString( 'id-ID' )}`
+}
 
 /** Toggles exposed to the booth client, in display order. */
 const SETTING_FIELDS : {
@@ -155,6 +174,8 @@ export function BoothSettingsPanel( { boothId } : { boothId : string } ) {
   const safePage = Math.min( page, totalPages )
   const dirty = Object.keys( patch ).length > 0 || nameChanged
   const disabledCount = settings.disabledFrameKeys.length
+  const discountAmount = getBoothDiscountAmount( settings )
+  const paymentAmount = getBoothPaymentAmount( settings )
 
   const saveMutation = useMutation( {
     mutationFn : ( payload : BoothPatch ) => updateBooth( boothId, payload ),
@@ -177,6 +198,18 @@ export function BoothSettingsPanel( { boothId } : { boothId : string } ) {
   const setFlag = ( key : ToggleSettingKey, value : boolean ) => {
     setSaved( false )
     setPatch( ( prev ) => ( { ...prev, [key] : value } ) )
+  }
+
+  const setAmount = ( key : AmountSettingKey, raw : string ) => {
+    const value = Number.parseInt( raw, 10 )
+    setSaved( false )
+    setPatch( ( prev ) => ( { ...prev, [key] : Number.isFinite( value ) ? value : 0 } ) )
+  }
+
+  const setDiscountType = ( discountType : BoothDiscountType ) => {
+    setSaved( false )
+    // The value means something else under the other mode, so start from zero.
+    setPatch( ( prev ) => ( { ...prev, discountType, discountValue : 0 } ) )
   }
 
   const toggleFrame = ( frameKey : string ) => {
@@ -349,6 +382,92 @@ export function BoothSettingsPanel( { boothId } : { boothId : string } ) {
             />
           ) )}
         </div>
+      </section>
+
+      {/* Pricing */}
+      <section className="rounded-2xl border border-neutral-100 bg-white p-5">
+        <div className="flex items-start gap-3">
+          <div className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg bg-secondary">
+            <Tag className="size-4 text-neutral-600" />
+          </div>
+          <div>
+            <h2 className="font-sans text-sm font-bold text-neutral-900">Pricing</h2>
+            <p className="mt-0.5 font-jakarta text-xs text-neutral-400">
+              Amount charged per session when payment is enabled.
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-4 grid gap-4 sm:grid-cols-3">
+          <label className="flex flex-col gap-1.5">
+            <span className="font-sans text-[10px] font-semibold tracking-wider text-neutral-500">
+              Price (Rp)
+            </span>
+            <input
+              type="number"
+              inputMode="numeric"
+              min={0}
+              max={MAX_BOOTH_PRICE}
+              step={1000}
+              value={settings.price}
+              onChange={( e ) => setAmount( 'price', e.target.value )}
+              disabled={saving}
+              className="w-full rounded-lg border border-neutral-200 bg-background px-3 py-2.5 font-sans text-sm transition placeholder:text-neutral-300 focus:border-primary focus:outline-none"
+            />
+          </label>
+
+          <label className="flex flex-col gap-1.5">
+            <span className="font-sans text-[10px] font-semibold tracking-wider text-neutral-500">
+              Discount type
+            </span>
+            <select
+              value={settings.discountType}
+              onChange={( e ) => setDiscountType( e.target.value as BoothDiscountType )}
+              disabled={saving}
+              className="w-full rounded-lg border border-neutral-200 bg-background px-3 py-2.5 font-sans text-sm transition placeholder:text-neutral-300 focus:border-primary focus:outline-none"
+            >
+              {DISCOUNT_TYPES.map( ( type ) => (
+                <option key={type}
+                  value={type}
+                >{DISCOUNT_TYPE_LABELS[type]}</option>
+              ) )}
+            </select>
+          </label>
+
+          <label className="flex flex-col gap-1.5">
+            <span className="font-sans text-[10px] font-semibold tracking-wider text-neutral-500">
+              {settings.discountType === 'percentage' ? 'Discount (%)' : 'Discount (Rp)'}
+            </span>
+            <input
+              type="number"
+              inputMode="numeric"
+              min={0}
+              max={settings.discountType === 'percentage' ? 100 : settings.price}
+              step={settings.discountType === 'percentage' ? 1 : 1000}
+              value={settings.discountValue}
+              onChange={( e ) => setAmount( 'discountValue', e.target.value )}
+              disabled={saving}
+              className="w-full rounded-lg border border-neutral-200 bg-background px-3 py-2.5 font-sans text-sm transition placeholder:text-neutral-300 focus:border-primary focus:outline-none"
+            />
+          </label>
+        </div>
+
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-2 rounded-xl bg-secondary px-3.5 py-3">
+          <span className="font-jakarta text-xs text-neutral-500">
+            {discountAmount > 0
+              ? `${formatRupiah( settings.price )} − ${formatRupiah( discountAmount )} discount`
+              : 'No discount applied'}
+          </span>
+          <span className="font-sans text-sm font-bold text-neutral-900">
+            Guest pays {formatRupiah( paymentAmount )}
+          </span>
+        </div>
+
+        {settings.paymentEnabled && paymentAmount <= 0 && (
+          <p className="mt-2 font-jakarta text-xs font-medium text-destructive">
+            Payment is enabled but the final price is Rp 0 — guests will not be able to pay.
+          </p>
+        )}
       </section>
 
       {/* Frame availability */}

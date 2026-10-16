@@ -46,7 +46,19 @@ export type BoothClientSettings = {
   timerEnabled : boolean
   /** Show the "photo X of Y" capture counter. */
   captureCounterEnabled : boolean
+  /** Base session price in IDR, before discount. */
+  price : number
+  /** How `discountValue` is applied to `price`. */
+  discountType : BoothDiscountType
+  /**
+   * Discount amount — a whole percent (0–100) for `percentage`, or IDR
+   * (0–`price`) for `fixed`. `0` means no discount.
+   */
+  discountValue : number
 }
+
+/** Discount mode for a booth's session price. */
+export type BoothDiscountType = 'percentage' | 'fixed'
 
 /** GET /api/booth/settings response. */
 export type BoothSettingsResponse = {

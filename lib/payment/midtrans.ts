@@ -196,15 +196,6 @@ export function extractDeeplinkUrl( response : QrisChargeResponse ) : string | n
 }
 
 /**
- * Get the default payment amount from env or fallback.
- */
-export function getDefaultAmount() : number {
-  const env = process.env.MIDTRANS_PAYMENT_AMOUNT
-
-  return env ? Number.parseInt( env, 10 ) : 15000
-}
-
-/**
  * Ensure the server key is configured.
  * Returns null if OK, or an error message.
  */

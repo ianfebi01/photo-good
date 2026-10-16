@@ -33,17 +33,6 @@ export function validatePaymentConfig() : string | null {
     : midtrans.validateConfig()
 }
 
-/**
- * Get the default payment amount in IDR.
- */
-export function getDefaultPaymentAmount() : number {
-  const gateway = getActiveGateway()
-
-  return gateway === 'doku'
-    ? doku.getDefaultAmount()
-    : midtrans.getDefaultAmount()
-}
-
 export interface PaymentChargeResult {
   orderId : string
   transactionId : string | null
@@ -62,14 +51,13 @@ export interface PaymentChargeResult {
 export async function createPaymentCharge( params : {
   boothId : string
   sessionId : string
-  grossAmount? : number
+  /** Amount in IDR — the booth's price after discount. */
+  grossAmount : number
 } ) : Promise<PaymentChargeResult> {
   await ensurePaymentSchema()
 
   const gateway = getActiveGateway()
-  const grossAmount = params.grossAmount && params.grossAmount > 0
-    ? params.grossAmount
-    : getDefaultPaymentAmount()
+  const { grossAmount } = params
 
   if ( gateway === 'doku' ) {
     const orderId = doku.generateOrderId( params.boothId )

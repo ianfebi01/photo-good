@@ -1,4 +1,7 @@
 import { requireBooth } from '@/lib/auth/booth'
+import { ensureAuthSchema } from '@/lib/auth/schema'
+import { getBoothPaymentAmount } from '@/lib/photobooth/booth-settings'
+import { getBoothSettingsForBooth } from '@/lib/photobooth/booth-settings.server'
 import {
   createPaymentCharge,
   validatePaymentConfig,
@@ -11,8 +14,10 @@ export const dynamic = 'force-dynamic'
  * POST — Create a QRIS payment charge for the authenticated booth.
  *
  * Body:
- *   sessionId   — the photobooth session this payment is for
- *   grossAmount — optional, defaults to gateway payment amount or 15000
+ *   sessionId — the photobooth session this payment is for
+ *
+ * The amount is the booth's configured price after discount (booth settings).
+ * It is never taken from the request, so a booth cannot pick its own price.
  *
  * Returns:
  *   orderId, transactionId, qrCodeUrl, deeplinkUrl, transactionStatus
@@ -28,15 +33,10 @@ export async function POST( request : Request ) {
   }
 
   let sessionId : string
-  let grossAmount : number | undefined
 
   try {
     const body = await request.json()
     sessionId = String( body.sessionId ?? '' ).trim().slice( 0, 32 )
-    grossAmount =
-      typeof body.grossAmount === 'number' && body.grossAmount > 0
-        ? body.grossAmount
-        : undefined
 
     if ( !sessionId ) {
       return Response.json( { error : 'Missing sessionId' }, { status : 400 } )
@@ -49,6 +49,16 @@ export async function POST( request : Request ) {
   }
 
   try {
+    await ensureAuthSchema()
+
+    const grossAmount = getBoothPaymentAmount( await getBoothSettingsForBooth( auth.id ) )
+    if ( grossAmount <= 0 ) {
+      return Response.json(
+        { error : 'Booth price after discount must be greater than zero' },
+        { status : 400 },
+      )
+    }
+
     const payment = await createPaymentCharge( {
       boothId : auth.id,
       sessionId,
