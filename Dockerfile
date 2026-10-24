@@ -2,7 +2,7 @@
 # docker stop coNext & docker image rm -f next & docker build -t next . && docker run -it --rm -dp 3000:3000 --name coNext next && docker exec -it coNext sh
 
 # Start Dockerfile
-ARG VERSION=alpine3.17
+ARG VERSION=22-alpine@sha256:fe4f6d74e20370acb04ad889077d14d0f64a9c8ea6a42bc60cddf1e844699914
 ARG DIR=usr/app
 
 FROM node:${VERSION} AS builder
